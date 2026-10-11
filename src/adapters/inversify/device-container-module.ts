@@ -16,7 +16,7 @@ import { DeviceBindings } from './device-bindings.ts'
  */
 export class DeviceContainerModule extends ContainerModule {
   public constructor(device: Device) {
-    super((bind) => {
+    super(({ bind }) => {
       bind(DeviceBindings.Device).toConstantValue(device)
       bind(DeviceBindings.Storage).toConstantValue(device.storage)
       bind(DeviceBindings.Camera).toConstantValue(device.camera)

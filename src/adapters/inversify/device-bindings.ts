@@ -1,4 +1,4 @@
-import type { interfaces } from 'inversify'
+import type { ServiceIdentifier } from 'inversify'
 
 import type { TabCoordination } from '../../core/coordination/tab-coordination.ts'
 import type { Device } from '../../core/device.ts'
@@ -57,7 +57,7 @@ export class DeviceBindings {
    */
   public static readonly Orientation = DeviceBindings.identifier<DeviceOrientation>('Orientation')
 
-  private static identifier<T>(name: string): interfaces.ServiceIdentifier<T> {
+  private static identifier<T>(name: string): ServiceIdentifier<T> {
     // registered globally, so two copies of the library in one application still agree on the identifiers
     return Symbol.for(`web-device-butler:${name}`)
   }

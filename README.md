@@ -194,7 +194,7 @@ Every error extends `DeviceError`, sets `name` and keeps the error of the browse
 | `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory   |
 | `web-device-butler/media`, `/permission`, `/platform`              | the combined session, permissions, platform |
 | `web-device-butler/vue`                                            | composables, needs `vue`                    |
-| `web-device-butler/inversify`                                      | container module, needs `inversify`         |
+| `web-device-butler/inversify`                                      | container module, needs `inversify` 8       |
 | `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric` |
 
 ### Vue
