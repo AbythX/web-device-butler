@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: settings in several tabs</title>
+    <link rel="stylesheet" href="../../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../../">All demos</a></nav>
+      <h1>Settings in several tabs</h1>
+      <p class="hint">
+        Open this page in two tabs. A setting that one tab changes arrives in the other, two tabs that change different
+        settings at once keep both, and every click of every tab is counted. Described in
+        <code>docs/use-cases/settings-across-tabs.md</code>.
+      </p>
+
+      <section>
+        <h2>Settings <small id="driver"></small></h2>
+        <form id="settings">
+          <label>
+            Theme
+            <select name="theme">
+              <option value="light dark">as the system</option>
+              <option value="light">light</option>
+              <option value="dark">dark</option>
+            </select>
+          </label>
+          <label>Name <input type="text" name="name" placeholder="nobody" /></label>
+        </form>
+        <p id="greeting"></p>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Counters</h2>
+        <dl id="counters"></dl>
+        <div class="actions">
+          <button id="click">Count a click</button>
+          <button id="click-many">Count 100 clicks</button>
+          <button id="reset">Reset everything</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Changes</h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>From</th>
+                <th>Store</th>
+                <th>Key</th>
+              </tr>
+            </thead>
+            <tbody id="changes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

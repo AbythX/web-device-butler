@@ -1,0 +1,108 @@
+{
+  "name": "web-device-butler",
+  "version": "0.0.0",
+  "private": true,
+  "description": "One library that hides the incidental complexity of browser APIs that are tied to the device.",
+  "license": "MIT",
+  "author": "Sebastian Weinert",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./dist/disposable-polyfill-*.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "default": "./dist/storage.js"
+    },
+    "./camera": {
+      "types": "./dist/media/camera/index.d.ts",
+      "default": "./dist/camera.js"
+    },
+    "./microphone": {
+      "types": "./dist/media/microphone/index.d.ts",
+      "default": "./dist/microphone.js"
+    },
+    "./media": {
+      "types": "./dist/media/index.d.ts",
+      "default": "./dist/media.js"
+    },
+    "./location": {
+      "types": "./dist/location/index.d.ts",
+      "default": "./dist/location.js"
+    },
+    "./permission": {
+      "types": "./dist/permission/index.d.ts",
+      "default": "./dist/permission.js"
+    },
+    "./platform": {
+      "types": "./dist/platform/index.d.ts",
+      "default": "./dist/platform.js"
+    },
+    "./fabric": {
+      "types": "./dist/adapters/fabric/index.d.ts",
+      "default": "./dist/fabric.js"
+    },
+    "./inversify": {
+      "types": "./dist/adapters/inversify/index.d.ts",
+      "default": "./dist/inversify.js"
+    },
+    "./vue": {
+      "types": "./dist/adapters/vue/index.d.ts",
+      "default": "./dist/vue.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:unit": "vitest run --project library",
+    "test:browser": "vitest run --project browser",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "demo": "vite --config demo/vite.config.ts",
+    "demo:lan": "vite --config demo/vite.config.ts --host",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+  },
+  "devDependencies": {
+    "@oxlint/plugins": "1.85.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "@vitest/browser-playwright": "^5.0.2",
+    "fabric": "^7.4.0",
+    "fake-indexeddb": "^6.2.5",
+    "inversify": "^6.2.2",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
+    "playwright": "^1.63.0",
+    "reflect-metadata": "^0.2.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2",
+    "vitest-mock-extended": "^5.1.1",
+    "vue": "^3.5.43"
+  },
+  "peerDependencies": {
+    "fabric": ">=6",
+    "inversify": "^6",
+    "vue": ">=3.3"
+  },
+  "peerDependenciesMeta": {
+    "fabric": {
+      "optional": true
+    },
+    "inversify": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  }
+}

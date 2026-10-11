@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: video message</title>
+    <link rel="stylesheet" href="../../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../../">All demos</a></nav>
+      <h1>Video message</h1>
+      <p class="hint">
+        Camera and microphone are opened as one session with one stream. Open this page in a second tab and take the
+        camera over: that works while this tab only shows the preview, and is refused while it records. Described in
+        <code>docs/use-cases/video-message.md</code>.
+      </p>
+
+      <section>
+        <div class="actions">
+          <button id="start">Start</button>
+          <button id="takeover">Start and take over</button>
+          <button id="record" disabled>Record</button>
+          <button id="finish" disabled>Stop recording</button>
+          <button id="close" disabled>Close</button>
+        </div>
+        <p id="status" class="status"></p>
+        <video id="preview" autoplay muted playsinline hidden></video>
+        <dl id="session"></dl>
+      </section>
+
+      <section id="result" hidden>
+        <h2>Message <small id="result-size"></small></h2>
+        <video id="message" controls playsinline></video>
+        <div class="actions">
+          <a id="download" download="message">Download</a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

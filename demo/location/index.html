@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: location, orientation, permissions</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Location, orientation, permissions</h1>
+      <p class="hint">
+        Where the device is, how it is held and what the page is allowed to use. Nothing is requested before you press a
+        button.
+      </p>
+
+      <section>
+        <h2>Device</h2>
+        <dl id="facts"></dl>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Permissions</h2>
+        <p class="hint">
+          <code>query()</code> never asks the user, <code>request()</code> does where the browser has to. A refusal is a
+          state, not an error.
+        </p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>State</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="permissions"></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button id="query">query() all</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Location</h2>
+        <form id="options">
+          <label><input type="checkbox" name="highAccuracy" /> highAccuracy</label>
+          <label>timeout in ms <input type="number" name="timeout" min="0" step="1000" placeholder="none" /></label>
+          <label>maximumAge in ms <input type="number" name="maximumAge" min="0" step="1000" placeholder="0" /></label>
+        </form>
+        <div class="actions">
+          <button id="current">current()</button>
+          <button id="watch">watch()</button>
+          <button id="stop">watch.stop()</button>
+        </div>
+        <dl id="position"></dl>
+      </section>
+
+      <section>
+        <h2>Positions of the watch</h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Accuracy</th>
+                <th>From the start</th>
+              </tr>
+            </thead>
+            <tbody id="positions"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: cameras</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Cameras of this device</h1>
+      <p class="hint">
+        The tool for the device matrix: it shows what the library finds out about every camera and lets you try each
+        feature. Nothing is requested before you press a button.
+      </p>
+
+      <section>
+        <h2>Device</h2>
+        <dl id="facts"></dl>
+      </section>
+
+      <section>
+        <h2>Requirements</h2>
+        <form id="requirements">
+          <label>
+            Facing
+            <select name="facing">
+              <option value="back">back</option>
+              <option value="front">front</option>
+              <option value="">any</option>
+            </select>
+          </label>
+          <label><input type="checkbox" name="torch" checked /> require torch</label>
+          <label><input type="checkbox" name="zoom" /> require zoom</label>
+          <label><input type="checkbox" name="focus" /> require focus</label>
+          <label>
+            Resolution
+            <select name="resolution">
+              <option value="">not set</option>
+              <option value="3840x2160">3840x2160</option>
+              <option value="1920x1080" selected>1920x1080</option>
+              <option value="1280x720">1280x720</option>
+              <option value="640x480">640x480</option>
+            </select>
+          </label>
+          <label><input type="checkbox" name="exact" /> exact</label>
+          <label>
+            Strategy
+            <select name="strategy">
+              <option value="best">best</option>
+              <option value="first">first</option>
+            </select>
+          </label>
+          <label>
+            When busy
+            <select name="whenBusy">
+              <option value="fail">fail</option>
+              <option value="wait">wait</option>
+              <option value="takeover">takeover</option>
+            </select>
+          </label>
+          <label><input type="checkbox" name="autoRecover" /> autoRecover</label>
+        </form>
+        <div class="actions">
+          <button id="initialize">initialize()</button>
+          <button id="open">open()</button>
+          <button id="probe">list({ detail: 'probed' })</button>
+          <button id="list">list()</button>
+          <button id="forget">forget()</button>
+        </div>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Cameras <small id="access"></small></h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Facing</th>
+                <th>Detail</th>
+                <th>Torch</th>
+                <th>Zoom</th>
+                <th>Focus</th>
+                <th>Max. resolution</th>
+                <th>Max. fps</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cameras"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="session" hidden>
+        <h2>Session <small id="session-state"></small></h2>
+        <video id="preview" autoplay muted playsinline></video>
+        <dl id="session-facts"></dl>
+        <div id="controls" class="controls"></div>
+        <div class="actions">
+          <button id="switch">switchTo(other facing)</button>
+          <button id="half">configure(1280x720)</button>
+          <label><input type="checkbox" id="allow-takeover" checked /> allowTakeover</label>
+          <button id="close">close()</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Report</h2>
+        <p class="hint">
+          Add what you saw (which lens the selected camera is, whether the torch really lights, what a second tab did)
+          and save the report in <code>docs/device-matrix</code>.
+        </p>
+        <textarea id="notes" rows="3" placeholder="Device, OS version, browser version, observations"></textarea>
+        <div class="actions">
+          <button id="report">Build report</button>
+          <button id="copy">Copy</button>
+        </div>
+        <pre id="report-output"></pre>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

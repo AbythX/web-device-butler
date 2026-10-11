@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: voice memos</title>
+    <link rel="stylesheet" href="../../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../../">All demos</a></nav>
+      <h1>Voice memos</h1>
+      <p class="hint">
+        A recording goes into the storage piece by piece while it runs, so its length is limited by the storage and not
+        by the memory. Described in <code>docs/use-cases/voice-memo.md</code>.
+      </p>
+
+      <section>
+        <form id="options">
+          <label><input type="checkbox" name="noiseSuppression" checked /> noise suppression</label>
+          <label><input type="checkbox" name="echoCancellation" /> echo cancellation</label>
+          <label><input type="checkbox" name="autoGainControl" checked /> auto gain</label>
+        </form>
+        <div class="actions">
+          <button id="record">Record</button>
+          <button id="stop" disabled>Stop</button>
+          <label><input type="checkbox" id="muted" /> muted</label>
+        </div>
+        <p id="status" class="status"></p>
+        <meter id="level" min="0" max="1" value="0"></meter>
+        <dl id="recording"></dl>
+      </section>
+
+      <section>
+        <h2>Memos <small id="space"></small></h2>
+        <audio id="player" controls hidden></audio>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Recorded</th>
+                <th>Length</th>
+                <th>Size</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="memos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

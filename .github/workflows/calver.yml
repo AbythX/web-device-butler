@@ -1,0 +1,67 @@
+name: CalVer release
+
+# Started by hand: creates the release of the latest commit on main under the next version, YEAR.MONTH.RELEASE. The
+# year and the month are the date in UTC; the last number starts at 0 every month and counts the tags of that month.
+# Packaging and publishing is the job of the release workflow, which is started for the new release.
+on:
+  workflow_dispatch:
+
+# one at a time, so two runs never get the same version
+concurrency:
+  group: calver
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      # nothing is checked out here, so the gh commands are told which repository they work on
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check that the commit can be released
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Releases are made from main, not from $GITHUB_REF_NAME."
+            exit 1
+          fi
+
+          released=$(gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" \
+            --jq ".[] | select(.object.sha == \"$GITHUB_SHA\") | .ref" | head -n 1)
+          if [ -n "$released" ]; then
+            echo "::error::This commit is already released as ${released#refs/tags/}."
+            exit 1
+          fi
+
+      - name: Work out the next version
+        id: next
+        run: |
+          month=$(date -u +%Y.%-m)
+
+          # the highest number among the tags of this month; the first release of a month is 0
+          last=$(gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$month." --jq '.[].ref' |
+            sed -n "s#^refs/tags/v$month\.\([0-9][0-9]*\)\$#\1#p" | sort -n | tail -n 1)
+          version="$month.$(( ${last:--1} + 1 ))"
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "Released as \`$version\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create the release
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$VERSION" --generate-notes
+
+      # a release that a workflow created does not start other workflows by itself, so the release workflow is told
+      - name: Start the release workflow
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
+        run: gh workflow run release.yml --ref "$TAG" -f tag="$TAG"

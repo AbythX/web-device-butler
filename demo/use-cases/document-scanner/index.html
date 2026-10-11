@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: document scanner</title>
+    <link rel="stylesheet" href="../../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../../">All demos</a></nav>
+      <h1>Document scanner</h1>
+      <p class="hint">
+        The application asks for a back camera and prefers one with a torch and a zoom; which camera that is on this
+        device is the business of the library. The photos stay in the storage of the browser. Described in
+        <code>docs/use-cases/document-scanner.md</code>.
+      </p>
+
+      <section>
+        <div class="actions">
+          <button id="start">Start the camera</button>
+          <button id="takeover" hidden>Take the camera from the other tab</button>
+          <button id="capture" disabled>Take a photo</button>
+          <button id="stop" disabled>Stop the camera</button>
+        </div>
+        <p id="status" class="status"></p>
+        <video id="preview" autoplay muted playsinline hidden></video>
+        <dl id="camera"></dl>
+        <div id="controls" class="controls"></div>
+      </section>
+
+      <section>
+        <h2>Scans <small id="space"></small></h2>
+        <ul id="scans" class="cards"></ul>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

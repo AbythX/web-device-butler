@@ -1,0 +1,88 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "vitest"],
+  "jsPlugins": [
+    {
+      "name": "anti-slop",
+      "specifier": "./tools/oxlint/anti-slop/index.ts"
+    }
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "rules": {
+    "no-console": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "import/no-cycle": "error",
+    "typescript/no-extraneous-class": "off",
+    "no-underscore-dangle": "off",
+    "unicorn/no-useless-spread": "off",
+    "unicorn/no-array-sort": "off",
+    "no-await-in-loop": "off",
+    "unicorn/require-post-message-target-origin": "off",
+    "vitest/require-mock-type-parameters": "off",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/disposable-polyfill.ts", "reflect-metadata"]
+      }
+    ],
+
+    "oxc/no-accumulating-spread": "error",
+    "anti-slop/no-array-filter-map": "error",
+    "anti-slop/no-reduce-accumulator-copy": "error",
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-conditional-empty-object-spread": "error",
+    "anti-slop/no-known-value-widening": "error",
+    "anti-slop/no-module-mocking": "error",
+    "anti-slop/no-object-parameters": "error",
+    "anti-slop/no-reflect-apply": "error",
+    "anti-slop/no-reflect-get": "error",
+    "anti-slop/no-shape-in-symbol-names": "error",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/require-readable-spacing": "error",
+    "anti-slop/require-safety-comment-for-type-assertion": "error",
+
+    // These four ask for input to be parsed "at the I/O boundary" and a named type to be passed inward. This library
+    // is that boundary: it takes what a browser throws, reports or has stored, and the checks the rules flag are the
+    // parsing. What they suggest instead is a schema library, and the core has no runtime dependencies on purpose.
+    //
+    // what a `catch` hands over and what a logger or a channel is given is `unknown` by nature
+    "anti-slop/no-unknown-parameters": "off",
+    // the callback of a lock and the reader of a hardware setting return what the caller put in or the browser has
+    "anti-slop/no-unknown-returns": "off",
+    // `typeof` is how a value of the browser or of the storage is checked before it is used
+    "anti-slop/no-runtime-typeof": "off",
+    // `Record<string, unknown>` is the step between "is an object" and checking each property; track settings carry
+    // an index for the hardware settings the DOM types do not know
+    "anti-slop/no-unsafe-dictionary-type": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.spec.ts", "**/testing/**"],
+      "rules": {
+        "unicorn/consistent-function-scoping": "off",
+
+        // A test builds a small part of a browser object and hands it over as the whole one, and it looks into an
+        // object to see what it left behind. The cast marks the fake as a fake; a justification on each of them
+        // would say that every time. The alternative is production code that only asks for the part it uses, which
+        // is worth doing where it is touched anyway, not as a rule for 250 places.
+        "anti-slop/require-safety-comment-for-type-assertion": "off",
+        "anti-slop/no-chained-type-assertions": "off",
+        // a fake takes any object as the globals or the properties of an error
+        "anti-slop/no-object-parameters": "off",
+        // private state and what a second tab left on `globalThis` are only reachable by name
+        "anti-slop/no-reflect-get": "off",
+        // a table of cases is typed by what all cases have in common
+        "anti-slop/no-known-value-widening": "off",
+        // a fake leaves a property away to be a browser that does not have it
+        "anti-slop/no-conditional-empty-object-spread": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["dist", ".claude/**", "tools/oxlint/anti-slop/**"]
+}

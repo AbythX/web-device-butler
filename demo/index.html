@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: demos</title>
+    <link rel="stylesheet" href="./shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1>web-device-butler</h1>
+      <p class="hint">
+        Every page runs on the source of the library. Nothing is requested from the browser before you press a button.
+        Most pages show more when they are open in two tabs at once.
+      </p>
+
+      <section>
+        <h2>Use cases</h2>
+        <p class="hint">Small applications, each built the way <code>docs/use-cases</code> describes it.</p>
+        <ul class="cards">
+          <li>
+            <a href="./use-cases/document-scanner/">Document scanner</a>
+            <p>A back camera with torch and zoom, photos kept in the storage of the browser.</p>
+          </li>
+          <li>
+            <a href="./use-cases/voice-memo/">Voice memos</a>
+            <p>A microphone with a level display, recorded straight into the storage as a stream.</p>
+          </li>
+          <li>
+            <a href="./use-cases/video-message/">Video message</a>
+            <p>Camera and microphone as one session that another tab cannot take away while it records.</p>
+          </li>
+          <li>
+            <a href="./use-cases/shared-settings/">Settings in several tabs</a>
+            <p>Settings and a counter that stay correct when several tabs change them at once.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>One area each</h2>
+        <p class="hint">Every call of an area behind a button, with the log of the library on the page.</p>
+        <ul class="cards">
+          <li>
+            <a href="./camera/">Cameras</a>
+            <p>What the library finds out about every camera. The tool for the device matrix.</p>
+          </li>
+          <li>
+            <a href="./microphone/">Microphones</a>
+            <p>Selection, processing, level and muting. The tool for the device matrix of the microphones.</p>
+          </li>
+          <li>
+            <a href="./storage/">Storage</a>
+            <p>The drivers, entries, concurrent updates, locks, streams and the space of the origin.</p>
+          </li>
+          <li>
+            <a href="./location/">Location, orientation, permissions</a>
+            <p>Positions, a watch, how the device is held and the state of every permission.</p>
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

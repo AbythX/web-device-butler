@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 120,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "arrowParens": "always",
+  "overrides": [
+    {
+      "files": ["*.jsonc"],
+      "options": {
+        "trailingComma": "none"
+      }
+    }
+  ],
+  "ignorePatterns": ["dist", "docs", "pnpm-lock.yaml", "tools/oxlint/anti-slop"]
+}

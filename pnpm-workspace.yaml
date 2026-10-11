@@ -1,0 +1,5 @@
+allowBuilds:
+  canvas: false
+
+# only versions that have been public for 14 days are installed, in minutes
+minimumReleaseAge: 20160

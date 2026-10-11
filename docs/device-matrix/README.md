@@ -1,0 +1,63 @@
+# Device matrix
+
+What the cameras and microphones of real devices do, collected with the [demo pages](../../demo/README.md). The
+results decide the open questions of [the plan](../plan/device-library.md) and which quirk classes the library
+needs.
+
+No device has been recorded yet.
+
+## Collecting a report
+
+1. `pnpm demo:lan` starts the demo pages over HTTPS and prints their address in the network. Phones in the same
+   network open that address and choose `Cameras` (the page `camera/`); the browser warns once about the self-signed
+   certificate.
+2. From a fresh page load, with the requirements `back`, `require torch` and `1920x1080`: press `initialize()`, then
+   `open()`. Check on the device which lens runs and whether `torch.toggle()` really lights the torch.
+3. Reload the page and repeat step 2. This is the cached visit: no camera other than the selected one should start.
+4. Press `list({ detail: 'probed' })` once, so the report covers every camera.
+5. With the session running, open the page in a second tab and press `initialize()` and `open()` there with each
+   `When busy` policy. Note what happens to the session of the first tab.
+6. Write the device, the OS version, the browser version and what you saw into the notes, press `Build report` and
+   `Copy`, and save the result as `docs/device-matrix/<device>-<browser>.json`.
+
+## Devices to cover
+
+| Device                                        | Browser | Report |
+| --------------------------------------------- | ------- | ------ |
+| Phone with iOS                                | Safari  |        |
+| Android phone with one back camera            | Chrome  |        |
+| Android phone with several front/back cameras | Chrome  |        |
+| Desktop                                       | Chrome  |        |
+| Desktop                                       | Firefox |        |
+| Desktop (macOS)                               | Safari  |        |
+
+## Questions the reports have to answer
+
+- Is `facingMode: { ideal }` enough for the access request on the phones that need a request per facing, or does it
+  have to be `exact`?
+- How long after the start of a camera does Chrome for Android report the torch? The library waits until the
+  capabilities stayed the same for 200 ms, at most 1500 ms (`CameraTiming`).
+- Does the tie-break of the selection (largest zoom range, then highest resolution) land on the main camera?
+- Does a browser swap width and height of the configured resolution when the phone is held upright?
+- Does Safari report the torch among the settings of the track, or only among its constraints?
+- Does a frozen background tab answer a take-over request?
+- Does Firefox change the resolution of a running camera? With its fake camera it accepts the change and keeps
+  delivering the old resolution.
+- Does OPFS work in Safari on macOS and iOS (open since phase 1)?
+- Does Firefox ask twice on the first visit, once for the access request and once for the camera that is opened by
+  its id? Its permission is granted per device unless the user chooses to remember it; the specs switch the prompt
+  off.
+- Are the ids of the cameras the same on the next visit in Safari on iOS? If not, what is remembered about the
+  cameras is thrown away on every page load and every camera is started again.
+- Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
+- Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
+
+For the microphones, the page `microphone/` builds the same kind of report: press `initialize()` and `open()`,
+switch each processing, watch the level, then repeat `open()` in a second tab, with and without `exclusive`. Save it
+as `docs/device-matrix/<device>-<browser>-microphone.json`. Open for them:
+
+- Can two tabs record from the microphone at once on iOS? The library lets them (`exclusive: false`).
+- Is the first listed microphone the default of the system in Firefox and Safari?
+- Which browsers change the processing of a running microphone? Chromium does not, so the library starts the
+  microphone again.
+- Does the level meter report once the user has interacted with the page in Firefox and Safari?

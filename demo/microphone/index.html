@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: microphones</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Microphones of this device</h1>
+      <p class="hint">
+        Shows what the library finds out about every microphone and lets you try the processing, the level and muting.
+        Nothing is requested before you press a button.
+      </p>
+
+      <section>
+        <h2>Device</h2>
+        <dl id="facts"></dl>
+      </section>
+
+      <section>
+        <h2>Requirements</h2>
+        <form id="requirements">
+          <label><input type="checkbox" name="requireEchoCancellation" /> require echo cancellation</label>
+          <label><input type="checkbox" name="requireNoiseSuppression" /> require noise suppression</label>
+          <label><input type="checkbox" name="requireAutoGainControl" /> require auto gain</label>
+          <label><input type="checkbox" name="stereo" /> require stereo</label>
+          <label><input type="checkbox" name="preferDefault" checked /> prefer the default</label>
+          <label>
+            Echo cancellation
+            <select name="echoCancellation">
+              <option value="">browser decides</option>
+              <option value="on">on</option>
+              <option value="off">off</option>
+            </select>
+          </label>
+          <label>
+            Noise suppression
+            <select name="noiseSuppression">
+              <option value="">browser decides</option>
+              <option value="on">on</option>
+              <option value="off">off</option>
+            </select>
+          </label>
+          <label>
+            Auto gain
+            <select name="autoGainControl">
+              <option value="">browser decides</option>
+              <option value="on">on</option>
+              <option value="off">off</option>
+            </select>
+          </label>
+          <label>
+            When busy
+            <select name="whenBusy">
+              <option value="fail">fail</option>
+              <option value="wait">wait</option>
+              <option value="takeover">takeover</option>
+            </select>
+          </label>
+          <label><input type="checkbox" name="exclusive" /> exclusive</label>
+          <label><input type="checkbox" name="autoRecover" /> autoRecover</label>
+        </form>
+        <div class="actions">
+          <button id="initialize">initialize()</button>
+          <button id="open">open()</button>
+          <button id="list">list()</button>
+        </div>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Microphones <small id="access"></small></h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Default</th>
+                <th>Detail</th>
+                <th>Echo cancellation</th>
+                <th>Noise suppression</th>
+                <th>Auto gain</th>
+                <th>Max. channels</th>
+                <th>Max. sample rate</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="microphones"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="session" hidden>
+        <h2>Session <small id="session-state"></small></h2>
+        <meter id="level" min="0" max="1" value="0"></meter>
+        <dl id="session-facts"></dl>
+        <div id="controls" class="controls"></div>
+        <div class="actions">
+          <label><input type="checkbox" id="measure" checked /> measure the level</label>
+          <label><input type="checkbox" id="muted" /> muted</label>
+          <button id="close">close()</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Report</h2>
+        <p class="hint">
+          Add what you saw (whether a second tab could record at the same time, whether the level moved) and save the
+          report in <code>docs/device-matrix</code>.
+        </p>
+        <textarea id="notes" rows="3" placeholder="Device, OS version, browser version, observations"></textarea>
+        <div class="actions">
+          <button id="report">Build report</button>
+          <button id="copy">Copy</button>
+        </div>
+        <pre id="report-output"></pre>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

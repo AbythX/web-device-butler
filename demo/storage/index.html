@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: storage</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Storage of this browser</h1>
+      <p class="hint">
+        One interface over every backend. Open this page in a second tab with the same store to see what the tabs tell
+        each other.
+      </p>
+
+      <section>
+        <h2>Browser</h2>
+        <dl id="facts"></dl>
+      </section>
+
+      <section>
+        <h2>Store</h2>
+        <form id="store-form">
+          <label>
+            Drivers, first supported wins
+            <input type="text" name="driver" value="indexeddb, local" />
+          </label>
+          <label>Namespace <input type="text" name="namespace" value="demo" /></label>
+        </form>
+        <div class="actions">
+          <button id="open">open()</button>
+        </div>
+        <dl id="capabilities"></dl>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Entry</h2>
+        <form id="entry-form">
+          <label>Key <input type="text" name="key" value="greeting" /></label>
+          <label>Value (JSON) <input type="text" name="value" value='{ "text": "hello" }' /></label>
+          <label>ttl in ms <input type="number" name="ttl" min="0" step="1000" placeholder="none" /></label>
+        </form>
+        <div class="actions">
+          <button id="set">set()</button>
+          <button id="get">get()</button>
+          <button id="has">has()</button>
+          <button id="delete">delete()</button>
+          <button id="set-no-wait">set({ wait: false })</button>
+          <button id="lock">lock() for 5 s</button>
+        </div>
+        <p class="hint">
+          While one tab holds the lock, <code>set()</code> of every tab waits and
+          <code>set({ wait: false })</code> fails with a <code>StorageLockedError</code>.
+        </p>
+      </section>
+
+      <section>
+        <h2>Entries <small id="size"></small></h2>
+        <div class="actions">
+          <button id="entries">entries()</button>
+          <button id="clear">clear()</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody id="entry-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Several tabs at once</h2>
+        <p class="hint">
+          Press the same button in two tabs at the same moment. <code>update()</code> counts every step of both tabs;
+          reading and then setting loses steps, because each tab overwrites what the other one just wrote.
+        </p>
+        <div class="actions">
+          <button id="count-update">update() 100 times</button>
+          <button id="count-get-set">get() then set(), 100 times</button>
+          <button id="count-reset">Reset the counter</button>
+        </div>
+        <dl id="counter"></dl>
+      </section>
+
+      <section>
+        <h2>Streams</h2>
+        <p class="hint">
+          Large data is written and read in pieces, without holding it in memory. Only <code>opfs</code> and
+          <code>memory</code> can do that; on the other drivers the calls fail with a
+          <code>StorageUnsupportedError</code>.
+        </p>
+        <form id="stream-form">
+          <label>Megabytes <input type="number" name="megabytes" value="20" min="1" max="2000" /></label>
+        </form>
+        <div class="actions">
+          <button id="write-stream">writeStream()</button>
+          <button id="read-stream">readStream()</button>
+          <button id="delete-stream">delete()</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Space of the origin</h2>
+        <div class="actions">
+          <button id="space">space()</button>
+          <button id="persist">persist()</button>
+          <label><input type="checkbox" id="watch-space" /> watchSpace()</label>
+        </div>
+        <dl id="space-facts"></dl>
+      </section>
+
+      <section>
+        <h2>Changes</h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Origin</th>
+                <th>Type</th>
+                <th>Key</th>
+              </tr>
+            </thead>
+            <tbody id="changes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
