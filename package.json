@@ -78,7 +78,7 @@
     "@vitest/browser-playwright": "^5.0.2",
     "fabric": "^7.4.0",
     "fake-indexeddb": "^6.2.5",
-    "inversify": "^6.2.2",
+    "inversify": "^8.2.3",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
     "playwright": "^1.63.0",
