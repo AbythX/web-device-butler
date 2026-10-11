@@ -75,7 +75,7 @@
   "devDependencies": {
     "@oxlint/plugins": "1.85.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
-    "@vitest/browser-playwright": "^5.0.2",
+    "@vitest/browser-playwright": "^5.0.3",
     "fabric": "^7.4.0",
     "fake-indexeddb": "^6.2.5",
     "inversify": "^6.2.2",
