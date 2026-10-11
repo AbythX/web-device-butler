@@ -5,7 +5,11 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    # only versions that have been out for 14 days, like `minimumReleaseAge` in pnpm-workspace.yaml; a pull request
+    # with a newer version would fail to install. Security updates are not held back by this.
+    cooldown:
+      default-days: 14
