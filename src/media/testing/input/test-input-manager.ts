@@ -46,8 +46,8 @@ export class TestInputManager extends BaseMediaInputManager<
     super(configuration, access, logger)
   }
 
-  protected describe(device: MediaDeviceInfo): TestInputDescriptor {
-    return new TestInputDescriptor(device)
+  protected describe(devices: readonly MediaDeviceInfo[]): TestInputDescriptor[] {
+    return devices.map((device) => new TestInputDescriptor(device))
   }
 
   protected accessScopes(requirements: TestInputRequirements): readonly MediaAccessScope[] {

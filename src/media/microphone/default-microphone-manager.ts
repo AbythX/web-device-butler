@@ -113,13 +113,10 @@ export class DefaultMicrophoneManager
   }
 
   /**
-   * The microphones. Never prompts and never starts a microphone; the list is empty until access has been requested.
-   *
    * Browsers that list "the default" as an entry of its own, next to the microphone it stands for, get that entry
    * removed: every microphone is listed once, and `isDefault` marks the one the system uses.
    */
-  public override async list(): Promise<MicrophoneDescriptor[]> {
-    const devices = await this.gate.enumerate()
+  protected describe(devices: readonly MediaDeviceInfo[]): MicrophoneDescriptor[] {
     const { listed, defaultDevice } = DefaultMicrophoneManager.withoutAliases(devices)
 
     return listed.map((device) => {
@@ -143,10 +140,6 @@ export class DefaultMicrophoneManager
     const { permission, devices: microphones, selected, error } = await this.prepareInput(requirements)
 
     return selected === undefined ? { permission, microphones, error } : { permission, microphones, selected }
-  }
-
-  protected describe(device: MediaDeviceInfo): MicrophoneDescriptor {
-    return MicrophoneDescriptor.listed(device, device.deviceId === DefaultMicrophoneManager.defaultId)
   }
 
   protected accessScopes(): readonly MediaAccessScope[] {

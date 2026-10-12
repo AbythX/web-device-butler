@@ -3,7 +3,6 @@ import './disposable-polyfill.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
 import { MediaAccess } from '../media/access/media-access.ts'
-import type { MediaAccessScope } from '../media/access/media-access-state.ts'
 import type { MediaMessages } from '../media/access/media-messages.ts'
 import { MediaPermissionRequester } from '../media/access/media-permission-requester.ts'
 import { DefaultCameraManager } from '../media/camera/default-camera-manager.ts'
@@ -76,21 +75,11 @@ export class DefaultDeviceButler implements DeviceButler {
       logger
     )
 
-    // a request without a facing asks for what the application configured
-    const cameraScopes = (): MediaAccessScope[] => {
-      const { require = {}, prefer = {} } = camera.configuration
-
-      if (require.facing !== undefined) {
-        return [require.facing]
-      }
-
-      return prefer.facing === 'front' ? ['front', 'back'] : ['back', 'front']
-    }
-
     const permission = new DefaultPermissionManager(
       environment,
       {
-        camera: new MediaPermissionRequester(cameraGate, cameraScopes),
+        // a request without a facing asks for what the application configured
+        camera: new MediaPermissionRequester(cameraGate, () => DefaultCameraManager.scopesFor(camera.configuration)),
         microphone: new MediaPermissionRequester(microphoneGate, ['any']),
         geolocation: new GeolocationPermissionRequester(environment),
         'persistent-storage': new PersistentStoragePermissionRequester(environment),

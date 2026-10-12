@@ -147,20 +147,25 @@ export class DefaultCameraManager
     return this.parts.cache.clear()
   }
 
-  protected describe(device: MediaDeviceInfo): CameraDescriptor {
-    return CameraDescriptor.listed(device)
+  protected describe(devices: readonly MediaDeviceInfo[]): CameraDescriptor[] {
+    return devices.map((device) => CameraDescriptor.listed(device))
   }
 
   /**
-   * A required side is the only one that is requested. Otherwise both are, the preferred one first; without a
-   * preference the back first: it is the one applications need most.
+   * The access the requirements need, in the order in which it is requested. A required side is the only one that
+   * is requested. Otherwise both are, the preferred one first; without a preference the back first: it is the one
+   * applications need most.
    */
-  protected accessScopes({ require = {}, prefer = {} }: CameraRequirements): readonly MediaAccessScope[] {
+  public static scopesFor({ require = {}, prefer = {} }: CameraRequirements): MediaAccessScope[] {
     if (require.facing !== undefined) {
       return [require.facing]
     }
 
     return prefer.facing === 'front' ? ['front', 'back'] : ['back', 'front']
+  }
+
+  protected accessScopes(requirements: CameraRequirements): readonly MediaAccessScope[] {
+    return DefaultCameraManager.scopesFor(requirements)
   }
 
   /**
