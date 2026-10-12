@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: screen and page</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Screen and page</h1>
+      <p class="hint">
+        Keeping the screen on, filling it with an element, keeping the page from turning, and what happens to the page
+        as a whole. Nothing is requested before you press a button.
+      </p>
+
+      <section>
+        <h2>Device</h2>
+        <dl id="facts"></dl>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Wake lock <small id="holds"></small></h2>
+        <p class="hint">
+          With a hold out, leave the phone alone: the screen stays on. Switch to another application and come back: the
+          browser dropped its lock, and the library took it again.
+        </p>
+        <div class="actions">
+          <button id="request">request()</button>
+          <button id="release">release() the last hold</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Fullscreen and orientation</h2>
+        <p class="hint">
+          Most browsers only keep a page from turning while it fills the screen, so the buttons for it are inside the
+          element that does. A phone that fills the screen with videos only refuses the element and takes the video.
+        </p>
+        <div class="actions">
+          <button id="enter-stage">enter(element)</button>
+          <button id="enter-clip">enter(video)</button>
+        </div>
+        <div id="stage" class="stage">
+          <dl id="stage-facts"></dl>
+          <div class="actions">
+            <button id="lock-portrait">lock('portrait')</button>
+            <button id="lock-landscape">lock('landscape')</button>
+            <button id="unlock">unlock()</button>
+            <button id="exit">exit()</button>
+          </div>
+          <video id="clip" muted playsinline></video>
+        </div>
+      </section>
+
+      <section>
+        <h2>Page</h2>
+        <p class="hint">
+          Switch to another tab or application, lock the screen, reload: the log below keeps what the page was told and
+          when. What a page is told while it is thrown away shows nowhere; that is the point of saving at
+          <code>hidden</code>.
+        </p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Event</th>
+                <th>Payload</th>
+              </tr>
+            </thead>
+            <tbody id="events"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

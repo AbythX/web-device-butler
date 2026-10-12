@@ -101,27 +101,26 @@ class DocumentScanner extends DemoPage {
   }
 
   private async capture(): Promise<void> {
-    const video = this.element<HTMLVideoElement>('preview')
-    const canvas = this.page.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    canvas.getContext('2d')?.drawImage(video, 0, 0)
+    const session = this.session
 
-    const picture = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => (blob === null ? reject(new Error('The picture could not be encoded')) : resolve(blob)),
-        'image/jpeg',
-        0.9
-      )
-    })
+    if (session === undefined) {
+      return
+    }
+
+    // a still picture of the camera where the browser can ask for one, which can be larger than the preview;
+    // otherwise the picture of the stream
+    const picture = await session.takePhoto({ quality: 0.9 })
+    const size = await createImageBitmap(picture)
 
     const scan: Scan = {
       id: crypto.randomUUID(),
       takenAt: Date.now(),
-      width: canvas.width,
-      height: canvas.height,
+      width: size.width,
+      height: size.height,
       bytes: picture.size,
     }
+
+    size.close()
 
     try {
       await (await this.pictures).set(scan.id, new Uint8Array(await picture.arrayBuffer()))

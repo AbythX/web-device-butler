@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: network and outbox</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Network and outbox</h1>
+      <p class="hint">
+        Whether the device has a network, and items that are kept until they could be sent. Switch the device to flight
+        mode, add items, close the page, open it again and switch the network back on.
+      </p>
+
+      <section>
+        <h2>Network</h2>
+        <dl id="facts"></dl>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Outbox <small id="outbox-facts"></small></h2>
+        <p class="hint">
+          This page has no server: <code>send</code> waits a moment and then succeeds, or fails while the server does
+          not answer. Open the page in a second tab to see that only one tab sends.
+        </p>
+        <form id="options">
+          <label>
+            maxAttempts
+            <input type="number" name="maxAttempts" min="1" placeholder="never given up" />
+          </label>
+          <label>
+            retryDelay in ms
+            <input type="number" name="retryDelay" min="0" step="1000" placeholder="5 s, doubled" />
+          </label>
+        </form>
+        <div class="actions">
+          <button id="open">open()</button>
+          <button id="dispose">dispose()</button>
+          <label><input type="checkbox" id="answers" checked /> the server answers</label>
+        </div>
+        <form id="item">
+          <label>Item <input type="text" name="text" value="A report" /></label>
+        </form>
+        <div class="actions">
+          <button id="add">add()</button>
+          <button id="flush">flush()</button>
+          <button id="entries">entries()</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Item</th>
+                <th>Added</th>
+                <th>Attempts</th>
+                <th>Last error</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="waiting"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Sent by this tab</h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Id</th>
+                <th>Item</th>
+                <th>Attempt</th>
+              </tr>
+            </thead>
+            <tbody id="sent"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
