@@ -32,21 +32,21 @@ describe('camera-selector', () => {
 
   describe('#select', () => {
     test('should return the back camera with the torch', async () => {
-      const selection = sut.select(phone, { facing: 'back', require: { torch: true } })
+      const selection = sut.select(phone, { require: { facing: 'back', torch: true } })
 
       expect(selection.best?.id).toBe('back-main')
       expect(ids(selection.ranked)).toEqual(['back-main'])
     })
 
     test('should never return a camera that lacks what is required', async () => {
-      const selection = sut.select(phone, { facing: 'front', require: { torch: true } })
+      const selection = sut.select(phone, { require: { facing: 'front', torch: true } })
 
       expect(selection.best).toBeUndefined()
       expect(selection.ranked).toEqual([])
     })
 
     test('should say which requirement removed which camera', async () => {
-      const selection = sut.select(phone, { facing: 'front', require: { torch: true } })
+      const selection = sut.select(phone, { require: { facing: 'front', torch: true } })
 
       expect(selection.explain()).toBe(
         "None of the 4 cameras fits the requirements: 'back-wide' lacks facing 'front'; " +
@@ -55,7 +55,7 @@ describe('camera-selector', () => {
     })
 
     test('should say that there is nothing to choose from', async () => {
-      expect(sut.select([], { facing: 'back' }).explain()).toBe('There is no camera to choose from')
+      expect(sut.select([], { require: { facing: 'back' } }).explain()).toBe('There is no camera to choose from')
     })
 
     test('should rank the cameras with the preferred features higher', async () => {
@@ -74,14 +74,14 @@ describe('camera-selector', () => {
       expect(sut.select(cameras, { prefer: { torch: true, zoom: true } }).best?.id).toBe('both')
     })
 
-    test('should rank a camera that cannot deliver the configured resolution lower', async () => {
-      const selection = sut.select(phone, { facing: 'front', resolution: fullHd })
+    test('should rank a camera that cannot deliver the preferred resolution lower', async () => {
+      const selection = sut.select(phone, { require: { facing: 'front' }, prefer: fullHd })
 
       expect(ids(selection.ranked)).toEqual(['front-0', 'front-1'])
     })
 
-    test('should remove a camera that cannot deliver a resolution that is asked for exactly', async () => {
-      const selection = sut.select(phone, { facing: 'front', resolution: { ...fullHd, mode: 'exact' } })
+    test('should remove a camera that cannot deliver a resolution that is required', async () => {
+      const selection = sut.select(phone, { require: { facing: 'front', ...fullHd } })
 
       expect(ids(selection.ranked)).toEqual(['front-0'])
     })
@@ -93,7 +93,7 @@ describe('camera-selector', () => {
         camera('wide', 'back', { maxResolution: ultraHd }),
       ]
 
-      expect(ids(sut.select(cameras, { facing: 'back' }).ranked)).toEqual(['main', 'tele', 'wide'])
+      expect(ids(sut.select(cameras, { require: { facing: 'back' } }).ranked)).toEqual(['main', 'tele', 'wide'])
     })
 
     test('should break a tie of the zoom by the highest resolution', async () => {
@@ -111,8 +111,41 @@ describe('camera-selector', () => {
       expect(ids(sut.select(cameras, {}).ranked)).toEqual(['a', 'b', 'c'])
     })
 
+    test('should put the cameras of the preferred side first, then those that do not say, then the others', async () => {
+      const cameras = [camera('back', 'back'), camera('webcam', 'unknown'), camera('front', 'front')]
+
+      expect(ids(sut.select(cameras, { prefer: { facing: 'front' } }).ranked)).toEqual(['front', 'webcam', 'back'])
+    })
+
+    test('should rank the preferred side above every other preference', async () => {
+      const selection = sut.select(phone, { prefer: { facing: 'front', torch: true, ...ultraHd } })
+
+      expect(ids(selection.ranked)).toEqual(['front-0', 'front-1', 'back-main', 'back-wide'])
+    })
+
+    test('should rank a preferred feature above a preferred resolution, and that above a preferred frame rate', async () => {
+      const cameras = [
+        camera('fast', 'back', { maxResolution: fullHd, maxFrameRate: 60 }),
+        camera('large', 'back', { maxResolution: ultraHd, maxFrameRate: 30 }),
+        camera('torch', 'back', { torch: true, maxResolution: fullHd, maxFrameRate: 30 }),
+      ]
+
+      const selection = sut.select(cameras, { prefer: { torch: true, ...ultraHd, frameRate: 60 } })
+
+      expect(ids(selection.ranked)).toEqual(['torch', 'large', 'fast'])
+    })
+
+    test('should count a preferred width and height as one preference', async () => {
+      const cameras = [
+        camera('zoom', 'back', { zoom: { min: 1, max: 2 }, maxResolution: fullHd }),
+        camera('large', 'back', { maxResolution: ultraHd }),
+      ]
+
+      expect(sut.select(cameras, { prefer: { zoom: true, ...ultraHd } }).best?.id).toBe('zoom')
+    })
+
     test('should keep the order of the list with the strategy first', async () => {
-      const selection = sut.select(phone, { facing: 'back', strategy: 'first' })
+      const selection = sut.select(phone, { require: { facing: 'back' }, strategy: 'first' })
 
       expect(ids(selection.ranked)).toEqual(['back-wide', 'back-main'])
     })
@@ -120,11 +153,11 @@ describe('camera-selector', () => {
     test('should use the cameras that do not say where they face if none faces the required way', async () => {
       const laptop = [camera('webcam', 'unknown'), camera('usb', 'external')]
 
-      expect(ids(sut.select(laptop, { facing: 'back' }).ranked)).toEqual(['webcam', 'usb'])
+      expect(ids(sut.select(laptop, { require: { facing: 'back' } }).ranked)).toEqual(['webcam', 'usb'])
     })
 
     test('should not use a front camera for the back', async () => {
-      const selection = sut.select([camera('front', 'front')], { facing: 'back' })
+      const selection = sut.select([camera('front', 'front')], { require: { facing: 'back' } })
 
       expect(selection.best).toBeUndefined()
       expect(selection.explain()).toContain("'front' lacks facing 'back'")
@@ -133,7 +166,7 @@ describe('camera-selector', () => {
     test('should prefer the cameras that face the required way over those that do not say', async () => {
       const cameras = [camera('usb', 'external', { torch: true }), camera('back', 'back')]
 
-      expect(ids(sut.select(cameras, { facing: 'back' }).ranked)).toEqual(['back'])
+      expect(ids(sut.select(cameras, { require: { facing: 'back' } }).ranked)).toEqual(['back'])
     })
   })
 
@@ -143,7 +176,7 @@ describe('camera-selector', () => {
     )
 
     test('should never offer the front cameras for a back camera', async () => {
-      expect(ids(sut.narrow(listed, { facing: 'back', require: { torch: true } }))).toEqual(['back-wide', 'back-main'])
+      expect(ids(sut.narrow(listed, { require: { facing: 'back', torch: true } }))).toEqual(['back-wide', 'back-main'])
     })
 
     test('should keep cameras whose torch is not known yet', async () => {
@@ -151,12 +184,11 @@ describe('camera-selector', () => {
     })
 
     test('should drop a camera that is known to lack the torch', async () => {
-      expect(ids(sut.narrow(phone, { facing: 'back', require: { torch: true } }))).toEqual(['back-main'])
+      expect(ids(sut.narrow(phone, { require: { facing: 'back', torch: true } }))).toEqual(['back-main'])
     })
 
     test('should drop cameras whose resolution is known to be too low', async () => {
-      expect(ids(sut.narrow(listed, { require: { minResolution: ultraHd } }))).toEqual(['back-main'])
-      expect(ids(sut.narrow(listed, { resolution: { ...ultraHd, mode: 'exact' } }))).toEqual(['back-main'])
+      expect(ids(sut.narrow(listed, { require: ultraHd }))).toEqual(['back-main'])
     })
 
     test('should keep every camera for requirements that ask for nothing', async () => {

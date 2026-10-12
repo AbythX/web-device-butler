@@ -5,6 +5,7 @@ import {
   type EventSubscription,
   type StorageSpace,
   type StorageSpaceWatch,
+  type StorageTraits,
   type Store,
 } from '../../src/index.ts'
 import { DemoPage } from '../shared/demo-page.ts'
@@ -14,6 +15,14 @@ import { DemoPage } from '../shared/demo-page.ts'
  */
 class StorageDemo extends DemoPage {
   private static readonly drivers = ['local', 'session', 'opfs', 'indexeddb', 'memory']
+
+  private static readonly flags = [
+    'binary',
+    'streaming',
+    'crossTabEvents',
+    'consistentAcrossTabs',
+    'persistent',
+  ] as const
   private static readonly counterKey = 'counter'
   private static readonly streamKey = 'large'
   private static readonly megabyte = 1024 * 1024
@@ -99,8 +108,35 @@ class StorageDemo extends DemoPage {
 
     const namespace = String(form.get('namespace'))
 
-    const store = await this.butler.storage.open({ driver, namespace })
+    const require: StorageTraits = {}
+    const prefer: StorageTraits = {}
+    /** where the form puts a trait: among what the backend must have, or among what it should have */
+    const placeOf = (name: string) => ({ require, prefer })[String(form.get(name))]
+
+    for (const name of StorageDemo.flags) {
+      const traits = placeOf(name)
+
+      if (traits !== undefined) {
+        traits[name] = true
+      }
+    }
+
+    const lifetime = placeOf('persistencePlace')
+
+    if (lifetime !== undefined) {
+      // SAFETY: the select of the form only offers the lifetimes of the type
+      lifetime.persistence = form.get('persistence') as StorageTraits['persistence']
+    }
+
+    // without names, the library chooses among every backend
+    const store = await this.butler.storage.open({
+      driver: driver.length > 0 ? driver : undefined,
+      namespace,
+      require,
+      prefer,
+    })
     // the entries of the streams are bytes and no JSON, so they live in a namespace of their own
+
     this.files = await this.butler.storage.open({
       driver: store.capabilities.driver,
       namespace: `${namespace}-files`,

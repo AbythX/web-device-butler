@@ -11,7 +11,7 @@ No device has been recorded yet.
 1. `pnpm demo:lan` starts the demo pages over HTTPS and prints their address in the network. Phones in the same
    network open that address and choose `Cameras` (the page `camera/`); the browser warns once about the self-signed
    certificate.
-2. From a fresh page load, with the requirements `back`, `require torch` and `1920x1080`: press `prepare()`, then
+2. From a fresh page load, with the back side and the torch as `must have` and `1920x1080` as `would like`: press `prepare()`, then
    `open()`. Check on the device which lens runs and whether `torch.toggle()` really lights the torch.
 3. Reload the page and repeat step 2. This is the cached visit: no camera other than the selected one should start.
 4. Press `list({ detail: 'probed' })` once, so the report covers every camera.

@@ -48,6 +48,38 @@
         <h2>Location</h2>
         <form id="options">
           <label><input type="checkbox" name="highAccuracy" /> highAccuracy</label>
+          <label>
+            must have: accuracy in m
+            <input type="number" name="requireAccuracy" min="1" placeholder="any" />
+          </label>
+          <label>
+            would like: accuracy in m
+            <input type="number" name="preferAccuracy" min="1" placeholder="any" />
+          </label>
+          <label>
+            Altitude
+            <select name="altitude">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Heading
+            <select name="heading">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Speed
+            <select name="speed">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
           <label>timeout in ms <input type="number" name="timeout" min="0" step="1000" placeholder="none" /></label>
           <label>maximumAge in ms <input type="number" name="maximumAge" min="0" step="1000" placeholder="0" /></label>
         </form>

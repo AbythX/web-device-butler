@@ -91,7 +91,7 @@ describe.skipIf(!hasMicrophone)('the microphone in a real browser', () => {
     })
 
     test('should start with the processing it was asked for', async () => {
-      await using session = await sut.open({ processing: { noiseSuppression: false } })
+      await using session = await sut.open({ prefer: { noiseSuppression: false } })
 
       expect(session.settings.noiseSuppression).toBe(false)
     })
@@ -141,7 +141,10 @@ describe.skipIf(!hasMicrophone)('the microphone in a real browser', () => {
 
   describe('camera and microphone together', () => {
     test('should deliver one stream that can be recorded', async () => {
-      using butler = DefaultDeviceButler.create({ camera: { facing: 'back', resolution: { width: 320, height: 240 } } })
+      using butler = DefaultDeviceButler.create({
+        camera: { require: { facing: 'back' }, prefer: { width: 320, height: 240 } },
+      })
+
       await using session = await butler.media.open()
 
       expect(session.stream.getVideoTracks()).toEqual([session.camera.track])

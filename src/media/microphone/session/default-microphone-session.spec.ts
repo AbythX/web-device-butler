@@ -510,6 +510,17 @@ describe('default-microphone-session', () => {
       expect(sut.track.enabled).toBe(false)
     })
 
+    test('should not switch a processing on again that was required and is switched off since', async () => {
+      await reopen({ autoRecover: true, require: { noiseSuppression: true } })
+      await sut.processing.set({ noiseSuppression: false })
+      const previous = sut.track
+
+      fakeTrackOf(sut).end()
+      await waitFor(() => sut.track !== previous)
+
+      expect(sut.settings.noiseSuppression).toBe(false)
+    })
+
     test('should keep measuring the level, on the new stream', async () => {
       await reopen({ autoRecover: true })
       const levels: number[] = []

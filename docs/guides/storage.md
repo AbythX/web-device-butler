@@ -19,8 +19,9 @@ const settings = await butler.storage.open<Settings>({
 })
 ```
 
-- `driver` is a name or a fallback chain. The first driver that works in this browser is used; if none does, the
-  call rejects with a `StorageUnsupportedError`.
+- `driver` is a name or a list of names. The first driver of the list that works in this browser is used; if none
+  does, the call rejects with a `StorageUnsupportedError`.
+- Without `driver` the library chooses the backend itself. See [Letting the library choose](#letting-the-library-choose).
 - `namespace` separates stores. Entries of different namespaces never see each other, even on the same driver. The
   `storage.namespace` of the configuration is a prefix in front of all of them, so several applications on one origin
   stay apart.
@@ -64,6 +65,74 @@ neither does not carry it.
 `opfs` keeps every entry as a file whose name is made of the key. Everything but lowercase letters, digits, `-` and
 `_` takes three characters there, and a file name has room for 255: a key that does not fit is refused with a
 `StorageError` that says so. Keep the keys of an `opfs` store short and lowercase, or use `indexeddb`.
+
+## Letting the library choose
+
+Instead of naming a backend, say what the store needs. `require` is what the backend must have: one without it is
+never used. `prefer` is what it should have: among the backends that have what is required and work in this
+browser, the one with the most of it is taken.
+
+```ts
+const recordings = await butler.storage.open({
+  namespace: 'recordings',
+  require: { persistence: 'origin', binary: true },
+  prefer: { streaming: true },
+})
+
+recordings.capabilities.driver // 'opfs' where the browser has it, 'indexeddb' otherwise
+```
+
+| Trait                  | In `require`                                                                  | In `prefer`                  |
+| ---------------------- | ----------------------------------------------------------------------------- | ---------------------------- |
+| `persistence`          | `'origin'`, `'tab'` or `'page'`, exactly: `'tab'` does not take a backend that outlives the tab | backends with it rank higher |
+| `binary`, `streaming`, `crossTabEvents`, `consistentAcrossTabs` | the backend has it. `false` asks for nothing. | backends with it rank higher |
+| `persistent`           | the browser has promised not to evict the data of the origin. Refused, the store does not open. | the promise is asked for; the store opens either way |
+
+The traits are the [capabilities](#choosing-a-driver) every backend declares, so a backend of your own takes part
+like the others. `persistent` belongs to the origin and not to a backend: it is what `butler.storage.persist()`
+asks for, requested when the store is opened, which shows a prompt in some browsers.
+
+`driver` and the traits combine. A list limits the backends to choose from, and its order decides between those
+that rank the same:
+
+| Written                                                          | Chosen                                               |
+| ---------------------------------------------------------------- | ---------------------------------------------------- |
+| `driver: 'opfs'`                                                 | this backend or an error                             |
+| `driver: ['indexeddb', 'local']`                                 | the first that works here                            |
+| `require: { persistence: 'origin' }, prefer: { streaming: true }` | among every registered backend                      |
+| `driver: ['opfs', 'indexeddb'], require: { binary: true }`       | among the named ones, and only one that fits         |
+| nothing                                                          | the default order                                    |
+
+Without a list, backends that rank the same are taken in the default order: the one whose data lives longest first
+(`origin`, `tab`, `page`), then `indexeddb`, `opfs`, `local`, `session`, `memory`, then your own backends in the
+order they were registered.
+
+If nothing fits, `open()` rejects with a `StorageUnsupportedError` whose message says what each backend lacks.
+
+The `storage` section of the configuration takes the same three fields as the defaults of every `open()`. A field
+of a call replaces the configured field as a whole.
+
+```ts
+const butler = DefaultDeviceButler.create({
+  storage: { namespace: 'my-app', require: { persistence: 'origin' }, prefer: { persistent: true } },
+})
+```
+
+Three things to know before leaving the choice to the library:
+
+- **The backend can be another one on the next visit.** The data of a store lives in its backend. If a browser
+  gains or loses a backend, you register one, or the default order changes with a version of the library, the same
+  `open()` lands elsewhere and finds the store empty. The library does not move data between backends. For data
+  that has to be found again, name one backend, or a short list.
+- **Without a required lifetime the choice can end in `session` or `memory`**, where a browser blocks the others,
+  for example in private mode. What is preferred counts before the lifetime, so `prefer: { streaming: true }` alone
+  takes `memory` in a browser without `opfs`. The data is then gone with the tab or the page. `require: { persistence: 'origin' }`
+  rules that out.
+- **Only the code of the chosen backend is loaded.** What `opfs` and `indexeddb` can do is known without loading
+  them.
+
+`butler.storage.prepare()` does the choosing without opening a store: it resolves with the `capabilities` of the
+backend `open()` would use, whether the data `isPersistent`, or the `error`. It does not throw.
 
 ## Entries
 

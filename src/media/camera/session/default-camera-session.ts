@@ -79,10 +79,11 @@ export class DefaultCameraSession extends BaseMediaSession<CameraSessionEvents> 
     return this.exclusively(async () => {
       this.assertOpen()
 
-      await this.queue.apply(CameraConstraints.for(changes))
+      const delivery = CameraConstraints.delivery({ prefer: changes })
+      await this.queue.apply(CameraConstraints.for({ prefer: delivery }))
 
       // a camera that is started again continues with the changed values
-      this.requirements = this.host.merge(this.requirements, changes)
+      this.requirements = { ...this.requirements, prefer: { ...this.requirements.prefer, ...delivery } }
       this.announceSettings()
     })
   }

@@ -34,7 +34,7 @@ describe.skipIf(!hasCamera)('the fabric renderer in a real browser', () => {
   beforeEach(async () => {
     // Firefox only starts a camera in the tab that is in the foreground
     await commands.showFirstTab()
-    manager = DefaultCameraManager.create({ resolution: { width: 640, height: 480 } })
+    manager = DefaultCameraManager.create({ prefer: { width: 640, height: 480 } })
     session = await manager.open()
     sut = await new FabricCameraFactory().create(session)
   })

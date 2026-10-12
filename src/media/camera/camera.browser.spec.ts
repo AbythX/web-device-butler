@@ -49,7 +49,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
     // Firefox only starts a camera in the tab that is in the foreground
     await commands.showFirstTab()
     localStorage.clear()
-    sut = load({ facing: 'back', resolution: small })
+    sut = load({ require: { facing: 'back' }, prefer: small })
   })
 
   afterEach(async () => {
@@ -93,7 +93,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
       'should select a camera and open it at the configured resolution, on the %s visit',
       async (visit) => {
         if (visit === 'next') {
-          await load({ facing: 'back', resolution: small }).prepare()
+          await load({ require: { facing: 'back' }, prefer: small }).prepare()
         }
 
         const result = await sut.prepare()
@@ -140,7 +140,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
       const settings: string[] = []
       session.on('settingschange', (changed) => settings.push(String(changed.resolution)))
 
-      await session.configure({ resolution: { width: 640, height: 480 } })
+      await session.configure({ width: 640, height: 480 })
 
       // Firefox accepts the change for its fake camera and keeps delivering the old resolution; the settings of the
       // session say what is delivered, not what was asked for
@@ -173,7 +173,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
     test('should not be interrupted by a second tab that loads the application', async () => {
       await using session = await sut.open()
 
-      const second = await commands.prepareCameraInSecondTab({ facing: 'back', resolution: small })
+      const second = await commands.prepareCameraInSecondTab({ require: { facing: 'back' }, prefer: small })
 
       // the second tab answers from what this tab remembered and starts nothing
       expect(second.selected).toBe(session.descriptor.id)
@@ -187,7 +187,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
       await sut.list({ detail: 'probed' })
       const known = (await sut.list()).length
 
-      const second = await commands.prepareCameraInSecondTab({ facing: 'back' })
+      const second = await commands.prepareCameraInSecondTab({ require: { facing: 'back' } })
       await commands.showFirstTab()
 
       expect(second.permission).toBe('granted')

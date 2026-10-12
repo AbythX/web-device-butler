@@ -186,6 +186,13 @@ export abstract class BaseMediaInputManager<
   }
 
   /**
+   * Requests the access a call needs before it can list and start devices.
+   */
+  protected ensureAccess(requirements: TRequirements, lease: MediaLease): Promise<void> {
+    return lease.ensureAccess(this.accessScopes(requirements))
+  }
+
+  /**
    * The devices a call chooses from. The lease is there for a subclass that has to start devices to describe them;
    * access has been requested by the caller.
    */
@@ -253,7 +260,7 @@ export abstract class BaseMediaInputManager<
     }
 
     try {
-      await lease.ensureAccess(this.accessScopes(requirements))
+      await this.ensureAccess(requirements, lease)
 
       return await this.candidates(requirements, lease)
     } finally {
@@ -300,7 +307,7 @@ export abstract class BaseMediaInputManager<
    * Decides which device is opened. Access comes first: before it, the browser lists nothing to choose from.
    */
   protected async resolve(requirements: TRequirements, lease: MediaLease): Promise<TDescriptor> {
-    await lease.ensureAccess(this.accessScopes(requirements))
+    await this.ensureAccess(requirements, lease)
     const descriptors = await this.candidates(requirements, lease)
 
     const descriptor = this.choose(descriptors, requirements)

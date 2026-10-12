@@ -72,7 +72,7 @@ describe('default-media-manager', () => {
 
     test('should use the configuration of each device and let the call override it', async () => {
       butler = DefaultDeviceButler.create(
-        { camera: backCamera, microphone: { require: { minChannelCount: 2 } } },
+        { camera: backCamera, microphone: { require: { channelCount: 2 } } },
         browser.openEnvironment()
       )
       butlers.push(butler)
@@ -83,7 +83,7 @@ describe('default-media-manager', () => {
       await configured.close()
 
       const overridden = await butler.media.open({
-        camera: { facing: 'front', require: {} },
+        camera: { require: { facing: 'front' } },
         microphone: { require: {} },
       })
 
@@ -129,7 +129,7 @@ describe('default-media-manager', () => {
     })
 
     test('should not start the microphone if the camera cannot be opened', async () => {
-      const opening = butler.media.open({ camera: { facing: 'front', require: { torch: true } } })
+      const opening = butler.media.open({ camera: { require: { facing: 'front', torch: true } } })
 
       await expect(opening).rejects.toThrow(MediaRequirementsError)
       expect(JSON.stringify(browser.devices.requests)).not.toContain('audio')

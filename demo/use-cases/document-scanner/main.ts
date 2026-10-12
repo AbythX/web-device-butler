@@ -40,10 +40,9 @@ class DocumentScanner extends DemoPage {
     this.butler = DefaultDeviceButler.create({
       logger: this.logger,
       camera: {
-        facing: 'back',
+        require: { facing: 'back' },
         // a scanner works without them, so they rank the cameras instead of excluding some
-        prefer: { torch: true, zoom: true },
-        resolution: { width: 1920, height: 1080 },
+        prefer: { torch: true, zoom: true, width: 1920, height: 1080 },
         // a phone ends the camera of a page in the background; the session starts it again
         autoRecover: true,
       },

@@ -18,8 +18,8 @@ export class MicrophoneSelection extends MediaInputSelection<MicrophoneDescripto
  */
 export class MicrophoneSelector {
   /**
-   * The microphones that have everything that is required, ordered by how many of the preferred features they
-   * have, then the default microphone of the system first, then by the order of the list.
+   * The microphones that have everything that is required, ordered by how many of the preferred traits they have,
+   * then the default microphone of the system first, then by the order of the list.
    */
   public select(
     descriptors: readonly MicrophoneDescriptor[],
@@ -38,10 +38,9 @@ export class MicrophoneSelector {
       }
     }
 
-    const { default: prefersDefault, ...features } = requirements.prefer ?? {}
+    const { prefer = {} } = requirements
 
-    const score = (descriptor: MicrophoneDescriptor) =>
-      descriptor.missing(features).length + Number(prefersDefault === true && !descriptor.isDefault)
+    const score = (descriptor: MicrophoneDescriptor) => descriptor.missing(prefer).length
 
     // the sort is stable, so microphones that rank the same keep the order of the list
     return new MicrophoneSelection(

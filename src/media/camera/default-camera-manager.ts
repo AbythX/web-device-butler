@@ -11,7 +11,7 @@ import type { StorageManager } from '../../storage/storage-manager.ts'
 import type { StorageMessages } from '../../storage/store/store-change.ts'
 import { MediaAccess } from '../access/media-access.ts'
 import type { MediaAccessScope } from '../access/media-access-state.ts'
-import type { MediaLease } from '../access/media-lease.ts'
+import { MediaLease } from '../access/media-lease.ts'
 import type { MediaMessages } from '../access/media-messages.ts'
 import { MediaDeviceNotFoundError } from '../errors/media-device-not-found-error.ts'
 import { MediaRequirementsError } from '../errors/media-requirements-error.ts'
@@ -139,8 +139,7 @@ export class DefaultCameraManager
       permission,
       cameras,
       selected,
-      isResolutionAvailable:
-        merged.resolution === undefined ? undefined : selected.features.maxResolution?.covers(merged.resolution),
+      isResolutionAvailable: selected.canDeliver(CameraConstraints.delivery(merged)),
     }
   }
 
@@ -153,10 +152,37 @@ export class DefaultCameraManager
   }
 
   /**
-   * Without a facing both sides are requested, the back first: it is the one applications need most.
+   * A required side is the only one that is requested. Otherwise both are, the preferred one first; without a
+   * preference the back first: it is the one applications need most.
    */
-  protected accessScopes(requirements: CameraRequirements): readonly MediaAccessScope[] {
-    return requirements.facing === undefined ? ['back', 'front'] : [requirements.facing]
+  protected accessScopes({ require = {}, prefer = {} }: CameraRequirements): readonly MediaAccessScope[] {
+    if (require.facing !== undefined) {
+      return [require.facing]
+    }
+
+    return prefer.facing === 'front' ? ['front', 'back'] : ['back', 'front']
+  }
+
+  /**
+   * A side that is only preferred is requested alone at first: the other side is requested once it turns out that
+   * it is needed, so an application that gets its preferred camera asks the user once.
+   */
+  protected override async ensureAccess(requirements: CameraRequirements, lease: MediaLease): Promise<void> {
+    const side = DefaultCameraManager.preferredSide(requirements)
+
+    if (side === undefined) {
+      return super.ensureAccess(requirements, lease)
+    }
+
+    try {
+      await lease.ensureAccess([side])
+    } catch (error) {
+      if (!MediaLease.isAnswer(error)) {
+        throw error
+      }
+
+      await lease.ensureAccess([DefaultCameraManager.opposite(side)])
+    }
   }
 
   protected scopeOf(descriptor: CameraDescriptor): MediaAccessScope {
@@ -294,11 +320,54 @@ export class DefaultCameraManager
 
   /**
    * Lists the cameras and starts those that the requirements can match and nothing is known about yet.
+   *
+   * With a side that is only preferred, the cameras of that side come first. The others are only looked at if none
+   * of them has what is required.
    */
   protected override async candidates(
     requirements: CameraRequirements,
     lease: MediaLease
   ): Promise<CameraDescriptor[]> {
+    const side = DefaultCameraManager.preferredSide(requirements)
+
+    if (side === undefined) {
+      return this.look(requirements, lease)
+    }
+
+    const near = await this.look({ ...requirements, require: { ...requirements.require, facing: side } }, lease)
+
+    const isOpen = (descriptor: CameraDescriptor) => this.gate.state.of(this.scopeOf(descriptor)) !== 'denied'
+
+    if (
+      near.some((descriptor) => descriptor.facing === side && isOpen(descriptor) && descriptor.satisfies(requirements))
+    ) {
+      return near
+    }
+
+    try {
+      await lease.ensureAccess([DefaultCameraManager.opposite(side)])
+    } catch (error) {
+      if (!MediaLease.isAnswer(error)) {
+        throw error
+      }
+    }
+
+    // a camera of a side that was refused cannot be started, however much it is preferred
+    return (await this.look(requirements, lease)).filter(isOpen)
+  }
+
+  /**
+   * The side the requirements prefer without requiring one.
+   */
+  private static preferredSide({ require = {}, prefer = {} }: CameraRequirements): 'front' | 'back' | undefined {
+    return require.facing === undefined ? prefer.facing : undefined
+  }
+
+  private static opposite(side: 'front' | 'back'): 'front' | 'back' {
+    return side === 'front' ? 'back' : 'front'
+  }
+
+  private async look(requirements: CameraRequirements, lease: MediaLease): Promise<CameraDescriptor[]> {
     const listed = await this.enumerate()
     const known = await this.parts.cache.apply(listed)
 

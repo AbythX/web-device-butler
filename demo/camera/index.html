@@ -31,9 +31,38 @@
               <option value="">any</option>
             </select>
           </label>
-          <label><input type="checkbox" name="torch" checked /> require torch</label>
-          <label><input type="checkbox" name="zoom" /> require zoom</label>
-          <label><input type="checkbox" name="focus" /> require focus</label>
+          <label>
+            Facing is
+            <select name="facingPlace">
+              <option value="">not asked for</option>
+              <option value="require" selected>must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Torch
+            <select name="torch">
+              <option value="">not asked for</option>
+              <option value="require" selected>must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Zoom
+            <select name="zoom">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Focus
+            <select name="focus">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
           <label>
             Resolution
             <select name="resolution">
@@ -44,7 +73,14 @@
               <option value="640x480">640x480</option>
             </select>
           </label>
-          <label><input type="checkbox" name="exact" /> exact</label>
+          <label>
+            Resolution is
+            <select name="resolutionPlace">
+              <option value="">not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer" selected>would like</option>
+            </select>
+          </label>
           <label>
             Strategy
             <select name="strategy">

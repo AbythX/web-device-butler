@@ -7,6 +7,28 @@ const berlin = { latitude: 52.52, longitude: 13.405 }
 const hamburg = { latitude: 53.5511, longitude: 9.9937 }
 
 describe('device-position', () => {
+  describe('#satisfies', () => {
+    const coarse = new DevicePosition(berlin.latitude, berlin.longitude, 300, 0)
+    const precise = new DevicePosition(berlin.latitude, berlin.longitude, 8, 0, 34, 3, 90, 2)
+
+    test('should satisfy traits that ask for nothing', async () => {
+      expect(coarse.satisfies({})).toBe(true)
+      expect(coarse.satisfies({ altitude: false, heading: false, speed: false })).toBe(true)
+    })
+
+    test('should satisfy an accuracy it is within', async () => {
+      expect(precise.satisfies({ accuracy: 8 })).toBe(true)
+      expect(coarse.satisfies({ accuracy: 100 })).toBe(false)
+    })
+
+    test('should say what it lacks', async () => {
+      const everything = { accuracy: 10, altitude: true, heading: true, speed: true }
+
+      expect(precise.missing(everything)).toEqual([])
+      expect(coarse.missing(everything)).toEqual(['accuracy of 10 m', 'altitude', 'heading', 'speed'])
+    })
+  })
+
   describe('#distanceTo', () => {
     test('should measure the distance along the surface of the earth', async () => {
       const position = new DevicePosition(berlin.latitude, berlin.longitude, 10, 0)

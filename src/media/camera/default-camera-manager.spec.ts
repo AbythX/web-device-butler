@@ -24,9 +24,8 @@ const phone: FakeMediaDevicesOptions = {
 }
 
 const torchCamera: CameraRequirements = {
-  facing: 'back',
-  require: { torch: true },
-  resolution: { width: 1920, height: 1080 },
+  require: { facing: 'back', torch: true },
+  prefer: { width: 1920, height: 1080 },
 }
 
 describe('default-camera-manager', () => {
@@ -130,7 +129,7 @@ describe('default-camera-manager', () => {
       })
 
       test('should look at every camera, whatever the configuration prefers', async () => {
-        sut = load({ facing: 'front', require: { torch: true } })
+        sut = load({ require: { facing: 'front', torch: true } })
 
         const cameras = await sut.list({ detail: 'probed' })
 
@@ -205,7 +204,7 @@ describe('default-camera-manager', () => {
     test('should show what is remembered without starting a camera', async () => {
       await sut.list({ detail: 'probed' })
       const next = load()
-      await next.requestAccess({ facing: 'back' })
+      await next.requestAccess({ require: { facing: 'back' } })
       const requests = browser.devices.requests.length
 
       const cameras = byId(await next.list())
@@ -218,7 +217,7 @@ describe('default-camera-manager', () => {
 
   describe('#select', () => {
     test('should find the back camera with the torch among several back cameras', async () => {
-      const camera = await sut.select({ facing: 'back', require: { torch: true } })
+      const camera = await sut.select({ require: { facing: 'back', torch: true } })
 
       expect(camera?.id).toBe('back-main')
       expect(camera?.detail).toBe('probed')
@@ -227,13 +226,13 @@ describe('default-camera-manager', () => {
 
     test('should wait for a torch that the camera does not report right away', async () => {
       // the torch of the fake main camera is missing from its first answer
-      const camera = await sut.select({ facing: 'back', require: { torch: true } })
+      const camera = await sut.select({ require: { facing: 'back', torch: true } })
 
       expect(camera?.features.torch).toBe(true)
     })
 
     test('should never start a front camera to find a back camera', async () => {
-      await sut.select({ facing: 'back', require: { torch: true } })
+      await sut.select({ require: { facing: 'back', torch: true } })
 
       expect(JSON.stringify(browser.devices.requests)).not.toContain('front')
       expect(JSON.stringify(browser.devices.requests)).not.toContain('user')
@@ -241,20 +240,20 @@ describe('default-camera-manager', () => {
     })
 
     test('should use the configured defaults and let a call override single fields', async () => {
-      sut = load({ facing: 'back', require: { torch: true } })
+      sut = load({ require: { facing: 'back', torch: true } })
 
       expect((await sut.select())?.id).toBe('back-main')
-      expect((await sut.select({ facing: 'front', require: {} }))?.facing).toBe('front')
+      expect((await sut.select({ require: { facing: 'front' } }))?.facing).toBe('front')
     })
 
     test('should return nothing if no camera has what is required', async () => {
-      expect(await sut.select({ facing: 'front', require: { torch: true } })).toBeUndefined()
+      expect(await sut.select({ require: { facing: 'front', torch: true } })).toBeUndefined()
     })
 
     test('should return nothing if access is refused', async () => {
       browser.devices.permission.camera = 'denied'
 
-      expect(await sut.select({ facing: 'back' })).toBeUndefined()
+      expect(await sut.select({ require: { facing: 'back' } })).toBeUndefined()
       expect(sut.access.back).toBe('denied')
     })
 
@@ -265,11 +264,39 @@ describe('default-camera-manager', () => {
 
     test('should prefer features without insisting on them', async () => {
       expect((await sut.select({ prefer: { torch: true } }))?.id).toBe('back-main')
-      expect((await sut.select({ facing: 'front', prefer: { torch: true } }))?.id).toBe('front-0')
+      expect((await sut.select({ require: { facing: 'front' }, prefer: { torch: true } }))?.id).toBe('front-0')
+    })
+
+    test('should take a camera of the preferred side without asking for the other side', async () => {
+      const camera = await sut.select({ prefer: { facing: 'front' } })
+
+      expect(camera?.id).toBe('front-0')
+      expect(sut.access.front).toBe('granted')
+      expect(sut.access.back).toBe('locked')
+      expect(startedById().filter((id) => String(id).startsWith('back'))).toEqual([])
+    })
+
+    test('should fall back to the other side if no camera of the preferred side has what is required', async () => {
+      const camera = await sut.select({ require: { torch: true }, prefer: { facing: 'front' } })
+
+      expect(camera?.id).toBe('back-main')
+      expect(sut.access.back).toBe('granted')
+    })
+
+    test('should take the other side if the preferred side is refused', async () => {
+      browser.devices.beforeCall = async (call) => {
+        if (mentions(call, '"user"')) {
+          throw new DOMException('Permission denied', 'NotAllowedError')
+        }
+      }
+
+      const camera = await sut.select({ prefer: { facing: 'front' } })
+
+      expect(camera?.facing).toBe('back')
     })
 
     test('should take the first camera that fits with the strategy first, without starting the others', async () => {
-      const camera = await sut.select({ facing: 'back', strategy: 'first' })
+      const camera = await sut.select({ require: { facing: 'back' }, strategy: 'first' })
 
       expect(camera?.id).toBe('back-wide')
       expect(startedById()).toEqual([])
@@ -357,7 +384,7 @@ describe('default-camera-manager', () => {
     test('should answer from what is known while a session of the same page runs', async () => {
       const session = await sut.open(torchCamera)
 
-      const camera = await sut.select({ facing: 'back', require: { zoom: true } })
+      const camera = await sut.select({ require: { facing: 'back', zoom: true } })
 
       expect(camera?.id).toBe('back-main')
       expect(session.track.readyState).toBe('live')
@@ -385,7 +412,7 @@ describe('default-camera-manager', () => {
       // as if the wide camera had a torch when it was looked at
       browser.localStorage.setItem(key, remembered.replace(/("id":"back-wide".*?"torch":)false/, '$1true'))
       const visit = load()
-      await visit.requestAccess({ facing: 'back' })
+      await visit.requestAccess({ require: { facing: 'back' } })
       expect(byId(await visit.list())['back-wide']?.features.torch).toBe(true)
 
       const session = await visit.open({ id: 'back-wide' })
@@ -414,7 +441,7 @@ describe('default-camera-manager', () => {
     test('should let a call override single fields of the configuration', async () => {
       sut = load(torchCamera)
 
-      const session = await sut.open({ facing: 'front', require: {}, resolution: { width: 640, height: 480 } })
+      const session = await sut.open({ require: { facing: 'front' }, prefer: { width: 640, height: 480 } })
 
       expect(session.descriptor.facing).toBe('front')
       expect(session.settings.resolution?.toString()).toBe('640x480')
@@ -423,23 +450,36 @@ describe('default-camera-manager', () => {
       expect(session.focus).toBeUndefined()
     })
 
-    test('should deliver the closest the camera can do to an ideal resolution', async () => {
-      const session = await sut.open({ id: 'front-1', resolution: { width: 1920, height: 1080 }, frameRate: 60 })
+    test('should deliver the closest the camera can do to a preferred resolution', async () => {
+      const session = await sut.open({ id: 'front-1', prefer: { width: 1920, height: 1080, frameRate: 60 } })
 
       expect(session.settings.resolution?.toString()).toBe('1280x720')
       expect(session.settings.frameRate).toBe(30)
     })
 
-    test('should fail if no camera delivers a resolution that is asked for exactly', async () => {
-      const opening = sut.open({ facing: 'front', resolution: { width: 3840, height: 2160, mode: 'exact' } })
+    test('should ask for what is required where nothing is preferred, and for what is preferred otherwise', async () => {
+      await sut.open({ id: 'back-main', require: { width: 1280, height: 720, frameRate: 30 }, prefer: { width: 1920 } })
+
+      expect(browser.devices.requests.at(-1)).toEqual({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 },
+          deviceId: { exact: 'back-main' },
+        },
+      })
+    })
+
+    test('should fail if no camera delivers a resolution that is required', async () => {
+      const opening = sut.open({ require: { facing: 'front', width: 3840, height: 2160 } })
 
       await expect(opening).rejects.toThrow(MediaRequirementsError)
-      await expect(opening).rejects.toThrow(/lacks resolution 3840x2160/)
+      await expect(opening).rejects.toThrow(/lacks resolution of at least 3840x2160/)
       expect(await isLocked()).toBe(false)
     })
 
     test('should say which requirement removed which camera if none fits', async () => {
-      const opening = sut.open({ facing: 'front', require: { torch: true } })
+      const opening = sut.open({ require: { facing: 'front', torch: true } })
 
       await expect(opening).rejects.toThrow(MediaRequirementsError)
       await expect(opening).rejects.toThrow(
@@ -543,7 +583,7 @@ describe('default-camera-manager', () => {
 
     test('should open the webcam of a laptop for a back camera, because nothing there faces a way', async () => {
       browser = new FakeMediaBrowser({ inputs: CameraTestBench.laptop() })
-      sut = load({ facing: 'back', resolution: { width: 1920, height: 1080 } })
+      sut = load({ require: { facing: 'back' }, prefer: { width: 1920, height: 1080 } })
 
       const session = await sut.open()
 
@@ -627,24 +667,24 @@ describe('default-camera-manager', () => {
     test('should let a call override the configuration', async () => {
       sut = load(torchCamera)
 
-      const result = await sut.prepare({ facing: 'front', require: {} })
+      const result = await sut.prepare({ require: { facing: 'front' } })
 
       expect(result.selected?.id).toBe('front-0')
     })
 
     test('should say that the selected camera cannot deliver the configured resolution', async () => {
-      const result = await sut.prepare({ facing: 'front', resolution: { width: 3840, height: 2160 } })
+      const result = await sut.prepare({ require: { facing: 'front' }, prefer: { width: 3840, height: 2160 } })
 
       expect(result.selected?.id).toBe('front-0')
       expect(result.isResolutionAvailable).toBe(false)
     })
 
     test('should not say anything about the resolution if none is configured', async () => {
-      expect((await sut.prepare({ facing: 'back' })).isResolutionAvailable).toBeUndefined()
+      expect((await sut.prepare({ require: { facing: 'back' } })).isResolutionAvailable).toBeUndefined()
     })
 
     test('should report that no camera fits instead of throwing', async () => {
-      const result = await sut.prepare({ facing: 'front', require: { torch: true } })
+      const result = await sut.prepare({ require: { facing: 'front', torch: true } })
 
       expect(result.permission).toBe('granted')
       expect(result.selected).toBeUndefined()
@@ -734,12 +774,12 @@ describe('default-camera-manager', () => {
   describe('.create', () => {
     test('should build a manager that works on its own', async () => {
       const { DefaultCameraManager: Manager } = await import('./default-camera-manager.ts')
-      const manager = Manager.create({ facing: 'back' }, browser.openEnvironment())
+      const manager = Manager.create({ require: { facing: 'back' } }, browser.openEnvironment())
       pages.push(manager)
 
       const camera = await manager.select({ require: { torch: true } })
 
-      expect(manager.configuration).toEqual({ facing: 'back' })
+      expect(manager.configuration).toEqual({ require: { facing: 'back' } })
       expect(camera?.id).toBe('back-main')
     })
   })

@@ -4,7 +4,10 @@ import type { DeviceButlerError } from '../core/errors/device-butler-error.ts'
 import type { DevicePosition } from './device-position.ts'
 
 export interface LocationWatchEvents {
-  /** the device moved, or determined where it is more precisely */
+  /**
+   * The device moved, or determined where it is more precisely. Only positions that have what the watch requires
+   * are announced; `position.satisfies()` tells whether one also has what is preferred.
+   */
   position: DevicePosition
   /** a position could not be determined; the watch goes on unless the permission was refused */
   error: DeviceButlerError
@@ -21,7 +24,7 @@ export interface LocationWatch extends Listenable<LocationWatchEvents>, Disposab
   readonly isActive: boolean
 
   /**
-   * The latest position; `undefined` until the first one arrived.
+   * The latest position that has what the watch requires; `undefined` until the first one arrived.
    */
   readonly position: DevicePosition | undefined
 

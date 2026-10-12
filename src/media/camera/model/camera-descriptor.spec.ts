@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 import { CameraDescriptor } from './camera-descriptor.ts'
 import { CameraFeatures } from './camera-features.ts'
+import type { CameraTraits } from './camera-requirements.ts'
 import { Resolution } from './resolution.ts'
 
 const mainCamera = {
@@ -99,39 +100,48 @@ describe('camera-descriptor', () => {
       [{ torch: true }, 'torch'],
       [{ zoom: true }, 'zoom'],
       [{ focus: true }, 'focus'],
-      [{ minResolution: { width: 1920, height: 1080 } }, 'resolution of at least 1920x1080'],
-      [{ minFrameRate: 60 }, 'frame rate of at least 60'],
-    ])('should tell that %j is missing', async (require, reason) => {
+      [{ width: 1920, height: 1080 }, 'resolution of at least 1920x1080'],
+      [{ width: 1920 }, 'width of at least 1920'],
+      [{ height: 1080 }, 'height of at least 1080'],
+      [{ frameRate: 60 }, 'frame rate of at least 60'],
+    ])('should tell that %j is missing', async (require: CameraTraits, reason) => {
       expect(probed.satisfies({ require })).toBe(true)
       expect(plain.satisfies({ require })).toBe(false)
       expect(plain.unmet({ require })).toEqual([reason])
     })
 
     test('should not satisfy the other facing', async () => {
-      expect(probed.satisfies({ facing: 'back' })).toBe(true)
-      expect(probed.unmet({ facing: 'front' })).toEqual(["facing 'front'"])
+      expect(probed.satisfies({ require: { facing: 'back' } })).toBe(true)
+      expect(probed.unmet({ require: { facing: 'front' } })).toEqual(["facing 'front'"])
     })
 
     test('should not rule out a camera that does not say where it faces', async () => {
       const webcam = CameraDescriptor.listed(device('Integrated Webcam'))
 
-      expect(webcam.satisfies({ facing: 'back' })).toBe(true)
+      expect(webcam.satisfies({ require: { facing: 'back' } })).toBe(true)
     })
 
-    test('should only insist on a resolution that is asked for exactly', async () => {
-      const resolution = { width: 1920, height: 1080 }
+    test('should only insist on what is required', async () => {
+      expect(plain.satisfies({ prefer: { width: 1920, height: 1080, torch: true } })).toBe(true)
+    })
 
-      expect(plain.satisfies({ resolution })).toBe(true)
-      expect(plain.unmet({ resolution: { ...resolution, mode: 'exact' } })).toEqual(['resolution 1920x1080'])
-      expect(probed.satisfies({ resolution: { ...resolution, mode: 'exact' } })).toBe(true)
+    test('should take a width and a height together for one size, whichever way the device is held', async () => {
+      expect(plain.satisfies({ require: { width: 720, height: 1280 } })).toBe(true)
+      expect(plain.satisfies({ require: { width: 720 } })).toBe(true)
+      expect(plain.satisfies({ require: { height: 1280 } })).toBe(false)
+    })
+
+    test('should say whether it can deliver a size', async () => {
+      expect(plain.canDeliver({ width: 1280, height: 720 })).toBe(true)
+      expect(plain.canDeliver({ width: 1920, height: 1080 })).toBe(false)
+      expect(plain.canDeliver({})).toBeUndefined()
+      expect(CameraDescriptor.listed(device('Camera')).canDeliver({ width: 1280 })).toBeUndefined()
     })
 
     test('should not rule out a camera whose resolution is not known', async () => {
       const unknown = CameraDescriptor.listed(device('Camera'))
 
-      expect(unknown.satisfies({ require: { minResolution: { width: 3840, height: 2160 }, minFrameRate: 120 } })).toBe(
-        true
-      )
+      expect(unknown.satisfies({ require: { width: 3840, height: 2160, frameRate: 120 } })).toBe(true)
     })
 
     test('should say that a camera that was not started cannot tell about its torch', async () => {

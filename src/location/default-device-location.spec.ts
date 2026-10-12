@@ -9,6 +9,7 @@ import { DefaultDeviceLocation } from './default-device-location.ts'
 import type { DeviceLocation } from './device-location.ts'
 import { DevicePosition } from './device-position.ts'
 import { LocationError } from './errors/location-error.ts'
+import { LocationRequirementsError } from './errors/location-requirements-error.ts'
 import { LocationTimeoutError } from './errors/location-timeout-error.ts'
 import { LocationUnavailableError } from './errors/location-unavailable-error.ts'
 import { FakeGeolocation } from './testing/fake-geolocation.ts'
@@ -250,9 +251,170 @@ describe('default-device-location', () => {
     })
   })
 
+  describe('#current with what is required and preferred', () => {
+    test('should not return a position without what is required', async () => {
+      const locating = sut.current({ require: { accuracy: 50 } })
+
+      geolocation.moveTo({ ...berlin, accuracy: 800 })
+      geolocation.moveTo({ ...berlin, accuracy: 30 })
+
+      expect((await locating).accuracy).toBe(30)
+      expect(geolocation.watches.size).toBe(0)
+    })
+
+    test('should return the first position that has what is required if nothing limits the time', async () => {
+      const locating = sut.current({ require: { accuracy: 100 }, prefer: { accuracy: 10 } })
+
+      geolocation.moveTo({ ...berlin, accuracy: 60 })
+
+      expect((await locating).accuracy).toBe(60)
+    })
+
+    test('should wait for a position with what is preferred as long as the timeout allows', async () => {
+      const locating = sut.current({ require: { accuracy: 100 }, prefer: { accuracy: 10 }, timeout: 1000 })
+
+      geolocation.moveTo({ ...berlin, accuracy: 60 })
+      geolocation.moveTo({ ...berlin, accuracy: 8 })
+
+      expect((await locating).accuracy).toBe(8)
+    })
+
+    test('should return the best position that has what is required when the time is over', async () => {
+      const locating = sut.current({ require: { accuracy: 100 }, prefer: { accuracy: 10 }, timeout: 20 })
+
+      geolocation.moveTo({ ...berlin, accuracy: 60 })
+      geolocation.moveTo({ ...berlin, accuracy: 40 })
+      geolocation.moveTo({ ...berlin, accuracy: 500 })
+
+      expect((await locating).accuracy).toBe(40)
+      expect(geolocation.watches.size).toBe(0)
+    })
+
+    test('should fail with the best position it saw if none had what is required in time', async () => {
+      const locating = sut.current({ require: { accuracy: 50, altitude: true }, timeout: 20 })
+
+      geolocation.moveTo({ ...berlin, accuracy: 800 })
+      geolocation.moveTo({ ...berlin, accuracy: 300 })
+
+      const error = await locating.catch((reason: unknown) => reason)
+
+      expect(error).toBeInstanceOf(LocationRequirementsError)
+      expect((error as LocationRequirementsError).message).toBe(
+        'The best position of the device lacks accuracy of 50 m, altitude'
+      )
+      expect((error as LocationRequirementsError).position?.accuracy).toBe(300)
+    })
+
+    test('should fail if no position arrived in time', async () => {
+      const error = await sut.current({ require: { accuracy: 50 }, timeout: 20 }).catch((reason: unknown) => reason)
+
+      expect(error).toBeInstanceOf(LocationRequirementsError)
+      expect((error as LocationRequirementsError).position).toBeUndefined()
+    })
+
+    test('should require the altitude, the heading and the speed', async () => {
+      const locating = sut.current({ require: { altitude: true, heading: true, speed: true } })
+
+      geolocation.moveTo({ ...berlin, altitude: 34 })
+      geolocation.moveTo({ ...berlin, altitude: 34, heading: 90, speed: 2 })
+
+      expect(await locating).toMatchObject({ altitude: 34, heading: 90, speed: 2 })
+    })
+
+    test('should keep the time itself and ask the browser for the rest', async () => {
+      const locating = sut.current({ require: { accuracy: 50 }, highAccuracy: true, maximumAge: 500, timeout: 1000 })
+      geolocation.moveTo({ ...berlin, accuracy: 5 })
+      await locating
+
+      expect(geolocation.calls).toEqual([{ enableHighAccuracy: true, maximumAge: 500 }])
+    })
+
+    test('should fail with what the browser reports', async () => {
+      const locating = sut.current({ require: { accuracy: 50 } })
+
+      geolocation.fail(FakeGeolocation.permissionDenied)
+
+      await expect(locating).rejects.toBeInstanceOf(PermissionDeniedError)
+      expect(geolocation.watches.size).toBe(0)
+    })
+
+    test('should stop when the call is aborted', async () => {
+      const controller = new AbortController()
+      const locating = sut.current({ require: { accuracy: 50 }, signal: controller.signal })
+
+      controller.abort(new Error('left the page'))
+
+      await expect(locating).rejects.toThrow('left the page')
+      expect(geolocation.watches.size).toBe(0)
+    })
+
+    test('should ask for nothing with a trait that is false', async () => {
+      const locating = sut.current({ require: { altitude: false } })
+      geolocation.moveTo(berlin)
+      await locating
+
+      expect(geolocation.watches.size).toBe(0)
+      expect(geolocation.calls).toHaveLength(1)
+    })
+  })
+
+  describe('#watch with what is required', () => {
+    test('should not announce positions without what is required', async () => {
+      using watch = sut.watch({ require: { accuracy: 50 } })
+      const accuracies: number[] = []
+      watch.on('position', (position) => accuracies.push(position.accuracy))
+
+      geolocation.moveTo({ ...berlin, accuracy: 400 })
+      geolocation.moveTo({ ...berlin, accuracy: 20 })
+      geolocation.moveTo({ ...berlin, accuracy: 90 })
+
+      expect(accuracies).toEqual([20])
+      expect(watch.position?.accuracy).toBe(20)
+    })
+
+    test('should let the application tell whether a position has what is preferred', async () => {
+      using watch = sut.watch({ require: { accuracy: 100 } })
+      geolocation.moveTo({ ...berlin, accuracy: 60 })
+
+      expect(watch.position?.satisfies({ accuracy: 10 })).toBe(false)
+      expect(watch.position?.missing({ accuracy: 10, speed: true })).toEqual(['accuracy of 10 m', 'speed'])
+    })
+  })
+
+  describe('the configuration', () => {
+    test('should be the defaults of every call', async () => {
+      const globals: object = { navigator: { geolocation } }
+      const environment = BrowserEnvironment.of(globals)
+
+      const configured = new DefaultDeviceLocation(environment, new NullLogger(), {
+        require: { accuracy: 50 },
+        highAccuracy: true,
+      })
+
+      const locating = configured.current()
+      geolocation.moveTo({ ...berlin, accuracy: 800 })
+      geolocation.moveTo({ ...berlin, accuracy: 20 })
+
+      expect((await locating).accuracy).toBe(20)
+      expect(geolocation.calls.at(-1)).toMatchObject({ enableHighAccuracy: true })
+    })
+
+    test('should be overridden by the fields a call names', async () => {
+      const globals: object = { navigator: { geolocation } }
+      const environment = BrowserEnvironment.of(globals)
+      const configured = new DefaultDeviceLocation(environment, new NullLogger(), { require: { accuracy: 50 } })
+
+      const locating = configured.current({ require: {}, highAccuracy: false })
+      geolocation.moveTo({ ...berlin, accuracy: 800 })
+
+      expect((await locating).accuracy).toBe(800)
+    })
+  })
+
   describe('.create', () => {
     test('should build a location that works on its own', async () => {
       const location = DefaultDeviceLocation.create(
+        {},
         BrowserEnvironment.of({ navigator: { geolocation } as unknown as Navigator })
       )
 

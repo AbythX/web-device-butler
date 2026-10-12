@@ -14,8 +14,8 @@ export interface CameraPreparation {
   /** the camera `open()` would start with the same requirements; `undefined` if none fits */
   readonly selected?: CameraDescriptor
   /**
-   * Whether the selected camera can deliver the configured resolution. `undefined` if no resolution is configured
-   * or the browser does not say what the camera can deliver.
+   * Whether the selected camera can deliver the preferred width and height, or the required ones where none are
+   * preferred. `undefined` if neither is asked for or the browser does not say what the camera can deliver.
    */
   readonly isResolutionAvailable?: boolean
   /** why there is no selected camera */

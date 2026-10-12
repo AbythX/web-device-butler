@@ -12,7 +12,9 @@ page for the whole use case.
 const watch = butler.location.watch({ highAccuracy: true, maximumAge: 0 })
 ```
 
-`highAccuracy` asks for GPS, which a route needs and which costs battery. The call can show the permission prompt,
+`highAccuracy` asks for GPS, which a route needs and which costs battery. To keep the coarse positions of the
+first seconds out of the route, require an accuracy: `watch({ highAccuracy: true, require: { accuracy: 30 } })`
+only announces positions that are at most 30 metres off. The call can show the permission prompt,
 so make it from the click on "Start".
 
 ```ts

@@ -10,7 +10,7 @@ recording does not sit in memory until it is finished, and it stops in an orderl
 
 ```ts
 const session = await butler.microphone.open({
-  processing: { noiseSuppression: true, echoCancellation: false, autoGainControl: true },
+  prefer: { noiseSuppression: true, echoCancellation: false, autoGainControl: true },
 })
 ```
 

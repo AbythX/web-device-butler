@@ -88,6 +88,34 @@ describe('the storage in a real browser', () => {
     expect(store.capabilities.driver).toBe(hasFileSystem ? 'opfs' : 'indexeddb')
   })
 
+  test('should choose a backend that is kept with the origin if none is named', async () => {
+    const store = await sut.open({ namespace })
+    await store.set('key', 'value')
+
+    expect(store.capabilities.driver).toBe('indexeddb')
+    expect(await store.get('key')).toBe('value')
+  })
+
+  test('should choose the backend by what is required and preferred', async () => {
+    const files = await sut.open({
+      namespace,
+      require: { persistence: 'origin', binary: true },
+      prefer: { streaming: true },
+    })
+
+    const tab = await sut.open({ namespace, require: { persistence: 'tab' } })
+
+    expect(files.capabilities.driver).toBe(hasFileSystem ? 'opfs' : 'indexeddb')
+    expect(tab.capabilities.driver).toBe('session')
+  })
+
+  test('should say which backend the stores would be kept in, without opening one', async () => {
+    const result = await sut.prepare({ require: { persistence: 'origin' }, prefer: { streaming: true } })
+
+    expect(result.capabilities?.driver).toBe(hasFileSystem ? 'opfs' : 'indexeddb')
+    expect(result.error).toBeUndefined()
+  })
+
   test('should report the space of the origin', async () => {
     const space = await sut.space()
 

@@ -92,8 +92,88 @@ describe('default-storage-manager', () => {
 
       await expect(sut.open({ driver: 'unsupported', namespace: 'test' })).rejects.toThrowError(StorageUnsupportedError)
       await expect(withoutStorage.open({ driver: ['local', 'unsupported'], namespace: 'test' })).rejects.toThrowError(
-        /local, unsupported/
+        "None of the 2 storage drivers fits the requirements: 'local' lacks support in this browser; " +
+          "'unsupported' lacks support in this browser"
       )
+    })
+
+    test('should choose a backend by itself if none is named', async () => {
+      const store = await sut.open({ namespace: 'test' })
+
+      expect(store.capabilities.driver).toBe('indexeddb')
+    })
+
+    test('should choose the backend that has what is required and most of what is preferred', async () => {
+      const files = await sut.open({ namespace: 'a', require: { persistence: 'origin' }, prefer: { streaming: true } })
+      const tab = await sut.open({ namespace: 'b', require: { persistence: 'tab' } })
+      const page = await sut.open({ namespace: 'c', require: { persistence: 'page' }, prefer: { streaming: true } })
+
+      expect(files.capabilities.driver).toBe('opfs')
+      expect(tab.capabilities.driver).toBe('session')
+      expect(page.capabilities.driver).toBe('memory')
+    })
+
+    test('should fall back to the next backend that fits where the best one does not work', async () => {
+      const environment = BrowserEnvironment.of({ localStorage: browser.localStorage })
+      using withoutFiles = DefaultStorageManager.create({}, environment)
+
+      const store = await withoutFiles.open({ namespace: 'test', prefer: { streaming: true, persistence: 'origin' } })
+
+      expect(store.capabilities.driver).toBe('local')
+    })
+
+    test('should only choose among the named backends, and only one that has what is required', async () => {
+      const store = await sut.open({
+        driver: ['local', 'memory', 'opfs'],
+        namespace: 'test',
+        require: { binary: true },
+      })
+
+      expect(store.capabilities.driver).toBe('memory')
+    })
+
+    test('should say what each backend lacks if none fits', async () => {
+      const opening = sut.open({ driver: ['local', 'session'], namespace: 'test', require: { streaming: true } })
+
+      await expect(opening).rejects.toThrowError(StorageUnsupportedError)
+      await expect(opening).rejects.toThrowError("'local' lacks streaming; 'session' lacks streaming")
+    })
+
+    test('should use the driver and the traits of the configuration where a call names none', async () => {
+      const configured = browser.openTab({ driver: ['session', 'local'], require: { persistence: 'origin' } })
+
+      expect((await configured.open({ namespace: 'test' })).capabilities.driver).toBe('local')
+      expect((await configured.open({ namespace: 'test', require: {} })).capabilities.driver).toBe('session')
+      expect((await configured.open({ namespace: 'test', driver: 'indexeddb' })).capabilities.driver).toBe('indexeddb')
+    })
+
+    test('should ask for the protection against eviction that is required or preferred', async () => {
+      await sut.open({ namespace: 'plain' })
+      const before = browser.isPersistent
+
+      await sut.open({ namespace: 'kept', prefer: { persistent: true } })
+
+      expect(before).toBe(false)
+      expect(browser.isPersistent).toBe(true)
+    })
+
+    test('should fail if the browser refuses a protection against eviction that is required', async () => {
+      const storage = { persist: async () => false, persisted: async () => false }
+      // SAFETY: a browser that has a storage manager, but refuses to protect the data
+      const navigator = { storage } as unknown as Navigator
+
+      using refused = DefaultStorageManager.create(
+        {},
+        BrowserEnvironment.of({ navigator, localStorage: browser.localStorage })
+      )
+
+      const required = refused.open({ driver: 'local', namespace: 'test', require: { persistent: true } })
+      const preferred = await refused.open({ driver: 'local', namespace: 'test', prefer: { persistent: true } })
+
+      await expect(required).rejects.toThrowError(
+        'The browser does not protect the data of the origin against eviction'
+      )
+      expect(preferred.capabilities.driver).toBe('local')
     })
 
     test('should fail for a driver that is not registered, even if another one of the list is supported', async () => {
@@ -213,6 +293,36 @@ describe('default-storage-manager', () => {
       expect(await manager.isSupported('local')).toBe(false)
       expect(await manager.isSupported('session')).toBe(false)
       expect(await manager.isSupported('memory')).toBe(true)
+    })
+  })
+
+  describe('#prepare', () => {
+    test('should say which backend a store would be kept in, without opening one', async () => {
+      const result = await sut.prepare({ require: { streaming: true } })
+
+      expect(result.capabilities?.driver).toBe('opfs')
+      expect(result.isPersistent).toBe(false)
+      expect(result.error).toBeUndefined()
+    })
+
+    test('should use the requirements of the configuration', async () => {
+      const configured = browser.openTab({ require: { persistence: 'tab' } })
+
+      expect((await configured.prepare()).capabilities?.driver).toBe('session')
+    })
+
+    test('should ask for the protection against eviction that is preferred', async () => {
+      const result = await sut.prepare({ prefer: { persistent: true } })
+
+      expect(result.isPersistent).toBe(true)
+    })
+
+    test('should report that no backend fits instead of throwing', async () => {
+      const result = await sut.prepare({ driver: 'local', require: { binary: true } })
+
+      expect(result.capabilities).toBeUndefined()
+      expect(result.error).toBeInstanceOf(StorageUnsupportedError)
+      expect(result.error?.message).toContain("'local' lacks binary values")
     })
   })
 

@@ -92,7 +92,7 @@ class VoiceMemos extends DemoPage {
     const form = new FormData(this.element<HTMLFormElement>('options'))
 
     const session = await this.butler.microphone.open({
-      processing: {
+      prefer: {
         noiseSuppression: form.has('noiseSuppression'),
         echoCancellation: form.has('echoCancellation'),
         autoGainControl: form.has('autoGainControl'),

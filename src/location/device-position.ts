@@ -1,3 +1,5 @@
+import type { LocationTraits } from './location-options.ts'
+
 /**
  * Where the device is, or was at `timestamp`. Immutable.
  */
@@ -39,6 +41,38 @@ export class DevicePosition {
       DevicePosition.optional(coords.heading),
       DevicePosition.optional(coords.speed)
     )
+  }
+
+  /**
+   * Whether the position has every trait of the list.
+   */
+  public satisfies(traits: LocationTraits): boolean {
+    return this.missing(traits).length === 0
+  }
+
+  /**
+   * The traits of the list that the position does not have, in words.
+   */
+  public missing(traits: LocationTraits): string[] {
+    const missing: string[] = []
+
+    if (traits.accuracy !== undefined && this.accuracy > traits.accuracy) {
+      missing.push(`accuracy of ${traits.accuracy} m`)
+    }
+
+    if (traits.altitude && this.altitude === undefined) {
+      missing.push('altitude')
+    }
+
+    if (traits.heading && this.heading === undefined) {
+      missing.push('heading')
+    }
+
+    if (traits.speed && this.speed === undefined) {
+      missing.push('speed')
+    }
+
+    return missing
   }
 
   /**

@@ -15,10 +15,50 @@ const position = await butler.location.current({ highAccuracy: true, timeout: 10
 
 | Option         | Meaning                                                                                           |
 | -------------- | ------------------------------------------------------------------------------------------------- |
+| `require`      | what a position must have. One without it is never returned or announced.                         |
+| `prefer`       | what a position should have. `current()` waits for one that has it, as long as `timeout` allows.  |
 | `highAccuracy` | the best position the device can give (GPS instead of the network), which takes longer and uses more power. Default: `false`. |
 | `timeout`      | how long determining a position may take, in milliseconds. Default: no limit.                     |
 | `maximumAge`   | how old a remembered position may be to count, in milliseconds. Default: `0`, always a new one.   |
 | `signal`       | `current()` only: stops waiting; the promise rejects with the reason of the signal                |
+
+### Asking for a position that is good enough
+
+A device answers with the first position it has, and that is often a coarse one from the network before the
+receiver has found its satellites. `require` and `prefer` say which positions count. Both take the same traits:
+
+| Trait                          | Meaning                                                            |
+| ------------------------------ | ------------------------------------------------------------------ |
+| `accuracy`                     | how far the real position may be from the reported one, in metres  |
+| `altitude`, `heading`, `speed` | the position says it. `false` asks for nothing.                    |
+
+```ts
+const position = await butler.location.current({
+  require: { accuracy: 100 }, // never a position that is further off
+  prefer: { accuracy: 10 }, // this, if it arrives in time
+  highAccuracy: true,
+  timeout: 15_000,
+})
+```
+
+`current()` then looks through the positions the device reports:
+
+- A position with what is required and what is preferred ends the call at once.
+- When the `timeout` has passed, the call resolves with the best position that has what is required.
+- If none had it, the call rejects with a `LocationRequirementsError`. Its `position` is the best one that
+  arrived, and its message says what that one lacks.
+- Without a `timeout` the call does not wait for what is preferred: it resolves with the first position that has
+  what is required, and waits for that one until the `signal` aborts it.
+
+This takes longer than a call that asks for nothing, and the receiver of the device runs until the call ends.
+`highAccuracy` stays a setting of its own: it is how the browser is asked, and a required accuracy does not switch
+it on.
+
+The `location` section of the configuration takes the same options as the defaults of every call:
+
+```ts
+const butler = DefaultDeviceButler.create({ location: { require: { accuracy: 100 }, highAccuracy: true } })
+```
 
 A `DevicePosition` is immutable:
 
@@ -32,6 +72,8 @@ position.heading // degrees clockwise from north; undefined while the device doe
 position.speed // metres per second
 
 position.distanceTo(other) // metres along the surface of the earth
+position.satisfies({ accuracy: 10 }) // whether it has these traits
+position.missing({ accuracy: 10, speed: true }) // the ones it lacks, in words
 ```
 
 What a device cannot tell is `undefined`, never `null` or `NaN`.
@@ -48,6 +90,9 @@ watch.position // the latest one; undefined until the first arrived
 watch.isActive
 watch.stop()
 ```
+
+A watch only announces positions that have what it requires: `watch({ require: { accuracy: 50 } })` leaves out
+the coarse ones. What is preferred does not filter; `position.satisfies()` tells whether a position has it.
 
 Problems arrive as `error` events instead of exceptions, because a watch outlives the call that started it:
 

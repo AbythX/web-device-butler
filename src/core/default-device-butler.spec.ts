@@ -95,7 +95,7 @@ describe('default-device-butler', () => {
   })
 
   describe('#camera', () => {
-    const torchCamera = { facing: 'back', require: { torch: true }, resolution: { width: 1920, height: 1080 } } as const
+    const torchCamera = { require: { facing: 'back', torch: true }, prefer: { width: 1920, height: 1080 } } as const
 
     test('should be configured with the camera section', async () => {
       const sut = DefaultDeviceButler.create({ camera: torchCamera }, BrowserEnvironment.of({}))
@@ -117,7 +117,7 @@ describe('default-device-butler', () => {
 
     test('should request the permission for the configured facing only', async () => {
       const browser = new FakeMediaBrowser()
-      using sut = DefaultDeviceButler.create({ camera: { facing: 'front' } }, browser.openEnvironment())
+      using sut = DefaultDeviceButler.create({ camera: { require: { facing: 'front' } } }, browser.openEnvironment())
 
       expect(await sut.permission.request('camera')).toBe('granted')
 
@@ -126,8 +126,8 @@ describe('default-device-butler', () => {
 
     test('should follow a configuration that is changed later', async () => {
       const browser = new FakeMediaBrowser()
-      using sut = DefaultDeviceButler.create({ camera: { facing: 'front' } }, browser.openEnvironment())
-      sut.camera.configure({ facing: 'back' })
+      using sut = DefaultDeviceButler.create({ camera: { require: { facing: 'front' } } }, browser.openEnvironment())
+      sut.camera.configure({ require: { facing: 'back' } })
 
       await sut.permission.request('camera')
 
@@ -137,7 +137,7 @@ describe('default-device-butler', () => {
     test('should close its sessions when the butler is disposed', async () => {
       const browser = new FakeMediaBrowser()
       const sut = DefaultDeviceButler.create({}, browser.openEnvironment())
-      const session = await sut.camera.open({ facing: 'back' })
+      const session = await sut.camera.open({ require: { facing: 'back' } })
 
       sut.dispose()
       await new Promise((resolve) => setTimeout(resolve))
@@ -148,7 +148,7 @@ describe('default-device-butler', () => {
   })
 
   describe('#prepare', () => {
-    const torchCamera = { facing: 'back', require: { torch: true }, resolution: { width: 1920, height: 1080 } } as const
+    const torchCamera = { require: { facing: 'back', torch: true }, prefer: { width: 1920, height: 1080 } } as const
 
     test('should prepare the camera and report what it found', async () => {
       const browser = new FakeMediaBrowser({ inputs: CameraTestBench.phone(), oneCameraAtATime: true })
@@ -186,7 +186,7 @@ describe('default-device-butler', () => {
       const browser = new FakeMediaBrowser({ inputs: CameraTestBench.phone(), oneCameraAtATime: true })
       using sut = DefaultDeviceButler.create({ camera: torchCamera }, browser.openEnvironment())
 
-      const result = await sut.prepare({ camera: { facing: 'front', require: {} } })
+      const result = await sut.prepare({ camera: { require: { facing: 'front' } } })
 
       expect(result.camera?.selected?.facing).toBe('front')
     })
@@ -198,6 +198,55 @@ describe('default-device-butler', () => {
       expect(await sut.prepare({})).toEqual({})
       expect(await sut.prepare({ camera: false })).toEqual({})
       expect(browser.devices.calls).toEqual([])
+    })
+
+    test('should say which backend the configured storage is kept in', async () => {
+      using sut = DefaultDeviceButler.create(
+        { storage: { require: { persistence: 'page' } } },
+        BrowserEnvironment.of({})
+      )
+
+      const result = await sut.prepare()
+
+      expect(result.storage?.capabilities?.driver).toBe('memory')
+      expect(result.storage?.isPersistent).toBe(false)
+    })
+
+    test('should report a storage that no backend fits instead of throwing', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      const result = await sut.prepare({ storage: { require: { persistence: 'origin' } } })
+
+      expect(result.storage?.capabilities).toBeUndefined()
+      expect(result.storage?.error?.name).toBe('StorageUnsupportedError')
+    })
+
+    test('should request the permission for the location if a location is configured', async () => {
+      const geolocation = new FakeGeolocation()
+      const globals: object = { navigator: { geolocation } }
+      using sut = DefaultDeviceButler.create({ location: { highAccuracy: true } }, BrowserEnvironment.of(globals))
+
+      const preparing = sut.prepare()
+      await new Promise<void>((resolve) => setTimeout(resolve))
+      geolocation.moveTo({ latitude: 52.52, longitude: 13.405 })
+
+      expect((await preparing).location).toEqual({ permission: 'granted' })
+    })
+
+    test('should say that there is no location where the browser has none', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect((await sut.prepare({ location: true })).location).toEqual({ permission: 'unsupported' })
+    })
+
+    test('should not prepare the storage and the location of an application that configured neither', async () => {
+      const browser = new FakeMediaBrowser()
+      using sut = DefaultDeviceButler.create({ microphone: {} }, browser.openEnvironment())
+
+      const result = await sut.prepare()
+
+      expect(result.storage).toBeUndefined()
+      expect(result.location).toBeUndefined()
     })
 
     test('should report instead of throwing where there are no cameras', async () => {
@@ -213,19 +262,19 @@ describe('default-device-butler', () => {
   describe('#microphone', () => {
     test('should be configured with the microphone section', async () => {
       const sut = DefaultDeviceButler.create(
-        { microphone: { processing: { noiseSuppression: false } } },
+        { microphone: { prefer: { noiseSuppression: false } } },
         BrowserEnvironment.of({})
       )
 
       expect(sut.microphone).toBeInstanceOf(DefaultMicrophoneManager)
-      expect(sut.microphone.configuration).toEqual({ processing: { noiseSuppression: false } })
+      expect(sut.microphone.configuration).toEqual({ prefer: { noiseSuppression: false } })
     })
 
     test('should open the configured microphone next to a camera', async () => {
       const browser = new FakeMediaBrowser()
       using sut = DefaultDeviceButler.create({}, browser.openEnvironment())
 
-      await using camera = await sut.camera.open({ facing: 'back' })
+      await using camera = await sut.camera.open({ require: { facing: 'back' } })
       await using microphone = await sut.microphone.open()
 
       expect(camera.state).toBe('live')
@@ -250,7 +299,7 @@ describe('default-device-butler', () => {
       browser.devices.permission.microphone = 'denied'
       using sut = DefaultDeviceButler.create({}, browser.openEnvironment())
 
-      const result = await sut.prepare({ camera: { facing: 'back' }, microphone: true })
+      const result = await sut.prepare({ camera: { require: { facing: 'back' } }, microphone: true })
 
       expect(result.camera?.selected).toBeDefined()
       expect(result.microphone?.permission).toBe('denied')
@@ -263,10 +312,28 @@ describe('default-device-butler', () => {
       const browser = new FakeMediaBrowser()
       using sut = DefaultDeviceButler.create({}, browser.openEnvironment())
 
-      await using session = await sut.media.open({ camera: { facing: 'back' } })
+      await using session = await sut.media.open({ camera: { require: { facing: 'back' } } })
 
       expect(sut.media).toBeInstanceOf(DefaultMediaManager)
       expect(session.stream.getTracks()).toHaveLength(2)
+    })
+  })
+
+  describe('#location with a configuration', () => {
+    test('should use the location section as the defaults of every call', async () => {
+      const geolocation = new FakeGeolocation()
+      const globals: object = { navigator: { geolocation } }
+
+      using sut = DefaultDeviceButler.create(
+        { location: { require: { accuracy: 50 } } },
+        BrowserEnvironment.of(globals)
+      )
+
+      const locating = sut.location.current()
+      geolocation.moveTo({ latitude: 52.52, longitude: 13.405, accuracy: 900 })
+      geolocation.moveTo({ latitude: 52.52, longitude: 13.405, accuracy: 12 })
+
+      expect((await locating).accuracy).toBe(12)
     })
   })
 
@@ -350,12 +417,12 @@ describe('default-device-butler', () => {
       const browser = new FakeMediaBrowser()
       const sut = DefaultDeviceButler.create({}, browser.openEnvironment())
       using other = DefaultDeviceButler.create({}, browser.openEnvironment())
-      await sut.camera.open({ facing: 'back' })
+      await sut.camera.open({ require: { facing: 'back' } })
 
       await sut.dispose()
 
       expect((await browser.locks.query()).held).toEqual([])
-      await using session = await other.camera.open({ facing: 'back' })
+      await using session = await other.camera.open({ require: { facing: 'back' } })
       expect(session.state).toBe('live')
     })
 
@@ -363,7 +430,7 @@ describe('default-device-butler', () => {
       const browser = new FakeMediaBrowser()
       {
         await using sut = DefaultDeviceButler.create({}, browser.openEnvironment())
-        await sut.camera.open({ facing: 'back' })
+        await sut.camera.open({ require: { facing: 'back' } })
       }
 
       expect(browser.devices.liveTracks).toEqual([])
