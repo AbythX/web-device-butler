@@ -1,6 +1,6 @@
 import { MediaInputSelection, type MediaInputRejection } from '../../input/media-input-selection.ts'
 import type { CameraDescriptor } from '../model/camera-descriptor.ts'
-import type { CameraRequirements } from '../model/camera-requirements.ts'
+import type { CameraRequirements, CameraTraits } from '../model/camera-requirements.ts'
 
 export type CameraRejection = MediaInputRejection<CameraDescriptor>
 
@@ -23,8 +23,8 @@ export class CameraSelector {
    */
   public narrow(descriptors: readonly CameraDescriptor[], requirements: CameraRequirements): CameraDescriptor[] {
     // only a camera that ran says something about its torch, zoom and focus
-    const { minResolution, minFrameRate } = requirements.require ?? {}
-    const knownBeforeStart: CameraRequirements = { ...requirements, require: { minResolution, minFrameRate } }
+    const { facing, width, height, frameRate } = requirements.require ?? {}
+    const knownBeforeStart: CameraRequirements = { ...requirements, require: { facing, width, height, frameRate } }
 
     return this.facing(descriptors, requirements).filter((descriptor) =>
       descriptor.satisfies(descriptor.detail === 'probed' ? requirements : knownBeforeStart)
@@ -34,16 +34,17 @@ export class CameraSelector {
   /**
    * The cameras that have everything that is required, best first.
    *
-   * With the strategy `best` they are ordered by how many of the preferred features they have, then by whether they
-   * can deliver the configured resolution, then by the largest zoom range, then by the highest resolution, then by
-   * the order of the list. The intent is to land on the main camera of a phone and not on an auxiliary lens. With
-   * `first` the order of the list is kept.
+   * With the strategy `best` they are ordered by the preferred side, then by how many of the preferred torch, zoom
+   * and focus they have, then by whether they can deliver the preferred width and height, then the preferred frame
+   * rate, then by the largest zoom range, then by the highest resolution, then by the order of the list. The intent
+   * is to land on the main camera of a phone and not on an auxiliary lens. With `first` the order of the list is
+   * kept.
    */
   public select(descriptors: readonly CameraDescriptor[], requirements: CameraRequirements): CameraSelection {
     const facing = this.facing(descriptors, requirements)
 
     const rejected: CameraRejection[] = descriptors.flatMap((descriptor) =>
-      facing.includes(descriptor) ? [] : [{ descriptor, reasons: [`facing '${requirements.facing}'`] }]
+      facing.includes(descriptor) ? [] : [{ descriptor, reasons: [`facing '${requirements.require?.facing}'`] }]
     )
 
     const fitting: CameraDescriptor[] = []
@@ -62,9 +63,11 @@ export class CameraSelector {
       return new CameraSelection(fitting, rejected)
     }
 
+    const { prefer = {} } = requirements
+
     // the sort is stable, so cameras that rank the same keep the order of the list
     return new CameraSelection(
-      [...fitting].sort((first, second) => this.compare(first, second, requirements)),
+      [...fitting].sort((first, second) => this.compare(first, second, prefer)),
       rejected
     )
   }
@@ -74,7 +77,7 @@ export class CameraSelector {
    * offers those instead of nothing.
    */
   private facing(descriptors: readonly CameraDescriptor[], requirements: CameraRequirements): CameraDescriptor[] {
-    const { facing } = requirements
+    const facing = requirements.require?.facing
 
     if (facing === undefined) {
       return [...descriptors]
@@ -90,17 +93,27 @@ export class CameraSelector {
   /**
    * @returns a negative number if the first camera is the better one
    */
-  private compare(first: CameraDescriptor, second: CameraDescriptor, requirements: CameraRequirements): number {
-    const { prefer = {}, resolution } = requirements
-
-    const delivers = (descriptor: CameraDescriptor) =>
-      resolution === undefined || (descriptor.features.maxResolution?.covers(resolution) ?? true)
+  private compare(first: CameraDescriptor, second: CameraDescriptor, prefer: CameraTraits): number {
+    const { facing, torch, zoom, focus, width, height, frameRate } = prefer
 
     return (
-      first.missing(prefer).length - second.missing(prefer).length ||
-      Number(delivers(second)) - Number(delivers(first)) ||
+      this.distance(first, facing) - this.distance(second, facing) ||
+      first.missing({ torch, zoom, focus }).length - second.missing({ torch, zoom, focus }).length ||
+      first.missing({ width, height }).length - second.missing({ width, height }).length ||
+      first.missing({ frameRate }).length - second.missing({ frameRate }).length ||
       (second.features.zoom?.span ?? 0) - (first.features.zoom?.span ?? 0) ||
       (second.features.maxResolution?.pixels ?? 0) - (first.features.maxResolution?.pixels ?? 0)
     )
+  }
+
+  /**
+   * How far a camera is from the preferred side: on it, not saying which side it is on, or on the other one.
+   */
+  private distance(descriptor: CameraDescriptor, facing: CameraTraits['facing']): number {
+    if (facing === undefined || descriptor.facing === facing) {
+      return 0
+    }
+
+    return descriptor.facing === 'front' || descriptor.facing === 'back' ? 2 : 1
   }
 }

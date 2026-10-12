@@ -9,35 +9,54 @@ Try it: `pnpm demo`, page `microphone/`.
 
 ```ts
 const session = await butler.microphone.open({
-  prefer: { default: true },
-  processing: { noiseSuppression: true, echoCancellation: false },
+  require: { noiseSuppression: true },
+  prefer: { default: true, echoCancellation: false },
 })
 ```
 
+`require` is what the microphone must have, `prefer` what it should have. Both take the same traits:
+
+| Trait                                                     | In `require`                                             | In `prefer`                              |
+| --------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------- |
+| `echoCancellation`, `noiseSuppression`, `autoGainControl` | `true`: the microphone has it, and the session starts with it on | `true`: microphones that have it rank higher, and it is on where it exists |
+| `channelCount`                                            | the microphone has at least this many channels, `2` for stereo | microphones that have them rank higher |
+| `sampleRate`                                              | the microphone can deliver at least this, in hertz       | microphones that can rank higher         |
+| `default`                                                 | only the microphone the user chose as the default of the system | that microphone ranks higher       |
+
+A processing that is `false`, in either place, switches it off and says nothing about which microphone is chosen. A
+processing that is not set is left to the browser, which switches on what the microphone has. Where `require` and
+`prefer` name the same processing, `require` decides.
+
+The preferred channel count and sample rate are also what the running microphone is asked to deliver, the closest
+it can do; where none is preferred, the required one is.
+
+The other fields say how to ask:
+
 | Field         | Meaning                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------ |
-| `require`     | a microphone without these is never returned: `echoCancellation`, `noiseSuppression`, `autoGainControl`, `minChannelCount` |
-| `prefer`      | the same fields plus `default`, the microphone the user chose as the default of the system; ranks      |
-| `processing`  | what the session starts with: each of the three switched on or off. A field that is not set leaves the decision to the browser. |
-| `channelCount`, `sampleRate` | the closest the microphone can do                                                       |
 | `exclusive`   | keep the other tabs of the application away from the microphones while the session runs. Default: `false`. |
 | `autoRecover` | start the microphone again when the system ends it                                                     |
 | `id`, `whenBusy`, `constraints`, `signal` | as for the [camera](camera.md#saying-what-you-need)                        |
 
-`require` and `prefer` are about what a microphone **can** do, `processing` about what it **does**. To record music,
-require nothing and switch everything off:
+To record music, require nothing and switch everything off:
 
 ```ts
 await butler.microphone.open({
-  processing: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+  prefer: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
 })
 ```
+
+To get a microphone that has a processing and start with it off, require it and switch it off in the session:
+`open({ require: { noiseSuppression: true } })`, then `session.processing.set({ noiseSuppression: false })`.
+
+A browser that says nothing about a listed microphone has to start it for a moment to find out what it can do. That
+happens on the first call that requires or prefers something other than `default` or a processing that is off.
 
 ## Looking at the microphones
 
 ```ts
 await butler.microphone.list() // never prompts; empty until access has been requested
-await butler.microphone.select({ require: { minChannelCount: 2 } })
+await butler.microphone.select({ require: { channelCount: 2 } })
 await butler.microphone.prepare() // { permission, microphones, selected, error }
 ```
 
@@ -123,8 +142,8 @@ To record a picture with its sound, open both as one session:
 
 ```ts
 await using recording = await butler.media.open({
-  camera: { facing: 'front' },
-  microphone: { processing: { echoCancellation: true } },
+  camera: { require: { facing: 'front' } },
+  microphone: { prefer: { echoCancellation: true } },
 })
 
 video.srcObject = recording.stream // one stream with both tracks

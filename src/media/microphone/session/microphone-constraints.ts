@@ -7,25 +7,32 @@ import type { MicrophoneRequirements } from '../model/microphone-requirements.ts
  */
 export class MicrophoneConstraints {
   /**
+   * A processing is switched the way `require` says, and the way `prefer` says where `require` leaves it open. The
+   * channel count and the sample rate are the preferred ones, the closest the microphone can do, and the required
+   * ones where none is preferred.
+   *
    * The raw constraints of the requirements come first, so a field of the library wins over the same constraint
    * written by hand.
    */
   public static for(
-    requirements: Pick<MicrophoneRequirements, 'processing' | 'channelCount' | 'sampleRate' | 'constraints'>
+    requirements: Pick<MicrophoneRequirements, 'require' | 'prefer' | 'constraints'>
   ): TrackConstraints {
     // SAFETY: TrackConstraints is MediaTrackConstraints plus the settings the DOM types do not know; a copy of one is
     // one
     const constraints = { ...requirements.constraints } as TrackConstraints
 
-    const { processing = {}, channelCount, sampleRate } = requirements
+    const { require = {}, prefer = {} } = requirements
 
     for (const name of MicrophoneFeatures.processingNames) {
-      const value = processing[name]
+      const value = require[name] ?? prefer[name]
 
       if (value !== undefined) {
         constraints[name] = value
       }
     }
+
+    const channelCount = prefer.channelCount ?? require.channelCount
+    const sampleRate = prefer.sampleRate ?? require.sampleRate
 
     if (channelCount !== undefined) {
       constraints.channelCount = { ideal: channelCount }

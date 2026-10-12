@@ -5,7 +5,7 @@ import type { FocusControl } from '../controls/focus-control.ts'
 import type { TorchControl } from '../controls/torch-control.ts'
 import type { ZoomControl } from '../controls/zoom-control.ts'
 import type { CameraDescriptor } from '../model/camera-descriptor.ts'
-import type { CameraRequirements, ResolutionRequirement } from '../model/camera-requirements.ts'
+import type { CameraRequirements } from '../model/camera-requirements.ts'
 import type { CameraSettings } from '../model/camera-settings.ts'
 
 export interface CameraSessionEvents extends MediaSessionEvents {
@@ -19,7 +19,11 @@ export interface CameraSessionEvents extends MediaSessionEvents {
  * What can be changed while the camera runs.
  */
 export interface CameraSessionChanges {
-  resolution?: ResolutionRequirement
+  /** in pixels */
+  width?: number
+  /** in pixels */
+  height?: number
+  /** frames per second */
   frameRate?: number
 }
 
@@ -66,9 +70,9 @@ export interface CameraSession extends MediaSession<CameraSessionEvents> {
   readonly focus: FocusControl | undefined
 
   /**
-   * Changes the resolution or the frame rate of the running camera. `settings` says what the camera made of it.
+   * Changes the width, the height or the frame rate of the running camera, which delivers the closest it can do.
+   * `settings` says what the camera made of it. The session prefers the new values from then on.
    *
-   * @throws MediaRequirementsError if the camera cannot deliver a resolution that was asked for with `exact`
    * @throws SessionClosedError if the session has ended
    */
   configure(changes: CameraSessionChanges): Promise<void>

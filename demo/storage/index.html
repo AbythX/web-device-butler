@@ -24,8 +24,64 @@
         <h2>Store</h2>
         <form id="store-form">
           <label>
-            Drivers, first supported wins
-            <input type="text" name="driver" value="indexeddb, local" />
+            Drivers to choose from, empty for all
+            <input type="text" name="driver" value="" placeholder="indexeddb, local" />
+          </label>
+          <label>
+            Lifetime
+            <select name="persistence">
+              <option value="origin">origin</option>
+              <option value="tab">tab</option>
+              <option value="page">page</option>
+            </select>
+          </label>
+          <label>
+            Lifetime is
+            <select name="persistencePlace">
+              <option value="">not asked for</option>
+              <option value="require" selected>must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Binary values
+            <select name="binary">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Streaming
+            <select name="streaming">
+              <option value="">not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer" selected>would like</option>
+            </select>
+          </label>
+          <label>
+            Change events across tabs
+            <select name="crossTabEvents">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Consistency across tabs
+            <select name="consistentAcrossTabs">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            Protection against eviction
+            <select name="persistent">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
           </label>
           <label>Namespace <input type="text" name="namespace" value="demo" /></label>
         </form>

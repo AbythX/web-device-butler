@@ -287,11 +287,13 @@ export class DefaultMicrophoneManager
     return this.list()
   }
 
+  /**
+   * Whether the requirements ask for something only the features of a microphone tell. Which one is the default is
+   * in the list, and a processing that is switched off is not a feature.
+   */
   private static asksForFeatures({ require = {}, prefer = {} }: MicrophoneRequirements): boolean {
-    const { default: _default, ...preferred } = prefer
-
-    return [...Object.values(require), ...Object.values(preferred)].some(
-      (value) => value !== undefined && value !== false
+    return [require, prefer].some(({ default: _default, ...traits }) =>
+      Object.values(traits).some((value) => value !== undefined && value !== false)
     )
   }
 

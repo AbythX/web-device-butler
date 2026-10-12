@@ -23,16 +23,12 @@
       <section>
         <h2>Requirements</h2>
         <form id="requirements">
-          <label><input type="checkbox" name="requireEchoCancellation" /> require echo cancellation</label>
-          <label><input type="checkbox" name="requireNoiseSuppression" /> require noise suppression</label>
-          <label><input type="checkbox" name="requireAutoGainControl" /> require auto gain</label>
-          <label><input type="checkbox" name="stereo" /> require stereo</label>
-          <label><input type="checkbox" name="preferDefault" checked /> prefer the default</label>
           <label>
             Echo cancellation
             <select name="echoCancellation">
               <option value="">browser decides</option>
-              <option value="on">on</option>
+              <option value="require">must have, on</option>
+              <option value="prefer">would like, on</option>
               <option value="off">off</option>
             </select>
           </label>
@@ -40,7 +36,8 @@
             Noise suppression
             <select name="noiseSuppression">
               <option value="">browser decides</option>
-              <option value="on">on</option>
+              <option value="require">must have, on</option>
+              <option value="prefer">would like, on</option>
               <option value="off">off</option>
             </select>
           </label>
@@ -48,8 +45,25 @@
             Auto gain
             <select name="autoGainControl">
               <option value="">browser decides</option>
-              <option value="on">on</option>
+              <option value="require">must have, on</option>
+              <option value="prefer">would like, on</option>
               <option value="off">off</option>
+            </select>
+          </label>
+          <label>
+            Stereo
+            <select name="stereo">
+              <option value="" selected>not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer">would like</option>
+            </select>
+          </label>
+          <label>
+            The default of the system
+            <select name="default">
+              <option value="">not asked for</option>
+              <option value="require">must have</option>
+              <option value="prefer" selected>would like</option>
             </select>
           </label>
           <label>

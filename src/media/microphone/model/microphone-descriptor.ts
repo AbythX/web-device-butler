@@ -1,7 +1,7 @@
 import { MediaInputDescriptor, type MediaInputDetail } from '../../input/media-input-descriptor.ts'
 import type { TrackCapabilities, TrackSettings } from '../../session/track-constraints.ts'
 import { MicrophoneFeatures } from './microphone-features.ts'
-import type { MicrophoneFeatureRequirements, MicrophoneRequirements } from './microphone-requirements.ts'
+import type { MicrophoneRequirements, MicrophoneTraits } from './microphone-requirements.ts'
 
 /**
  * The immutable description of one microphone.
@@ -68,20 +68,31 @@ export class MicrophoneDescriptor extends MediaInputDescriptor {
   }
 
   /**
-   * The features of the list that the microphone does not have, in words.
+   * The traits of the list that the microphone does not have, in words. A processing that is asked to be off is not
+   * a trait a microphone can lack.
    */
-  public missing(features: MicrophoneFeatureRequirements): string[] {
+  public missing(traits: MicrophoneTraits): string[] {
     const unknown = this.detail === 'listed' ? ' (not known before the microphone was started)' : ''
 
     const missing: string[] = MicrophoneFeatures.processingNames
-      .filter((name) => features[name] && !this.features[name])
+      .filter((name) => traits[name] && !this.features[name])
       .map((name) => `${name}${unknown}`)
 
-    const { minChannelCount } = features
-    const max = this.features.maxChannelCount
+    const { channelCount, sampleRate } = traits
+    const maxChannelCount = this.features.maxChannelCount
 
-    if (minChannelCount !== undefined && (max ?? (this.detail === 'listed' ? 0 : 1)) < minChannelCount) {
-      missing.push(`${minChannelCount} channels${unknown}`)
+    if (channelCount !== undefined && (maxChannelCount ?? (this.detail === 'listed' ? 0 : 1)) < channelCount) {
+      missing.push(`${channelCount} channels${unknown}`)
+    }
+
+    const maxSampleRate = this.features.maxSampleRate
+
+    if (sampleRate !== undefined && maxSampleRate !== undefined && maxSampleRate < sampleRate) {
+      missing.push(`sample rate of at least ${sampleRate}`)
+    }
+
+    if (traits.default && !this.isDefault) {
+      missing.push('being the default microphone')
     }
 
     return missing

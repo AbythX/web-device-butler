@@ -20,10 +20,9 @@ export type { MicrophoneFeatureValues, MicrophoneProcessingName } from './model/
 
 export type {
   MicrophoneConfiguration,
-  MicrophoneFeatureRequirements,
-  MicrophonePreferences,
   MicrophoneProcessing,
   MicrophoneRequirements,
+  MicrophoneTraits,
 } from './model/microphone-requirements.ts'
 
 export { MicrophoneSelection, MicrophoneSelector } from './model/microphone-selector.ts'

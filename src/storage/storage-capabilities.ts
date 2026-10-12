@@ -4,6 +4,28 @@ export type StoragePersistence = 'page' | 'tab' | 'origin'
  * What a backend can do. Immutable.
  */
 export class StorageCapabilities {
+  /**
+   * What the driver `indexeddb` can do: kept with the origin, holds bytes as they are, cannot stream. Known without
+   * loading the driver.
+   */
+  public static readonly indexedDb = new StorageCapabilities({
+    driver: 'indexeddb',
+    persistence: 'origin',
+    binary: true,
+    streaming: false,
+  })
+
+  /**
+   * What the driver `opfs` can do: kept with the origin, holds bytes as they are, can stream. Known without loading
+   * the driver.
+   */
+  public static readonly opfs = new StorageCapabilities({
+    driver: 'opfs',
+    persistence: 'origin',
+    binary: true,
+    streaming: true,
+  })
+
   /** `local`, `session`, `opfs`, `indexeddb`, `memory` or the name of a custom driver */
   public readonly driver: string
   /** how long the data lives: until the page is left, until the tab is closed, or with the origin */

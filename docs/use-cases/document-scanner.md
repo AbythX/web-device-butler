@@ -11,16 +11,15 @@ them. The photos survive a reload and do not fill the memory.
 ```ts
 const butler = DefaultDeviceButler.create({
   camera: {
-    facing: 'back',
-    prefer: { torch: true, zoom: true },
-    resolution: { width: 1920, height: 1080 },
+    require: { facing: 'back' },
+    prefer: { torch: true, zoom: true, width: 1920, height: 1080 },
     autoRecover: true,
   },
   storage: { namespace: 'scanner' },
 })
 ```
 
-- `prefer`, not `require`: a scanner works without a torch. On a laptop this configuration opens the webcam; with
+- `prefer`, not `require`, for the torch, the zoom and the size: a scanner works without them. On a laptop this configuration opens the webcam; with
   `require: { torch: true }` it would fail there with a `MediaRequirementsError`.
 - `autoRecover`: a user who switches to another application to look something up comes back to a running camera.
 
@@ -130,4 +129,5 @@ pressure, which is worth a call once the user has scanned something.
 - **A camera picker**: `butler.camera.list({ detail: 'probed' })` on a settings screen, `open({ id })` afterwards.
 - **Macro shots**: `prefer: { focus: true }`, then `session.focus?.setMode('manual')` and
   `session.focus?.setDistance()`.
-- **Photos at full resolution**: `resolution: descriptor.features.maxResolution` of the selected camera.
+- **Photos at full resolution**: `prefer: { ...descriptor.features.maxResolution?.toJSON() }` of the selected
+  camera.

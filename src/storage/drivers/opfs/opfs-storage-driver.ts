@@ -22,12 +22,7 @@ export class OpfsStorageDriver extends StorageDriver {
   /** the name a store is opened with: `{ driver: 'opfs' }` */
   public readonly name: string = 'opfs'
   /** kept with the origin, holds bytes as they are, can stream */
-  public readonly capabilities = new StorageCapabilities({
-    driver: this.name,
-    persistence: 'origin',
-    binary: true,
-    streaming: true,
-  })
+  public readonly capabilities = StorageCapabilities.opfs
 
   public constructor(
     private readonly environment: BrowserEnvironment,

@@ -5,6 +5,7 @@ import {
   type DevicePermissionState,
   type DevicePosition,
   type LocationOptions,
+  type LocationTraits,
   type LocationWatch,
 } from '../../src/index.ts'
 import { DemoPage } from '../shared/demo-page.ts'
@@ -59,7 +60,24 @@ class LocationDemo extends DemoPage {
       return value === '' ? undefined : Number(value)
     }
 
-    return { highAccuracy: form.has('highAccuracy'), timeout: optional('timeout'), maximumAge: optional('maximumAge') }
+    const require: LocationTraits = { accuracy: optional('requireAccuracy') }
+    const prefer: LocationTraits = { accuracy: optional('preferAccuracy') }
+
+    for (const name of ['altitude', 'heading', 'speed'] as const) {
+      const traits = { require, prefer }[String(form.get(name))]
+
+      if (traits !== undefined) {
+        traits[name] = true
+      }
+    }
+
+    return {
+      require,
+      prefer,
+      highAccuracy: form.has('highAccuracy'),
+      timeout: optional('timeout'),
+      maximumAge: optional('maximumAge'),
+    }
   }
 
   private async queryAll(): Promise<void> {

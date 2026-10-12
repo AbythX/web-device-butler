@@ -1,4 +1,5 @@
 import type { DeviceLocation } from '../location/device-location.ts'
+import type { LocationPreparation } from '../location/location-preparation.ts'
 import type { CameraPreparation } from '../media/camera/camera-preparation.ts'
 import type { CameraManager } from '../media/camera/camera-manager.ts'
 import type { CameraRequirements } from '../media/camera/model/camera-requirements.ts'
@@ -9,26 +10,34 @@ import type { MicrophoneRequirements } from '../media/microphone/model/microphon
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import type { DevicePlatform } from '../platform/device-platform.ts'
+import type { StorageRequirements } from '../storage/selection/storage-requirements.ts'
 import type { StorageManager } from '../storage/storage-manager.ts'
+import type { StoragePreparation } from '../storage/storage-preparation.ts'
 import type { TabCoordination } from './coordination/tab-coordination.ts'
 
 /**
- * What `butler.prepare()` prepares. Without options it prepares the devices that have a section in the
- * configuration, and both if neither has one.
+ * What `butler.prepare()` prepares. Without options it prepares what has a section in the configuration, and the
+ * camera and the microphone if neither of the two has one.
  */
 export interface DeviceButlerPrepareOptions {
+  /** `true` for the configured storage, or requirements that override the configuration for this call */
+  storage?: boolean | StorageRequirements
   /** `true` for the configured camera, or requirements that override the configuration for this call */
   camera?: boolean | Partial<CameraRequirements>
   /** `true` for the configured microphone, or requirements that override the configuration for this call */
   microphone?: boolean | Partial<MicrophoneRequirements>
+  /** `true` requests the permission to ask where the device is */
+  location?: boolean
 }
 
 /**
- * What `butler.prepare()` found out, per device that was asked for.
+ * What `butler.prepare()` found out, per section that was asked for.
  */
 export interface DeviceButlerPreparation {
+  readonly storage?: StoragePreparation
   readonly camera?: CameraPreparation
   readonly microphone?: MicrophonePreparation
+  readonly location?: LocationPreparation
 }
 
 /**
@@ -67,10 +76,11 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
    * the configuration needs, looks at the cameras and says which one `open()` would start. An application runs it
    * on a set-up or permission screen. It is optional; `open()` does the same on demand.
    *
-   * Without options it prepares the devices that have a section in the configuration, and both if neither has
-   * one.
+   * Without options it prepares what has a section in the configuration, and the camera and the microphone if
+   * neither of the two has one. For the storage it says which backend the stores would be kept in and asks for the
+   * protection against eviction the configuration names; for the location it requests the permission.
    *
-   * It reports per device instead of throwing, and leaves no device running.
+   * It reports per section instead of throwing, and leaves no device running.
    */
   prepare(options?: DeviceButlerPrepareOptions): Promise<DeviceButlerPreparation>
 

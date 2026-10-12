@@ -25,7 +25,7 @@ describe('fabric-camera-renderer', () => {
   beforeEach(async () => {
     browser = new FakeMediaBrowser({ inputs: CameraTestBench.phone(), oneCameraAtATime: true })
     manager = CameraTestBench.load(browser)
-    session = await manager.open({ facing: 'back', require: { torch: true } })
+    session = await manager.open({ require: { facing: 'back', torch: true } })
     element = new FakeVideoElement()
   })
 

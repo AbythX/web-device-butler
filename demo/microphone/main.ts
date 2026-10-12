@@ -3,10 +3,10 @@ import {
   type DeviceButler,
   type EventSubscription,
   type MicrophoneDescriptor,
-  type MicrophoneProcessing,
   type MicrophoneProcessingName,
   type MicrophoneRequirements,
   type MicrophoneSession,
+  type MicrophoneTraits,
 } from '../../src/index.ts'
 import { DemoPage } from '../shared/demo-page.ts'
 
@@ -67,25 +67,36 @@ class MicrophoneDemo extends DemoPage {
    */
   private get requirements(): MicrophoneRequirements {
     const form = new FormData(this.element<HTMLFormElement>('requirements'))
-    const processing: MicrophoneProcessing = {}
+    const require: MicrophoneTraits = {}
+    const prefer: MicrophoneTraits = {}
+    /** where the form puts a trait: among what a microphone must have, or among what it should have */
+    const placeOf = (name: string) => ({ require, prefer })[String(form.get(name))]
 
     for (const name of MicrophoneDemo.processingNames) {
-      const choice = form.get(name)
+      const traits = placeOf(name)
 
-      if (choice !== '') {
-        processing[name] = choice === 'on'
+      if (traits !== undefined) {
+        traits[name] = true
+      } else if (form.get(name) === 'off') {
+        prefer[name] = false
       }
     }
 
+    const stereo = placeOf('stereo')
+
+    if (stereo !== undefined) {
+      stereo.channelCount = 2
+    }
+
+    const usesDefault = placeOf('default')
+
+    if (usesDefault !== undefined) {
+      usesDefault.default = true
+    }
+
     return {
-      require: {
-        echoCancellation: form.has('requireEchoCancellation'),
-        noiseSuppression: form.has('requireNoiseSuppression'),
-        autoGainControl: form.has('requireAutoGainControl'),
-        minChannelCount: form.has('stereo') ? 2 : undefined,
-      },
-      prefer: { default: form.has('preferDefault') },
-      processing,
+      require,
+      prefer,
       // SAFETY: the select of the form only offers the busy policies of the type
       whenBusy: form.get('whenBusy') as MicrophoneRequirements['whenBusy'],
       exclusive: form.has('exclusive'),

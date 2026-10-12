@@ -15,6 +15,7 @@ One per area: what the area does for you, the calls in the order you need them, 
 | [Location, orientation, platform, permissions](guides/location-orientation-permissions.md) | positions, watches, how the device is held, permission screens |
 | [Several tabs](guides/multiple-tabs.md)                                         | what the tabs of an application share and how the library coordinates it |
 | [Errors](guides/errors.md)                                                      | every error class, when it is thrown and what to tell the user     |
+| [Migrating to `require` and `prefer`](guides/migrating-to-require-and-prefer.md) | what changed in what an application asks of a camera or a microphone |
 
 ## Use cases
 

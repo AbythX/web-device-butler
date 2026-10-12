@@ -10,7 +10,7 @@ import { DeviceButlerContainerModule } from './device-butler-container-module.ts
 
 describe('device-butler-container-module', () => {
   const load = () => {
-    const butler = DefaultDeviceButler.create({ camera: { facing: 'back' } }, BrowserEnvironment.of({}))
+    const butler = DefaultDeviceButler.create({ camera: { require: { facing: 'back' } } }, BrowserEnvironment.of({}))
     const container = new Container()
     container.load(new DeviceButlerContainerModule(butler))
 
@@ -42,7 +42,7 @@ describe('device-butler-container-module', () => {
     const { container } = load()
 
     // compiles only if the identifier carries the type of the camera manager
-    expect(container.get(DeviceButlerBindings.Camera).configuration.facing).toBe('back')
+    expect(container.get(DeviceButlerBindings.Camera).configuration.require?.facing).toBe('back')
   })
 
   test('should use identifiers that do not collide with each other', async () => {
