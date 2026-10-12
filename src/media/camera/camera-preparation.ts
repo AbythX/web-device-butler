@@ -1,12 +1,12 @@
-import type { DeviceError } from '../../core/errors/device-error.ts'
+import type { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import type { DevicePermissionState } from '../../permission/permission-state.ts'
 import type { CameraDescriptor } from './model/camera-descriptor.ts'
 
 /**
- * What `initialize()` found out about the cameras. It reports instead of throwing, so an application can go on
+ * What `prepare()` found out about the cameras. It reports instead of throwing, so an application can go on
  * without a camera.
  */
-export interface CameraInitialization {
+export interface CameraPreparation {
   /** `unknown` if the cameras were not asked, because another tab holds them and their features are remembered */
   readonly permission: DevicePermissionState
   /** every camera that is known, with what was found out about it */
@@ -19,5 +19,5 @@ export interface CameraInitialization {
    */
   readonly isResolutionAvailable?: boolean
   /** why there is no selected camera */
-  readonly error?: DeviceError
+  readonly error?: DeviceButlerError
 }

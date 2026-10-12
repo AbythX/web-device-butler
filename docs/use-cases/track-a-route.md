@@ -9,7 +9,7 @@ page for the whole use case.
 ## Following the device
 
 ```ts
-const watch = device.location.watch({ highAccuracy: true, maximumAge: 0 })
+const watch = butler.location.watch({ highAccuracy: true, maximumAge: 0 })
 ```
 
 `highAccuracy` asks for GPS, which a route needs and which costs battery. The call can show the permission prompt,
@@ -61,7 +61,7 @@ watch.on('error', (error) => {
 Appending with `update()` is one step, also if a second tab shows the same route:
 
 ```ts
-const routes = await device.storage.open<Point[]>({ driver: ['indexeddb', 'local'], namespace: 'routes' })
+const routes = await butler.storage.open<Point[]>({ driver: ['indexeddb', 'local'], namespace: 'routes' })
 
 const append = (point: Point) => routes.update(routeId, (stored = []) => [...stored, point])
 ```
@@ -80,10 +80,10 @@ watch.stop()
 Or let the scope do it:
 
 ```ts
-using watch = device.location.watch({ highAccuracy: true })
+using watch = butler.location.watch({ highAccuracy: true })
 ```
 
-`device.dispose()` stops every watch.
+`butler.dispose()` stops every watch.
 
 ## The limit: the background
 
@@ -97,7 +97,7 @@ of this library.
 ```ts
 import { useLocation } from 'web-device-butler/vue'
 
-const { position, error, isWatching, start, stop } = useLocation(device.location)
+const { position, error, isWatching, start, stop } = useLocation(butler.location)
 
 start({ highAccuracy: true }) // from a click
 watch(position, (current) => current && addPoint(current))

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { commands } from 'vitest/browser'
 
-import { DefaultDevice } from '../../core/default-device.ts'
+import { DefaultDeviceButler } from '../../core/default-device-butler.ts'
 import { MediaDeviceBusyError } from '../errors/media-device-busy-error.ts'
 import { DefaultMicrophoneManager } from './default-microphone-manager.ts'
 import type { MicrophoneManager } from './microphone-manager.ts'
@@ -59,7 +59,7 @@ describe.skipIf(!hasMicrophone)('the microphone in a real browser', () => {
     })
 
     test('should select the default microphone and leave nothing running', async () => {
-      const result = await sut.initialize()
+      const result = await sut.prepare()
 
       expect(result.permission).toBe('granted')
       expect(result.selected?.isDefault).toBe(true)
@@ -67,7 +67,7 @@ describe.skipIf(!hasMicrophone)('the microphone in a real browser', () => {
     })
 
     test('should find out what the microphones can do if a feature is asked for', async () => {
-      const result = await sut.initialize({ prefer: { echoCancellation: true } })
+      const result = await sut.prepare({ prefer: { echoCancellation: true } })
 
       expect(result.microphones.every((microphone) => microphone.detail !== 'listed')).toBe(true)
       expect(await isLocked()).toBe(false)
@@ -141,8 +141,8 @@ describe.skipIf(!hasMicrophone)('the microphone in a real browser', () => {
 
   describe('camera and microphone together', () => {
     test('should deliver one stream that can be recorded', async () => {
-      using device = DefaultDevice.create({ camera: { facing: 'back', resolution: { width: 320, height: 240 } } })
-      await using session = await device.media.open()
+      using butler = DefaultDeviceButler.create({ camera: { facing: 'back', resolution: { width: 320, height: 240 } } })
+      await using session = await butler.media.open()
 
       expect(session.stream.getVideoTracks()).toEqual([session.camera.track])
       expect(session.stream.getAudioTracks()).toEqual([session.microphone.track])
@@ -161,8 +161,8 @@ describe.skipIf(!hasMicrophone)('the microphone in a real browser', () => {
     })
 
     test('should release both devices when it is closed', async () => {
-      using device = DefaultDevice.create()
-      const session = await device.media.open()
+      using butler = DefaultDeviceButler.create()
+      const session = await butler.media.open()
 
       await session.close()
 

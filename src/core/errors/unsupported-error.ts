@@ -1,9 +1,9 @@
-import { DeviceError } from './device-error.ts'
+import { DeviceButlerError } from './device-butler-error.ts'
 
 /**
  * The current browser or context does not provide what was asked for.
  */
-export class UnsupportedError extends DeviceError {
+export class UnsupportedError extends DeviceButlerError {
   public constructor(
     public readonly feature: string,
     options?: ErrorOptions

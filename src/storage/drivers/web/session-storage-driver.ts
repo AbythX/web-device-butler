@@ -1,4 +1,4 @@
-import type { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { StorageCapabilities } from '../../storage-capabilities.ts'
 import { WebStorageDriver } from './web-storage-driver.ts'
 
@@ -16,7 +16,7 @@ export class SessionStorageDriver extends WebStorageDriver {
     streaming: false,
   })
 
-  public constructor(private readonly environment: DeviceEnvironment) {
+  public constructor(private readonly environment: BrowserEnvironment) {
     super()
   }
 

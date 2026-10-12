@@ -1,4 +1,4 @@
-import type { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import type { Logger } from '../../../core/logging/logger.ts'
 import type { MediaLease } from '../../access/media-lease.ts'
 import type { PlatformQuirk } from '../../quirks/platform-quirk.ts'
@@ -39,7 +39,7 @@ export class DefaultMicrophoneSession extends BaseMediaSession<MicrophoneSession
     requirements: MicrophoneRequirements,
     quirks: readonly PlatformQuirk[],
     private readonly host: MicrophoneSessionHost,
-    environment: DeviceEnvironment,
+    environment: BrowserEnvironment,
     logger: Logger,
     private readonly timing: MicrophoneTiming = {}
   ) {

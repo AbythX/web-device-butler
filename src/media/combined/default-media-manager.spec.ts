@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
-import { DefaultDevice } from '../../core/default-device.ts'
-import type { Device } from '../../core/device.ts'
+import { DefaultDeviceButler } from '../../core/default-device-butler.ts'
+import type { DeviceButler } from '../../core/device-butler.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import { CameraTestBench } from '../camera/testing/camera-test-bench.ts'
@@ -17,14 +17,14 @@ const backCamera = { facing: 'back', require: { torch: true } } as const
 describe('default-media-manager', () => {
   let browser!: FakeMediaBrowser
 
-  let device!: Device
+  let butler!: DeviceButler
 
-  const devices: Device[] = []
+  const butlers: DeviceButler[] = []
 
   /** another page of the browser */
   const load = () => {
-    const loaded = DefaultDevice.create({}, browser.openEnvironment())
-    devices.push(loaded)
+    const loaded = DefaultDeviceButler.create({}, browser.openEnvironment())
+    butlers.push(loaded)
 
     return loaded
   }
@@ -41,11 +41,11 @@ describe('default-media-manager', () => {
       oneCameraAtATime: true,
       backNeedsFacingRequest: true,
     })
-    device = load()
+    butler = load()
   })
 
   afterEach(async () => {
-    devices.splice(0).forEach((loaded) => loaded.dispose())
+    butlers.splice(0).forEach((loaded) => loaded.dispose())
     await flush()
 
     browser.close()
@@ -55,7 +55,7 @@ describe('default-media-manager', () => {
 
   describe('#open', () => {
     test('should run a camera and a microphone and deliver one stream', async () => {
-      const sut = await device.media.open({ camera: backCamera })
+      const sut = await butler.media.open({ camera: backCamera })
 
       expect(sut.camera.descriptor.id).toBe('back-main')
       expect(sut.microphone.descriptor.id).toBe('headset')
@@ -65,24 +65,24 @@ describe('default-media-manager', () => {
     })
 
     test('should hold both devices', async () => {
-      await device.media.open({ camera: backCamera })
+      await butler.media.open({ camera: backCamera })
 
       expect(await heldLocks()).toEqual(['web-device-butler:camera', 'web-device-butler:microphone'])
     })
 
     test('should use the configuration of each device and let the call override it', async () => {
-      device = DefaultDevice.create(
+      butler = DefaultDeviceButler.create(
         { camera: backCamera, microphone: { require: { minChannelCount: 2 } } },
         browser.openEnvironment()
       )
-      devices.push(device)
+      butlers.push(butler)
 
-      const configured = await device.media.open()
+      const configured = await butler.media.open()
       expect(configured.camera.descriptor.id).toBe('back-main')
       expect(configured.microphone.descriptor.id).toBe('stereo')
       await configured.close()
 
-      const overridden = await device.media.open({
+      const overridden = await butler.media.open({
         camera: { facing: 'front', require: {} },
         microphone: { require: {} },
       })
@@ -92,7 +92,7 @@ describe('default-media-manager', () => {
     })
 
     test('should offer the controls of both devices', async () => {
-      const sut = await device.media.open({ camera: backCamera })
+      const sut = await butler.media.open({ camera: backCamera })
 
       await sut.camera.torch?.set(true)
       await sut.microphone.processing.set({ noiseSuppression: false })
@@ -104,7 +104,7 @@ describe('default-media-manager', () => {
     test('should close the camera again if the microphone cannot be opened', async () => {
       browser.devices.permission.microphone = 'denied'
 
-      await expect(device.media.open({ camera: backCamera })).rejects.toThrow(PermissionDeniedError)
+      await expect(butler.media.open({ camera: backCamera })).rejects.toThrow(PermissionDeniedError)
 
       expect(await heldLocks()).toEqual([])
       expect(browser.devices.liveTracks).toEqual([])
@@ -129,7 +129,7 @@ describe('default-media-manager', () => {
     })
 
     test('should not start the microphone if the camera cannot be opened', async () => {
-      const opening = device.media.open({ camera: { facing: 'front', require: { torch: true } } })
+      const opening = butler.media.open({ camera: { facing: 'front', require: { torch: true } } })
 
       await expect(opening).rejects.toThrow(MediaRequirementsError)
       expect(JSON.stringify(browser.devices.requests)).not.toContain('audio')

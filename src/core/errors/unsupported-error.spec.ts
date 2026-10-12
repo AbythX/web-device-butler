@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceError } from './device-error.ts'
+import { DeviceButlerError } from './device-butler-error.ts'
 import { UnsupportedError } from './unsupported-error.ts'
 
 describe('unsupported-error', () => {
@@ -8,7 +8,7 @@ describe('unsupported-error', () => {
     const cause = new Error('original')
     const sut = new UnsupportedError('navigator.locks', { cause })
 
-    expect(sut).toBeInstanceOf(DeviceError)
+    expect(sut).toBeInstanceOf(DeviceButlerError)
     expect(sut.name).toBe('UnsupportedError')
     expect(sut.feature).toBe('navigator.locks')
     expect(sut.message).toContain('navigator.locks')

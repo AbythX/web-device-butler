@@ -53,6 +53,6 @@ export interface MicrophoneRequirements extends MediaInputRequirements {
 }
 
 /**
- * The `microphone` section of the configuration passed to `DefaultDevice.create()`.
+ * The `microphone` section of the configuration passed to `DefaultDeviceButler.create()`.
  */
 export type MicrophoneConfiguration = Omit<MicrophoneRequirements, 'signal'>

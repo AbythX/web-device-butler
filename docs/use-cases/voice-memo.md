@@ -9,7 +9,7 @@ recording does not sit in memory until it is finished, and it stops in an orderl
 ## The microphone
 
 ```ts
-const session = await device.microphone.open({
+const session = await butler.microphone.open({
   processing: { noiseSuppression: true, echoCancellation: false, autoGainControl: true },
 })
 ```
@@ -31,7 +31,7 @@ The level is measured only while this listener exists. It is `undefined` where t
 The recorder of the browser delivers pieces; each goes straight into a stream of the store.
 
 ```ts
-const sounds = await device.storage.open({
+const sounds = await butler.storage.open({
   driver: ['opfs', 'memory'], // the drivers that can stream
   namespace: 'memos',
   codec: new BinaryCodec(),
@@ -81,7 +81,7 @@ try {
 ## Before the storage is full
 
 ```ts
-using space = device.storage.watchSpace({ interval: 2000, lowBelow: 20 * 1024 * 1024 })
+using space = butler.storage.watchSpace({ interval: 2000, lowBelow: 20 * 1024 * 1024 })
 space.on('low', () => stop())
 ```
 

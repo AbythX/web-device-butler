@@ -2,7 +2,7 @@ import '../core/disposable-polyfill.ts'
 
 import { CrossTabChannel } from '../core/coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from '../core/coordination/lock/cross-tab-lock.ts'
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import { ScopedLogger } from '../core/logging/scoped-logger.ts'
@@ -30,11 +30,11 @@ export class DefaultStorageManager implements StorageManager {
   private static readonly defaultNamespace = 'web-device-butler'
 
   /**
-   * For applications that only use the storage module. Otherwise the manager is reached through `Device`.
+   * For applications that only use the storage module. Otherwise the manager is reached through `DeviceButler`.
    */
   public static create(
     configuration: StorageConfiguration = {},
-    environment: DeviceEnvironment = DeviceEnvironment.browser(),
+    environment: BrowserEnvironment = BrowserEnvironment.browser(),
     logger: Logger = new NullLogger()
   ): StorageManager {
     const lock = CrossTabLock.create(environment, logger)
@@ -63,7 +63,7 @@ export class DefaultStorageManager implements StorageManager {
    */
   public constructor(
     private readonly configuration: StorageConfiguration,
-    environment: DeviceEnvironment,
+    environment: BrowserEnvironment,
     private readonly lock: CrossTabLock,
     private readonly channel: CrossTabChannel<StorageMessages>,
     private readonly logger: Logger,

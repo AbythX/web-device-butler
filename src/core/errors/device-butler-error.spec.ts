@@ -1,19 +1,19 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceError } from './device-error.ts'
+import { DeviceButlerError } from './device-butler-error.ts'
 
-class TestError extends DeviceError {
+class TestError extends DeviceButlerError {
   public constructor(message?: string, options?: ErrorOptions) {
     super(message, options)
   }
 }
 
-describe('device-error', () => {
+describe('device-butler-error', () => {
   test('should be an error with the given message', async () => {
     const sut = new TestError('something failed')
 
     expect(sut).toBeInstanceOf(Error)
-    expect(sut).toBeInstanceOf(DeviceError)
+    expect(sut).toBeInstanceOf(DeviceButlerError)
     expect(sut.message).toBe('something failed')
   })
 

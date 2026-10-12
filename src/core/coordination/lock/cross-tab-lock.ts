@@ -1,5 +1,5 @@
 import { CrossTabLockHandle } from './cross-tab-lock-handle.ts'
-import { DeviceEnvironment } from '../../environment/device-environment.ts'
+import { BrowserEnvironment } from '../../environment/browser-environment.ts'
 import { InTabLockManager } from './in-tab-lock-manager.ts'
 import type { LockManagerLike, LockMode, LockRequestOptions } from './lock-manager-like.ts'
 import type { Logger } from '../../logging/logger.ts'
@@ -23,7 +23,7 @@ export class CrossTabLock {
   /**
    * The lock of an origin, as every part of the library builds it.
    */
-  public static create(environment: DeviceEnvironment, logger: Logger): CrossTabLock {
+  public static create(environment: BrowserEnvironment, logger: Logger): CrossTabLock {
     return new CrossTabLock(environment, new ScopedLogger('CrossTabLock', logger))
   }
 
@@ -32,13 +32,13 @@ export class CrossTabLock {
    * inside this tab and deliberately does not reach further.
    */
   public static inTab(manager: LockManagerLike = InTabLockManager.shared): CrossTabLock {
-    return new CrossTabLock(DeviceEnvironment.of({}), new NullLogger(), manager)
+    return new CrossTabLock(BrowserEnvironment.of({}), new NullLogger(), manager)
   }
 
   private hasReportedFallback = false
 
   public constructor(
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly logger: Logger,
     private readonly fallback: LockManagerLike = InTabLockManager.shared
   ) {}

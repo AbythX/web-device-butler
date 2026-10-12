@@ -17,7 +17,7 @@ export interface StoreOptions<T> {
 }
 
 /**
- * The entry to the storage module (`device.storage`): opens stores, knows the drivers and reports the space of the
+ * The entry to the storage module (`butler.storage`): opens stores, knows the drivers and reports the space of the
  * origin.
  */
 export interface StorageManager extends Disposable {

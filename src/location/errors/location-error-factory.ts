@@ -1,4 +1,4 @@
-import { DeviceError } from '../../core/errors/device-error.ts'
+import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import { LocationError } from './location-error.ts'
 import { LocationTimeoutError } from './location-timeout-error.ts'
@@ -17,8 +17,8 @@ export class LocationErrorFactory {
    * Translates what the Geolocation API fails with into an error of the library. An error of the library is
    * returned as it is.
    */
-  public static from(error: unknown): DeviceError {
-    if (error instanceof DeviceError) {
+  public static from(error: unknown): DeviceButlerError {
+    if (error instanceof DeviceButlerError) {
       return error
     }
 

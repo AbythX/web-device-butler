@@ -1,3 +1,3 @@
-export { DeviceBindings } from './device-bindings.ts'
+export { DeviceButlerBindings } from './device-butler-bindings.ts'
 
-export { DeviceContainerModule } from './device-container-module.ts'
+export { DeviceButlerContainerModule } from './device-butler-container-module.ts'

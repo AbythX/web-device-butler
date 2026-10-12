@@ -55,6 +55,6 @@ export interface CameraRequirements extends MediaInputRequirements {
 }
 
 /**
- * The `camera` section of the configuration passed to `DefaultDevice.create()`.
+ * The `camera` section of the configuration passed to `DefaultDeviceButler.create()`.
  */
 export type CameraConfiguration = Omit<CameraRequirements, 'signal'>

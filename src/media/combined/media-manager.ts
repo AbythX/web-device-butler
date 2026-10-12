@@ -4,7 +4,7 @@ import type { CombinedMediaSession } from './combined-media-session.ts'
 
 /**
  * What a combined session is opened with. Each part overrides single fields of the configuration of its device,
- * the way the argument of `device.camera.open()` and `device.microphone.open()` does.
+ * the way the argument of `butler.camera.open()` and `butler.microphone.open()` does.
  */
 export interface CombinedMediaRequirements {
   camera?: Partial<CameraRequirements>
@@ -12,7 +12,7 @@ export interface CombinedMediaRequirements {
 }
 
 /**
- * Opens a camera and a microphone together (`device.media`).
+ * Opens a camera and a microphone together (`butler.media`).
  */
 export interface MediaManager {
   /**

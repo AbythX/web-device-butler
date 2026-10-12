@@ -12,7 +12,7 @@ the application. There is no demo page for it.
 import { Group, Rect, FabricText } from 'fabric'
 import { FabricCameraFactory } from 'web-device-butler/fabric'
 
-const session = await device.camera.open()
+const session = await butler.camera.open()
 const renderer = await new FabricCameraFactory({ frameRate: 30 }).create(session)
 
 container.append(renderer.output.getElement()) // the canvas
@@ -64,11 +64,11 @@ const recorder = new MediaRecorder(picture)
 With sound, open the microphone as well and combine the tracks:
 
 ```ts
-const microphone = await device.microphone.open()
+const microphone = await butler.microphone.open()
 const recorder = new MediaRecorder(new MediaStream([...picture.getVideoTracks(), microphone.track]))
 ```
 
-`device.media.open()` is not the tool here: its stream carries the picture of the camera, without the overlay.
+`butler.media.open()` is not the tool here: its stream carries the picture of the camera, without the overlay.
 
 A photo is the canvas as an image: `renderer.output.toDataURL({ format: 'jpeg', quality: 0.9, multiplier: 1 })`.
 
@@ -86,16 +86,16 @@ await session.close()
 Or with `using`, in the order they were created:
 
 ```ts
-await using session = await device.camera.open()
+await using session = await butler.camera.open()
 using renderer = await new FabricCameraFactory().create(session)
 ```
 
 ## In a Vue component
 
 ```ts
-import { useCamera, useDevice } from 'web-device-butler/vue'
+import { useCamera, useDeviceButler } from 'web-device-butler/vue'
 
-const camera = useCamera(useDevice().camera) // closed when the component is unmounted
+const camera = useCamera(useDeviceButler().camera) // closed when the component is unmounted
 let renderer: FabricCameraRenderer | undefined
 
 onMounted(async () => {

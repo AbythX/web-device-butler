@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import type { DeviceOrientation, OrientationKind } from './device-orientation.ts'
 import { DefaultDeviceOrientation } from './default-device-orientation.ts'
@@ -38,7 +38,7 @@ describe('default-device-orientation', () => {
   let sut!: DeviceOrientation
 
   const orientationOf = (globals: object) =>
-    new DefaultDeviceOrientation(DeviceEnvironment.of(globals), new NullLogger())
+    new DefaultDeviceOrientation(BrowserEnvironment.of(globals), new NullLogger())
 
   beforeEach(() => {
     page = new FakeWindow()

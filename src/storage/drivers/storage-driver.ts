@@ -5,7 +5,7 @@ import type { StorageCapabilities } from '../storage-capabilities.ts'
  * One backend. A driver only knows how to read, write, remove and list raw values; namespacing, codecs, expiry,
  * locking and change events are handled once, by the store that uses it.
  *
- * A custom backend extends this class and is registered with `device.storage.register()`.
+ * A custom backend extends this class and is registered with `butler.storage.register()`.
  */
 export abstract class StorageDriver {
   /** the name a store is opened with: `{ driver: 'local' }` */

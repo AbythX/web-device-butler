@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { type MockProxy, mock } from 'vitest-mock-extended'
 
 import { CrossTabLock } from './cross-tab-lock.ts'
-import { DeviceEnvironment } from '../../environment/device-environment.ts'
+import { BrowserEnvironment } from '../../environment/browser-environment.ts'
 import { InTabLockManager } from './in-tab-lock-manager.ts'
 import type { Logger } from '../../logging/logger.ts'
 
@@ -15,11 +15,11 @@ describe('cross-tab-lock', () => {
 
   /** a lock as a tab of a browser with Web Locks would create it */
   const createForTab = () =>
-    new CrossTabLock(DeviceEnvironment.of({ navigator: { locks: browserLocks } as unknown as Navigator }), logger)
+    new CrossTabLock(BrowserEnvironment.of({ navigator: { locks: browserLocks } as unknown as Navigator }), logger)
 
   /** a lock as a tab of a browser without Web Locks would create it */
   const createWithoutWebLocks = (fallback: InTabLockManager) =>
-    new CrossTabLock(DeviceEnvironment.of({ navigator: {} as Navigator }), logger, fallback)
+    new CrossTabLock(BrowserEnvironment.of({ navigator: {} as Navigator }), logger, fallback)
 
   beforeEach(() => {
     logger = mock<Logger>()
@@ -208,7 +208,7 @@ describe('cross-tab-lock', () => {
     test('should report that it does not reach other tabs', async () => {
       expect(createForTab().isCrossTab).toBe(true)
       expect(createWithoutWebLocks(new InTabLockManager()).isCrossTab).toBe(false)
-      expect(new CrossTabLock(DeviceEnvironment.of({}), logger).isCrossTab).toBe(false)
+      expect(new CrossTabLock(BrowserEnvironment.of({}), logger).isCrossTab).toBe(false)
     })
 
     test('should still coordinate the instances inside the tab', async () => {
@@ -221,7 +221,7 @@ describe('cross-tab-lock', () => {
     })
 
     test('should share the fallback between instances by default', async () => {
-      const environment = DeviceEnvironment.of({})
+      const environment = BrowserEnvironment.of({})
       const handle = await new CrossTabLock(environment, logger).acquire('cross-tab-lock.spec')
 
       expect(await new CrossTabLock(environment, logger).tryAcquire('cross-tab-lock.spec')).toBeUndefined()

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { mock } from 'vitest-mock-extended'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import { MediaPermissionRequester } from '../media/access/media-permission-requester.ts'
@@ -34,7 +34,7 @@ describe('default-permission-manager', () => {
 
   const createSut = (browserPermissions: FakePermissions = permissions, logger: Logger = new NullLogger()) =>
     new DefaultPermissionManager(
-      DeviceEnvironment.of({ navigator: { permissions: browserPermissions } as unknown as Navigator }),
+      BrowserEnvironment.of({ navigator: { permissions: browserPermissions } as unknown as Navigator }),
       requesters,
       logger
     )
@@ -63,7 +63,7 @@ describe('default-permission-manager', () => {
 
     test('should not know the state where the browser has no Permissions API', async () => {
       sut = new DefaultPermissionManager(
-        DeviceEnvironment.of({ navigator: {} as Navigator }),
+        BrowserEnvironment.of({ navigator: {} as Navigator }),
         requesters,
         new NullLogger()
       )
@@ -331,7 +331,7 @@ describe('default-permission-manager', () => {
   describe('geolocation', () => {
     const createRequester = (getCurrentPosition?: Geolocation['getCurrentPosition']) =>
       new GeolocationPermissionRequester(
-        DeviceEnvironment.of({
+        BrowserEnvironment.of({
           navigator: (getCurrentPosition ? { geolocation: { getCurrentPosition } } : {}) as unknown as Navigator,
         })
       )
@@ -347,7 +347,7 @@ describe('default-permission-manager', () => {
       const getCurrentPosition = vi.fn()
 
       const requester = new GeolocationPermissionRequester(
-        DeviceEnvironment.of({
+        BrowserEnvironment.of({
           isSecureContext: false,
           navigator: { geolocation: { getCurrentPosition } } as unknown as Navigator,
         })
@@ -390,7 +390,9 @@ describe('default-permission-manager', () => {
 
   describe('persistent storage', () => {
     const createRequester = (storage?: Partial<StorageManager>) =>
-      new PersistentStoragePermissionRequester(DeviceEnvironment.of({ navigator: { storage } as unknown as Navigator }))
+      new PersistentStoragePermissionRequester(
+        BrowserEnvironment.of({ navigator: { storage } as unknown as Navigator })
+      )
 
     test('should not be supported where the browser cannot keep data', async () => {
       expect(createRequester().isSupported).toBe(false)

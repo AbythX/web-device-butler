@@ -1,4 +1,4 @@
-import type { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import type { DevicePlatform } from './device-platform.ts'
 
 /**
@@ -14,7 +14,7 @@ export class DefaultDevicePlatform implements DevicePlatform {
     'ipod simulator',
   ]
 
-  public constructor(private readonly environment: DeviceEnvironment) {}
+  public constructor(private readonly environment: BrowserEnvironment) {}
 
   public get isIos(): boolean {
     const platform = this.platform

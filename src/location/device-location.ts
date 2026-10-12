@@ -3,7 +3,7 @@ import type { CurrentLocationOptions, LocationOptions } from './location-options
 import type { LocationWatch } from './location-watch.ts'
 
 /**
- * Where the device is (`device.location`). Nothing is asked of the browser before `current()` or `watch()` is
+ * Where the device is (`butler.location`). Nothing is asked of the browser before `current()` or `watch()` is
  * called, because asking shows the permission prompt.
  */
 export interface DeviceLocation extends Disposable {

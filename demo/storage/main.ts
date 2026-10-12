@@ -1,7 +1,7 @@
 import {
   BinaryCodec,
-  DefaultDevice,
-  type Device,
+  DefaultDeviceButler,
+  type DeviceButler,
   type EventSubscription,
   type StorageSpace,
   type StorageSpaceWatch,
@@ -18,7 +18,7 @@ class StorageDemo extends DemoPage {
   private static readonly streamKey = 'large'
   private static readonly megabyte = 1024 * 1024
 
-  private readonly device: Device
+  private readonly butler: DeviceButler
 
   private store: Store | undefined
   /** the same driver with a codec for bytes, for the streams */
@@ -28,7 +28,7 @@ class StorageDemo extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({ logger: this.logger, storage: { namespace: 'web-device-butler-demo' } })
+    this.butler = DefaultDeviceButler.create({ logger: this.logger, storage: { namespace: 'web-device-butler-demo' } })
 
     this.onClick('open', () => this.open())
     this.onClick('set', () => this.opened.set(this.key, this.value, { ttl: this.ttl }))
@@ -48,8 +48,8 @@ class StorageDemo extends DemoPage {
     this.onClick('read-stream', () => this.readStream())
     this.onClick('delete-stream', () => this.openedFiles.delete(StorageDemo.streamKey))
 
-    this.onClick('space', async () => this.showSpace(await this.device.storage.space()))
-    this.onClick('persist', async () => this.status(`persist(): ${await this.device.storage.persist()}`))
+    this.onClick('space', async () => this.showSpace(await this.butler.storage.space()))
+    this.onClick('persist', async () => this.status(`persist(): ${await this.butler.storage.persist()}`))
     this.element('watch-space').addEventListener('change', () => this.watchSpace())
 
     void this.showFacts()
@@ -99,9 +99,9 @@ class StorageDemo extends DemoPage {
 
     const namespace = String(form.get('namespace'))
 
-    const store = await this.device.storage.open({ driver, namespace })
+    const store = await this.butler.storage.open({ driver, namespace })
     // the entries of the streams are bytes and no JSON, so they live in a namespace of their own
-    this.files = await this.device.storage.open({
+    this.files = await this.butler.storage.open({
       driver: store.capabilities.driver,
       namespace: `${namespace}-files`,
       codec: new BinaryCodec(),
@@ -213,7 +213,7 @@ class StorageDemo extends DemoPage {
     this.spaceWatch = undefined
 
     if (this.element<HTMLInputElement>('watch-space').checked) {
-      this.spaceWatch = this.device.storage.watchSpace({ interval: 2000, lowBelow: 100 * StorageDemo.megabyte })
+      this.spaceWatch = this.butler.storage.watchSpace({ interval: 2000, lowBelow: 100 * StorageDemo.megabyte })
       this.spaceWatch.on('change', (space) => this.showSpace(space))
       this.spaceWatch.on('low', (space) => this.logger.warn(`low: ${DemoPage.bytes(space.available)} left`))
     }
@@ -223,12 +223,12 @@ class StorageDemo extends DemoPage {
 
   private async showFacts(): Promise<void> {
     const support = await Promise.all(
-      StorageDemo.drivers.map(async (driver) => [driver, String(await this.device.storage.isSupported(driver))])
+      StorageDemo.drivers.map(async (driver) => [driver, String(await this.butler.storage.isSupported(driver))])
     )
 
     this.describe('facts', {
       ...Object.fromEntries(support),
-      'Cross-tab locks': String(this.device.coordination.isCrossTab),
+      'Cross-tab locks': String(this.butler.coordination.isCrossTab),
     })
   }
 

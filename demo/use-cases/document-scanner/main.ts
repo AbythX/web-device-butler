@@ -2,8 +2,8 @@ import {
   BinaryCodec,
   type CameraRequirements,
   type CameraSession,
-  DefaultDevice,
-  type Device,
+  DefaultDeviceButler,
+  type DeviceButler,
   MediaDeviceBusyError,
   StorageQuotaExceededError,
   type Store,
@@ -26,7 +26,7 @@ interface Scan {
  * survive a reload.
  */
 class DocumentScanner extends DemoPage {
-  private readonly device: Device
+  private readonly butler: DeviceButler
   /** the pictures, as the bytes of a JPEG */
   private readonly pictures: Promise<Store<Uint8Array>>
   private readonly scans: Promise<Store<Scan>>
@@ -37,7 +37,7 @@ class DocumentScanner extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({
+    this.butler = DefaultDeviceButler.create({
       logger: this.logger,
       camera: {
         facing: 'back',
@@ -51,12 +51,12 @@ class DocumentScanner extends DemoPage {
     })
 
     // pictures are large: a file system first, then a database, and memory where a browser has neither
-    this.pictures = this.device.storage.open({
+    this.pictures = this.butler.storage.open({
       driver: ['opfs', 'indexeddb', 'memory'],
       namespace: 'scans',
       codec: new BinaryCodec(),
     })
-    this.scans = this.device.storage.open<Scan>({ driver: ['indexeddb', 'local', 'memory'], namespace: 'scan-index' })
+    this.scans = this.butler.storage.open<Scan>({ driver: ['indexeddb', 'local', 'memory'], namespace: 'scan-index' })
 
     this.onClick('start', () => this.start())
     this.onClick('takeover', () => this.start({ whenBusy: 'takeover' }))
@@ -80,7 +80,7 @@ class DocumentScanner extends DemoPage {
     let session: CameraSession
 
     try {
-      session = await this.device.camera.open(requirements)
+      session = await this.butler.camera.open(requirements)
     } catch (error) {
       // only one tab can run a camera; the user decides whether this one takes it
       this.element('takeover').hidden = !(error instanceof MediaDeviceBusyError && error.holder === 'other-tab')
@@ -231,7 +231,7 @@ class DocumentScanner extends DemoPage {
     this.shown.forEach((url) => URL.revokeObjectURL(url))
     this.shown = urls
 
-    const space = await this.device.storage.space()
+    const space = await this.butler.storage.space()
     this.element('space').textContent =
       `${scans.length} on '${pictures.capabilities.driver}'` +
       (space.isKnown ? `, ${DemoPage.bytes(space.available)} free` : '')

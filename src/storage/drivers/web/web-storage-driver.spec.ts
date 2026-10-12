@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { StorageAccessDeniedError } from '../../errors/storage-access-denied-error.ts'
 import { StorageQuotaExceededError } from '../../errors/storage-quota-exceeded-error.ts'
 import { StorageUnsupportedError } from '../../errors/storage-unsupported-error.ts'
@@ -9,7 +9,7 @@ import { LocalStorageDriver } from './local-storage-driver.ts'
 
 describe('web-storage-driver', () => {
   const createDriver = (localStorage: Storage | undefined) =>
-    new LocalStorageDriver(DeviceEnvironment.of({ localStorage }))
+    new LocalStorageDriver(BrowserEnvironment.of({ localStorage }))
 
   test('should prefix the keys with the encoded namespace', async () => {
     const storage = new FakeStorage()
@@ -48,7 +48,7 @@ describe('web-storage-driver', () => {
     })
 
     test('should not be supported if reading the storage of the browser throws', async () => {
-      const environment = new DeviceEnvironment(() => ({
+      const environment = new BrowserEnvironment(() => ({
         get localStorage(): Storage {
           throw new DOMException('The operation is insecure.', 'SecurityError')
         },

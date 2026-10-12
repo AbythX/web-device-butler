@@ -1,4 +1,4 @@
-import { DefaultDevice, type Device, type Store, type StoreChange } from '../../../src/index.ts'
+import { DefaultDeviceButler, type DeviceButler, type Store, type StoreChange } from '../../../src/index.ts'
 import { DemoPage } from '../../shared/demo-page.ts'
 
 interface Settings {
@@ -15,7 +15,7 @@ class SharedSettings extends DemoPage {
   private static readonly settingsKey = 'user'
   private static readonly defaults: Settings = { theme: 'light dark', name: '' }
 
-  private readonly device: Device
+  private readonly butler: DeviceButler
   private readonly settings: Promise<Store<Settings>>
   private readonly counters: Promise<Store<number>>
   /** what the form showed before the user changed it */
@@ -23,12 +23,12 @@ class SharedSettings extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({ logger: this.logger, storage: { namespace: 'web-device-butler-demo' } })
+    this.butler = DefaultDeviceButler.create({ logger: this.logger, storage: { namespace: 'web-device-butler-demo' } })
 
     // several tabs update this data at once, so it belongs in a driver that is consistent across tabs
     const driver = ['indexeddb', 'local']
-    this.settings = this.device.storage.open<Settings>({ driver, namespace: 'settings' })
-    this.counters = this.device.storage.open<number>({ driver, namespace: 'counters' })
+    this.settings = this.butler.storage.open<Settings>({ driver, namespace: 'settings' })
+    this.counters = this.butler.storage.open<number>({ driver, namespace: 'counters' })
 
     const form = this.element<HTMLFormElement>('settings')
     form.addEventListener('change', () => void this.run('Saving', () => this.save(new FormData(form))))

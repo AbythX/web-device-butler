@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from './device-environment.ts'
+import { BrowserEnvironment } from './browser-environment.ts'
 import { PageVisibility } from './page-visibility.ts'
 
 class FakeDocument {
@@ -23,7 +23,7 @@ class FakeDocument {
 }
 
 const visibilityOf = (document: FakeDocument) =>
-  new PageVisibility(DeviceEnvironment.of({ window: {} as Window, document: document as unknown as Document }))
+  new PageVisibility(BrowserEnvironment.of({ window: {} as Window, document: document as unknown as Document }))
 
 const settled = async (promise: Promise<void>) => {
   let isSettled = false
@@ -45,7 +45,7 @@ describe('page-visibility', () => {
     })
 
     test('should be false where there is no page', async () => {
-      expect(new PageVisibility(DeviceEnvironment.of({})).isHidden).toBe(false)
+      expect(new PageVisibility(BrowserEnvironment.of({})).isHidden).toBe(false)
     })
   })
 
@@ -58,7 +58,7 @@ describe('page-visibility', () => {
     })
 
     test('should resolve at once where there is no page', async () => {
-      expect(await settled(new PageVisibility(DeviceEnvironment.of({})).whenVisible())).toBe(true)
+      expect(await settled(new PageVisibility(BrowserEnvironment.of({})).whenVisible())).toBe(true)
     })
 
     test('should wait until the page is visible', async () => {

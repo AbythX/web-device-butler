@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
-import type { DeviceError } from '../core/errors/device-error.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
+import type { DeviceButlerError } from '../core/errors/device-butler-error.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import { PermissionDeniedError } from '../permission/errors/permission-denied-error.ts'
@@ -21,7 +21,7 @@ describe('default-device-location', () => {
   let geolocation!: FakeGeolocation
   let sut!: DeviceLocation
 
-  const locationOf = (globals: object) => new DefaultDeviceLocation(DeviceEnvironment.of(globals), new NullLogger())
+  const locationOf = (globals: object) => new DefaultDeviceLocation(BrowserEnvironment.of(globals), new NullLogger())
 
   beforeEach(() => {
     geolocation = new FakeGeolocation()
@@ -162,7 +162,7 @@ describe('default-device-location', () => {
 
     test('should report a problem and keep watching', async () => {
       const watch = sut.watch()
-      const errors: DeviceError[] = []
+      const errors: DeviceButlerError[] = []
       const positions: DevicePosition[] = []
       watch.on('error', (error) => errors.push(error))
       watch.on('position', (position) => positions.push(position))
@@ -178,7 +178,7 @@ describe('default-device-location', () => {
 
     test('should report a refused permission and stop, because nothing arrives after it', async () => {
       const watch = sut.watch()
-      const errors: DeviceError[] = []
+      const errors: DeviceButlerError[] = []
       watch.on('error', (error) => errors.push(error))
 
       geolocation.fail(FakeGeolocation.permissionDenied)
@@ -253,7 +253,7 @@ describe('default-device-location', () => {
   describe('.create', () => {
     test('should build a location that works on its own', async () => {
       const location = DefaultDeviceLocation.create(
-        DeviceEnvironment.of({ navigator: { geolocation } as unknown as Navigator })
+        BrowserEnvironment.of({ navigator: { geolocation } as unknown as Navigator })
       )
 
       const locating = location.current()

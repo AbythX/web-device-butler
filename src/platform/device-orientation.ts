@@ -11,7 +11,7 @@ export interface DeviceOrientationEvents {
 }
 
 /**
- * How the device is held (`device.orientation`), as far as the page can tell: it follows the shape of the page, so
+ * How the device is held (`butler.orientation`), as far as the page can tell: it follows the shape of the page, so
  * a desktop window that is made narrow counts as portrait. For the same reason a phone that is held upright can
  * report `landscape` while its keyboard is open, because the keyboard leaves the page wider than tall.
  */

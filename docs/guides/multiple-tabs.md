@@ -16,7 +16,7 @@ Try it: open any page of `pnpm demo` in two tabs. `storage/`, `use-cases/shared-
 ## How far it reaches
 
 ```ts
-device.coordination.isCrossTab
+butler.coordination.isCrossTab
 ```
 
 `true` where the browser has the Web Locks API, which is every current browser. Where it is `false`, access is only
@@ -58,9 +58,9 @@ Only one tab can run a camera. What happens when another tab holds it is a polic
 call:
 
 ```ts
-await device.camera.open({ whenBusy: 'fail' }) // default
-await device.camera.open({ whenBusy: 'wait', signal })
-await device.camera.open({ whenBusy: 'takeover' })
+await butler.camera.open({ whenBusy: 'fail' }) // default
+await butler.camera.open({ whenBusy: 'wait', signal })
+await butler.camera.open({ whenBusy: 'takeover' })
 ```
 
 | `whenBusy`   | The call                                                                                           |
@@ -73,11 +73,11 @@ The usual flow is to fail first and let the user decide:
 
 ```ts
 try {
-  session = await device.camera.open()
+  session = await butler.camera.open()
 } catch (error) {
   if (error instanceof MediaDeviceBusyError && error.holder === 'other-tab') {
     if (await confirm('The camera runs in another tab. Use it here?')) {
-      session = await device.camera.open({ whenBusy: 'takeover' })
+      session = await butler.camera.open({ whenBusy: 'takeover' })
     }
   } else {
     throw error
@@ -102,12 +102,12 @@ session.on('ended', ({ reason }) => {
 The state is observable without opening anything:
 
 ```ts
-device.camera.availability // 'free' | 'held-by-this-tab' | 'held-by-other-tab'
-device.camera.on('availabilitychange', (availability) => {})
+butler.camera.availability // 'free' | 'held-by-this-tab' | 'held-by-other-tab'
+butler.camera.on('availabilitychange', (availability) => {})
 ```
 
 Finding out what the cameras can do never interrupts another tab. While another tab holds the camera, `list({ detail:
-'probed' })`, `select()` and `initialize()` answer from what is remembered; only if nothing is remembered does the
+'probed' })`, `select()` and `prepare()` answer from what is remembered; only if nothing is remembered does the
 busy policy apply.
 
 **Microphones** can be shared: by default every tab gets its own session. `exclusive: true` makes a microphone
@@ -115,8 +115,8 @@ session behave like a camera session towards the other tabs.
 
 ## The same tab
 
-A second `device.camera.open()` while a session of the same `Device` runs fails with `holder: 'this-tab'`: close the
+A second `butler.camera.open()` while a session of the same `DeviceButler` runs fails with `holder: 'this-tab'`: close the
 session first, or use `session.switchTo()`.
 
-Locks are identified by name, not by tab, so two `Device` objects in one tab are coordinated like two tabs, and
-report each other as `'other-tab'`. Another reason to create one device and share it.
+Locks are identified by name, not by tab, so two `DeviceButler` objects in one tab are coordinated like two tabs, and
+report each other as `'other-tab'`. Another reason to create one butler and share it.

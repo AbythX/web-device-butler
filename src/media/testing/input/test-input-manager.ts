@@ -1,6 +1,6 @@
 import { CrossTabChannel } from '../../../core/coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from '../../../core/coordination/lock/cross-tab-lock.ts'
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import type { Logger } from '../../../core/logging/logger.ts'
 import { NullLogger } from '../../../core/logging/null-logger.ts'
 import { MediaAccess, type MediaAccessTiming } from '../../access/media-access.ts'
@@ -30,7 +30,7 @@ export class TestInputManager extends BaseMediaInputManager<
   public static inBrowser(
     timing: MediaAccessTiming = { takeoverTimeout: 3000, availabilityInterval: 50 }
   ): TestInputManager {
-    const environment = DeviceEnvironment.browser()
+    const environment = BrowserEnvironment.browser()
     const logger = new NullLogger()
     const channel = new CrossTabChannel<MediaMessages>(CrossTabChannel.defaultName, environment, logger)
     const lock = new CrossTabLock(environment, logger)

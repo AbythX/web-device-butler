@@ -88,15 +88,15 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
     })
   })
 
-  describe('initialize and open', () => {
+  describe('prepare and open', () => {
     test.each(['first', 'next'])(
       'should select a camera and open it at the configured resolution, on the %s visit',
       async (visit) => {
         if (visit === 'next') {
-          await load({ facing: 'back', resolution: small }).initialize()
+          await load({ facing: 'back', resolution: small }).prepare()
         }
 
-        const result = await sut.initialize()
+        const result = await sut.prepare()
         await using session = await sut.open()
 
         expect(result.permission).toBe('granted')
@@ -109,15 +109,15 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
       }
     )
 
-    test('should leave no camera running after initialize', async () => {
-      await sut.initialize()
+    test('should leave no camera running after prepare', async () => {
+      await sut.prepare()
 
       expect(await isLocked()).toBe(false)
       expect(sut.availability).toBe('free')
     })
 
     test('should report that no camera has a torch, and refuse to open one', async () => {
-      const result = await sut.initialize({ require: { torch: true } })
+      const result = await sut.prepare({ require: { torch: true } })
 
       expect(result.selected).toBeUndefined()
       expect(result.error).toBeInstanceOf(MediaRequirementsError)
@@ -173,7 +173,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
     test('should not be interrupted by a second tab that loads the application', async () => {
       await using session = await sut.open()
 
-      const second = await commands.initializeCameraInSecondTab({ facing: 'back', resolution: small })
+      const second = await commands.prepareCameraInSecondTab({ facing: 'back', resolution: small })
 
       // the second tab answers from what this tab remembered and starts nothing
       expect(second.selected).toBe(session.descriptor.id)
@@ -187,7 +187,7 @@ describe.skipIf(!hasCamera)('the camera in a real browser', () => {
       await sut.list({ detail: 'probed' })
       const known = (await sut.list()).length
 
-      const second = await commands.initializeCameraInSecondTab({ facing: 'back' })
+      const second = await commands.prepareCameraInSecondTab({ facing: 'back' })
       await commands.showFirstTab()
 
       expect(second.permission).toBe('granted')

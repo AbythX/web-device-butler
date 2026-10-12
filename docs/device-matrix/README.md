@@ -11,11 +11,11 @@ No device has been recorded yet.
 1. `pnpm demo:lan` starts the demo pages over HTTPS and prints their address in the network. Phones in the same
    network open that address and choose `Cameras` (the page `camera/`); the browser warns once about the self-signed
    certificate.
-2. From a fresh page load, with the requirements `back`, `require torch` and `1920x1080`: press `initialize()`, then
+2. From a fresh page load, with the requirements `back`, `require torch` and `1920x1080`: press `prepare()`, then
    `open()`. Check on the device which lens runs and whether `torch.toggle()` really lights the torch.
 3. Reload the page and repeat step 2. This is the cached visit: no camera other than the selected one should start.
 4. Press `list({ detail: 'probed' })` once, so the report covers every camera.
-5. With the session running, open the page in a second tab and press `initialize()` and `open()` there with each
+5. With the session running, open the page in a second tab and press `prepare()` and `open()` there with each
    `When busy` policy. Note what happens to the session of the first tab.
 6. Write the device, the OS version, the browser version and what you saw into the notes, press `Build report` and
    `Copy`, and save the result as `docs/device-matrix/<device>-<browser>.json`.
@@ -52,7 +52,7 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
-For the microphones, the page `microphone/` builds the same kind of report: press `initialize()` and `open()`,
+For the microphones, the page `microphone/` builds the same kind of report: press `prepare()` and `open()`,
 switch each processing, watch the level, then repeat `open()` in a second tab, with and without `exclusive`. Save it
 as `docs/device-matrix/<device>-<browser>-microphone.json`. Open for them:
 

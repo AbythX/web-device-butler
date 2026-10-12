@@ -1,6 +1,6 @@
 import '../../../core/disposable-polyfill.ts'
 
-import type { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { EventEmitter } from '../../../core/events/event-emitter.ts'
 import type { Logger } from '../../../core/logging/logger.ts'
 import type { LevelMeter, LevelMeterEvents } from './level-meter.ts'
@@ -24,7 +24,7 @@ export class DefaultLevelMeter extends EventEmitter<LevelMeterEvents> implements
    */
   public constructor(
     private stream: MediaStream,
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly logger: Logger,
     private readonly interval = DefaultLevelMeter.defaultInterval
   ) {

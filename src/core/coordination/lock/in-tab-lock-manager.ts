@@ -11,7 +11,7 @@ interface PendingRequest {
  */
 export class InTabLockManager implements LockManagerLike {
   /**
-   * Shared by every `Device` of the tab, so several instances still coordinate without Web Locks.
+   * Shared by every `DeviceButler` of the tab, so several instances still coordinate without Web Locks.
    */
   public static readonly shared = new InTabLockManager()
 

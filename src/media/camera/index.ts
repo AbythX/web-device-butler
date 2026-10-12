@@ -1,4 +1,4 @@
-export type { CameraInitialization } from './camera-initialization.ts'
+export type { CameraPreparation } from './camera-preparation.ts'
 
 export type { CameraListOptions, CameraManager, CameraManagerParts } from './camera-manager.ts'
 

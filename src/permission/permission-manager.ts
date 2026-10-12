@@ -12,7 +12,7 @@ export interface PermissionManagerEvents {
 }
 
 /**
- * The one place to ask about and request the permissions of the device (`device.permission`), so an application can
+ * The one place to ask about and request the permissions of the device (`butler.permission`), so an application can
  * drive a permission screen without knowing how each browser handles each permission.
  */
 export interface PermissionManager extends Listenable<PermissionManagerEvents>, Disposable {

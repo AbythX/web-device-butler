@@ -8,7 +8,7 @@ One per area: what the area does for you, the calls in the order you need them, 
 
 | Guide                                                                           | Covers                                                             |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [Getting started](guides/getting-started.md)                                    | creating the device, configuration, lifetimes, events, logging     |
+| [Getting started](guides/getting-started.md)                                    | creating the butler, configuration, lifetimes, events, logging     |
 | [Camera](guides/camera.md)                                                      | requirements, selection, sessions, torch, zoom, focus, switching   |
 | [Microphone](guides/microphone.md)                                              | selection, processing, level, muting, camera and microphone at once |
 | [Storage](guides/storage.md)                                                    | drivers, stores, codecs, expiry, streams, space                    |

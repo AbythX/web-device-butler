@@ -1,4 +1,4 @@
-import { DeviceError } from '../../core/errors/device-error.ts'
+import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import type { MediaKind } from '../access/media-access-state.ts'
 import { MediaDeviceBusyError } from './media-device-busy-error.ts'
@@ -19,8 +19,8 @@ export class MediaErrorFactory {
   /**
    * @param action what was attempted, used as the message: "Could not open the camera"
    */
-  public static from(error: unknown, action: string, kind: MediaKind): DeviceError {
-    if (error instanceof DeviceError) {
+  public static from(error: unknown, action: string, kind: MediaKind): DeviceButlerError {
+    if (error instanceof DeviceButlerError) {
       return error
     }
 

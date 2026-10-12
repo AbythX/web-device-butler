@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { type MockProxy, mock } from 'vitest-mock-extended'
 
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { BinaryCodec } from '../codecs/binary-codec.ts'
 import { JsonCodec } from '../codecs/json-codec.ts'
@@ -1112,7 +1112,7 @@ describe('default-store', () => {
     })
 
     test('should not wait where the lock does not reach other tabs anyway', async () => {
-      using manager = DefaultStorageManager.create({}, DeviceEnvironment.of({ localStorage: browser.localStorage }))
+      using manager = DefaultStorageManager.create({}, BrowserEnvironment.of({ localStorage: browser.localStorage }))
       const store = await manager.open<number>({ driver: 'local', namespace: 'test' })
       const setTimeout = vi.spyOn(globalThis, 'setTimeout')
 

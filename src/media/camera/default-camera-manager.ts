@@ -1,6 +1,6 @@
 import { CrossTabChannel } from '../../core/coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from '../../core/coordination/lock/cross-tab-lock.ts'
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { PageVisibility } from '../../core/environment/page-visibility.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
@@ -19,7 +19,7 @@ import type { MediaInputStart } from '../input/media-input-manager.ts'
 import { BaseMediaInputManager } from '../input/base-media-input-manager.ts'
 import type { PlatformQuirk } from '../quirks/platform-quirk.ts'
 import { PlatformQuirks } from '../quirks/platform-quirks.ts'
-import type { CameraInitialization } from './camera-initialization.ts'
+import type { CameraPreparation } from './camera-preparation.ts'
 import { CameraCapabilityReader } from './discovery/camera-capability-reader.ts'
 import { CameraProbeCache } from './discovery/camera-probe-cache.ts'
 import { CameraProber } from './discovery/camera-prober.ts'
@@ -41,11 +41,11 @@ export class DefaultCameraManager
   implements CameraManager
 {
   /**
-   * For applications that only use the camera module. Otherwise the manager is reached through `Device`.
+   * For applications that only use the camera module. Otherwise the manager is reached through `DeviceButler`.
    */
   public static create(
     configuration: CameraConfiguration = {},
-    environment: DeviceEnvironment = DeviceEnvironment.browser(),
+    environment: BrowserEnvironment = BrowserEnvironment.browser(),
     logger: Logger = new NullLogger()
   ): CameraManager {
     const lock = CrossTabLock.create(environment, logger)
@@ -70,7 +70,7 @@ export class DefaultCameraManager
     configuration: CameraConfiguration,
     gate: MediaAccess,
     storage: StorageManager,
-    environment: DeviceEnvironment,
+    environment: BrowserEnvironment,
     logger: Logger,
     timing: CameraTiming = {},
     owned: readonly Disposable[] = []
@@ -122,8 +122,14 @@ export class DefaultCameraManager
     return this.known()
   }
 
-  public async initialize(requirements?: Partial<CameraRequirements>): Promise<CameraInitialization> {
-    const { permission, devices: cameras, selected, error, requirements: merged } = await this.prepare(requirements)
+  public async prepare(requirements?: Partial<CameraRequirements>): Promise<CameraPreparation> {
+    const {
+      permission,
+      devices: cameras,
+      selected,
+      error,
+      requirements: merged,
+    } = await this.prepareInput(requirements)
 
     if (selected === undefined) {
       return { permission, cameras, error }

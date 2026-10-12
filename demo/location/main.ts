@@ -1,6 +1,6 @@
 import {
-  DefaultDevice,
-  type Device,
+  DefaultDeviceButler,
+  type DeviceButler,
   type DevicePermissionName,
   type DevicePermissionState,
   type DevicePosition,
@@ -20,7 +20,7 @@ class LocationDemo extends DemoPage {
     'persistent-storage',
   ]
 
-  private readonly device: Device
+  private readonly butler: DeviceButler
   private readonly states = new Map<DevicePermissionName, DevicePermissionState>()
 
   private watch: LocationWatch | undefined
@@ -29,20 +29,20 @@ class LocationDemo extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({ logger: this.logger })
+    this.butler = DefaultDeviceButler.create({ logger: this.logger })
 
-    this.device.orientation.on('change', (orientation) => {
+    this.butler.orientation.on('change', (orientation) => {
       this.logger.info(`orientation change: ${orientation}`)
       this.showFacts()
     })
-    this.device.permission.on('change', ({ name, state }) => {
+    this.butler.permission.on('change', ({ name, state }) => {
       this.logger.info(`permission change: ${name} is ${state}`)
       this.states.set(name, state)
       this.showPermissions()
     })
 
     this.onClick('query', () => this.queryAll())
-    this.onClick('current', async () => this.showPosition(await this.device.location.current(this.options)))
+    this.onClick('current', async () => this.showPosition(await this.butler.location.current(this.options)))
     this.onClick('watch', () => this.startWatch())
     this.onClick('stop', () => this.watch?.stop())
 
@@ -64,14 +64,14 @@ class LocationDemo extends DemoPage {
 
   private async queryAll(): Promise<void> {
     for (const name of LocationDemo.permissions) {
-      this.states.set(name, await this.device.permission.query(name))
+      this.states.set(name, await this.butler.permission.query(name))
     }
 
     this.showPermissions()
   }
 
   private async request(name: DevicePermissionName): Promise<void> {
-    this.states.set(name, await this.device.permission.request(name))
+    this.states.set(name, await this.butler.permission.request(name))
     this.showPermissions()
   }
 
@@ -80,7 +80,7 @@ class LocationDemo extends DemoPage {
     this.origin = undefined
     this.element('positions').replaceChildren()
 
-    const watch = this.device.location.watch(this.options)
+    const watch = this.butler.location.watch(this.options)
     watch.on('position', (position) => {
       this.origin ??= position
       this.showPosition(position)
@@ -105,7 +105,7 @@ class LocationDemo extends DemoPage {
   // ---- output ----
 
   private showFacts(): void {
-    const { platform, orientation, location, coordination } = this.device
+    const { platform, orientation, location, coordination } = this.butler
 
     this.describe('facts', {
       'User agent': navigator.userAgent,

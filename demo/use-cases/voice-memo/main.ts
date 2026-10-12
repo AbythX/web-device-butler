@@ -1,7 +1,7 @@
 import {
   BinaryCodec,
-  DefaultDevice,
-  type Device,
+  DefaultDeviceButler,
+  type DeviceButler,
   type MicrophoneSession,
   type StorageSpaceWatch,
   type Store,
@@ -41,7 +41,7 @@ class VoiceMemos extends DemoPage {
   /** stop before the storage is full, while the end of the recording still fits */
   private static readonly reserve = 20 * 1024 * 1024
 
-  private readonly device: Device
+  private readonly butler: DeviceButler
   /** the sound, on a driver that can be written as a stream */
   private readonly sounds: Promise<Store<Uint8Array>>
   private readonly memos: Promise<Store<Memo>>
@@ -51,17 +51,17 @@ class VoiceMemos extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({ logger: this.logger, storage: { namespace: 'web-device-butler-demo' } })
+    this.butler = DefaultDeviceButler.create({ logger: this.logger, storage: { namespace: 'web-device-butler-demo' } })
 
     // only `opfs` and `memory` can be written as a stream; memory keeps the memos until the page is left
-    this.sounds = this.device.storage.open({
+    this.sounds = this.butler.storage.open({
       driver: ['opfs', 'memory'],
       namespace: 'memos',
       codec: new BinaryCodec(),
     })
     // the list lives as long as the sounds do
     this.memos = this.sounds.then((sounds) =>
-      this.device.storage.open<Memo>({
+      this.butler.storage.open<Memo>({
         driver: sounds.capabilities.persistence === 'origin' ? ['indexeddb', 'local'] : ['memory'],
         namespace: 'memo-index',
       })
@@ -91,7 +91,7 @@ class VoiceMemos extends DemoPage {
   private async record(): Promise<void> {
     const form = new FormData(this.element<HTMLFormElement>('options'))
 
-    const session = await this.device.microphone.open({
+    const session = await this.butler.microphone.open({
       processing: {
         noiseSuppression: form.has('noiseSuppression'),
         echoCancellation: form.has('echoCancellation'),
@@ -114,7 +114,7 @@ class VoiceMemos extends DemoPage {
 
       // until the stream is closed, the entry does not exist for anyone else
       const writer = (await (await this.sounds).writeStream(memo.id)).getWriter()
-      const space = this.device.storage.watchSpace({ interval: 2000, lowBelow: VoiceMemos.reserve })
+      const space = this.butler.storage.watchSpace({ interval: 2000, lowBelow: VoiceMemos.reserve })
       const recording: Recording = { memo, session, recorder, writer, space, writing: Promise.resolve() }
 
       recorder.addEventListener('dataavailable', ({ data }) => {
@@ -251,7 +251,7 @@ class VoiceMemos extends DemoPage {
 
     this.element('memos').replaceChildren(...rows)
 
-    const space = await this.device.storage.space()
+    const space = await this.butler.storage.space()
     this.element('space').textContent =
       `${memos.length} on '${(await this.sounds).capabilities.driver}'` +
       (space.isKnown ? `, ${DemoPage.bytes(space.available)} free` : '')

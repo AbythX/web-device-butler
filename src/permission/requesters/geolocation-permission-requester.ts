@@ -1,4 +1,4 @@
-import type { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -10,7 +10,7 @@ export class GeolocationPermissionRequester implements PermissionRequester {
   /** in milliseconds; it starts once the user has answered the prompt */
   private static readonly timeout = 10_000
 
-  public constructor(private readonly environment: DeviceEnvironment) {}
+  public constructor(private readonly environment: BrowserEnvironment) {}
 
   /**
    * `false` outside a secure context and where the browser has no Geolocation API.

@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { StorageSpaceReader } from './storage-space-reader.ts'
 
 describe('storage-space-reader', () => {
   const createReader = (storage: Partial<Navigator['storage']> | undefined) =>
-    new StorageSpaceReader(DeviceEnvironment.of({ navigator: { storage } as Navigator }))
+    new StorageSpaceReader(BrowserEnvironment.of({ navigator: { storage } as Navigator }))
 
   describe('#read', () => {
     test('should read the estimate and the persistence of the browser', async () => {
@@ -18,7 +18,7 @@ describe('storage-space-reader', () => {
     })
 
     test.each([
-      ['there is no navigator', new StorageSpaceReader(DeviceEnvironment.of({}))],
+      ['there is no navigator', new StorageSpaceReader(BrowserEnvironment.of({}))],
       ['the browser has no storage manager', createReader(undefined)],
       ['the browser has no estimate', createReader({})],
       ['the estimate is empty', createReader({ estimate: async () => ({}) })],
@@ -51,7 +51,7 @@ describe('storage-space-reader', () => {
     test('should return false if the browser cannot persist or fails', async () => {
       expect(await createReader({}).persist()).toBe(false)
       expect(await createReader({ persist: () => Promise.reject(new Error('refused')) }).persist()).toBe(false)
-      expect(await new StorageSpaceReader(DeviceEnvironment.of({})).persist()).toBe(false)
+      expect(await new StorageSpaceReader(BrowserEnvironment.of({})).persist()).toBe(false)
     })
   })
 })

@@ -3,7 +3,7 @@ import { type MockProxy, mock } from 'vitest-mock-extended'
 
 import type { BroadcastChannelLike } from './broadcast-channel-like.ts'
 import { CrossTabChannel } from './cross-tab-channel.ts'
-import { DeviceEnvironment } from '../../environment/device-environment.ts'
+import { BrowserEnvironment } from '../../environment/browser-environment.ts'
 import { InTabBroadcastChannel } from './in-tab-broadcast-channel.ts'
 import type { Logger } from '../../logging/logger.ts'
 
@@ -17,7 +17,7 @@ const flush = () => new Promise<void>((resolve) => setTimeout(resolve))
 describe('cross-tab-channel', () => {
   let logger!: MockProxy<Logger>
   let opened!: InTabBroadcastChannel[]
-  let environment!: DeviceEnvironment
+  let environment!: BrowserEnvironment
   let channels!: CrossTabChannel<TestMessages>[]
 
   /** a channel as a tab of a browser with BroadcastChannel would create it */
@@ -40,7 +40,7 @@ describe('cross-tab-channel', () => {
       }
     }
 
-    environment = DeviceEnvironment.of({ BroadcastChannel: RecordingBroadcastChannel })
+    environment = BrowserEnvironment.of({ BroadcastChannel: RecordingBroadcastChannel })
   })
 
   afterEach(() => {
@@ -185,7 +185,7 @@ describe('cross-tab-channel', () => {
 
   describe('without BroadcastChannel', () => {
     beforeEach(() => {
-      environment = DeviceEnvironment.of({})
+      environment = BrowserEnvironment.of({})
     })
 
     test('should still deliver messages between the channels inside the tab', async () => {
@@ -212,7 +212,7 @@ describe('cross-tab-channel', () => {
   })
 
   test('should deliver messages through the BroadcastChannel of the runtime', async () => {
-    environment = DeviceEnvironment.browser()
+    environment = BrowserEnvironment.browser()
     const sender = createForTab()
     const receiver = createForTab()
 
@@ -224,7 +224,7 @@ describe('cross-tab-channel', () => {
 
   test('should use the broadcast channel of the environment', async () => {
     const broadcastChannel = mock<BroadcastChannelLike>()
-    environment = DeviceEnvironment.of({
+    environment = BrowserEnvironment.of({
       BroadcastChannel: class {
         public constructor() {
           return broadcastChannel

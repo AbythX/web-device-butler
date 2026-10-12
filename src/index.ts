@@ -25,19 +25,19 @@ export type {
 
 export { ConsoleLogger } from './core/logging/console-logger.ts'
 
-export type { Device, DeviceInitialization, DeviceInitializeOptions } from './core/device.ts'
+export type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions } from './core/device-butler.ts'
 
-export { DefaultDevice } from './core/default-device.ts'
+export { DefaultDeviceButler } from './core/default-device-butler.ts'
 
-export type { DeviceConfiguration } from './core/device-configuration.ts'
+export type { DeviceButlerConfiguration } from './core/device-butler-configuration.ts'
 
-export { DeviceEnvironment } from './core/environment/device-environment.ts'
+export { BrowserEnvironment } from './core/environment/browser-environment.ts'
 
-export type { DeviceGlobals } from './core/environment/device-environment.ts'
+export type { BrowserGlobals } from './core/environment/browser-environment.ts'
 
 export { PageVisibility } from './core/environment/page-visibility.ts'
 
-export { DeviceError } from './core/errors/device-error.ts'
+export { DeviceButlerError } from './core/errors/device-butler-error.ts'
 
 export { EventEmitter } from './core/events/event-emitter.ts'
 

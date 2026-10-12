@@ -9,18 +9,18 @@ the same application in another tab.
 ## One session for both devices
 
 ```ts
-const device = DefaultDevice.create({
+const butler = DefaultDeviceButler.create({
   camera: { facing: 'front', resolution: { width: 1280, height: 720 } },
   microphone: { processing: { echoCancellation: true, noiseSuppression: true } },
 })
 
-const session = await device.media.open()
+const session = await butler.media.open()
 
 preview.srcObject = session.stream // one stream with the picture and the sound
 preview.muted = true // or the user hears themselves
 ```
 
-`device.media.open()` saves the bookkeeping of two sessions:
+`butler.media.open()` saves the bookkeeping of two sessions:
 
 - If the microphone cannot be opened (no permission, none there), the camera is closed again and the call fails
   with the error of the microphone. No camera light stays on behind an error message.
@@ -37,7 +37,7 @@ Each part stays a full session: `session.camera.torch`, `session.camera.switchTo
 Requirements for one call go to the part they belong to:
 
 ```ts
-await device.media.open({ camera: { facing: 'back' }, microphone: { exclusive: true } })
+await butler.media.open({ camera: { facing: 'back' }, microphone: { exclusive: true } })
 ```
 
 ## Recording
