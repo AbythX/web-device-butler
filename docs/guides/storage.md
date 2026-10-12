@@ -1,7 +1,7 @@
 # Storage
 
 A browser has five places to keep data, each with its own API, its own limits and its own idea of what happens when
-two tabs write at once. `device.storage` puts one interface over them: a `Store` behaves the same on every backend,
+two tabs write at once. `butler.storage` puts one interface over them: a `Store` behaves the same on every backend,
 and says what its backend can do.
 
 Try it: `pnpm demo`, page `storage/`.
@@ -13,7 +13,7 @@ interface Settings {
   theme: 'light' | 'dark'
 }
 
-const settings = await device.storage.open<Settings>({
+const settings = await butler.storage.open<Settings>({
   driver: ['indexeddb', 'local'],
   namespace: 'settings',
 })
@@ -55,8 +55,8 @@ Two things to check where they matter:
   delay, so `update()` and `lock()` can, rarely, work on a value that another tab has just replaced. Data that
   several tabs update at once belongs in `indexeddb` or `opfs`.
 
-`device.storage.isSupported('opfs')` answers for one driver without opening a store. An application adds a backend
-of its own by extending `StorageDriver` and calling `device.storage.register(driver)`.
+`butler.storage.isSupported('opfs')` answers for one driver without opening a store. An application adds a backend
+of its own by extending `StorageDriver` and calling `butler.storage.register(driver)`.
 
 The code of `opfs` and `indexeddb` is loaded when a store first asks for one of them, so an application that uses
 neither does not carry it.
@@ -140,10 +140,10 @@ A codec turns values into what a backend holds. The default is JSON.
 import { BinaryCodec, JsonCodec, TextCodec } from 'web-device-butler'
 
 // bytes, for example pictures; base64 is used only where the backend holds nothing but strings
-const pictures = await device.storage.open({ driver: 'opfs', namespace: 'pictures', codec: new BinaryCodec() })
+const pictures = await butler.storage.open({ driver: 'opfs', namespace: 'pictures', codec: new BinaryCodec() })
 
 // JSON that is validated when it is read, here with zod
-const settings = await device.storage.open({
+const settings = await butler.storage.open({
   driver: 'indexeddb',
   namespace: 'settings',
   codec: new JsonCodec({ parse: (value) => SettingsSchema.parse(value) }),
@@ -185,7 +185,7 @@ See [voice memos](../use-cases/voice-memo.md).
 ## Space
 
 ```ts
-const space = await device.storage.space()
+const space = await butler.storage.space()
 
 space.isKnown // false where the browser gives no estimate
 space.quota // bytes the origin may use
@@ -195,7 +195,7 @@ space.usedRatio // 0..1
 space.isPersistent
 space.hasRoomFor(bytes) // false when the space is unknown
 
-await device.storage.persist() // asks the browser not to evict; resolves with whether it agreed
+await butler.storage.persist() // asks the browser not to evict; resolves with whether it agreed
 ```
 
 The numbers are estimates for the whole origin and can be wrong in both directions: a write still has to handle
@@ -204,7 +204,7 @@ The numbers are estimates for the whole origin and can be wrong in both directio
 To follow the space, for the duration of a recording or on a settings screen:
 
 ```ts
-using watch = device.storage.watchSpace({ interval: 5000, lowBelow: 50 * 1024 * 1024 })
+using watch = butler.storage.watchSpace({ interval: 5000, lowBelow: 50 * 1024 * 1024 })
 
 watch.on('change', (space) => {})
 watch.on('low', (space) => stopRecording())

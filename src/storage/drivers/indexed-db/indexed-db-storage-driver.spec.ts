@@ -1,7 +1,7 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { StorageError } from '../../errors/storage-error.ts'
 import { StorageQuotaExceededError } from '../../errors/storage-quota-exceeded-error.ts'
 import { StorageUnsupportedError } from '../../errors/storage-unsupported-error.ts'
@@ -20,7 +20,7 @@ describe('indexed-db-storage-driver', () => {
 
   /** a driver as a tab of the browser would create it */
   const createForTab = (databaseName?: string) => {
-    const driver = new IndexedDbStorageDriver(DeviceEnvironment.of({ indexedDB, IDBKeyRange }), databaseName)
+    const driver = new IndexedDbStorageDriver(BrowserEnvironment.of({ indexedDB, IDBKeyRange }), databaseName)
     drivers.push(driver)
 
     return driver
@@ -36,7 +36,7 @@ describe('indexed-db-storage-driver', () => {
   })
 
   StorageDriverContract.run(
-    () => new IndexedDbStorageDriver(DeviceEnvironment.of({ indexedDB: new IDBFactory(), IDBKeyRange }))
+    () => new IndexedDbStorageDriver(BrowserEnvironment.of({ indexedDB: new IDBFactory(), IDBKeyRange }))
   )
 
   test('should describe a binary driver that is shared by the origin and cannot stream', async () => {
@@ -188,8 +188,8 @@ describe('indexed-db-storage-driver', () => {
 
   describe('#isSupported', () => {
     test.each([
-      ['there is no IndexedDB', DeviceEnvironment.of({ IDBKeyRange })],
-      ['there are no key ranges', DeviceEnvironment.of({ indexedDB: new IDBFactory() })],
+      ['there is no IndexedDB', BrowserEnvironment.of({ IDBKeyRange })],
+      ['there are no key ranges', BrowserEnvironment.of({ indexedDB: new IDBFactory() })],
     ])('should not be supported if %s', async (_, environment) => {
       expect(await new IndexedDbStorageDriver(environment).isSupported()).toBe(false)
     })
@@ -217,7 +217,7 @@ describe('indexed-db-storage-driver', () => {
 
   describe('errors', () => {
     test('should report a missing IndexedDB on every operation', async () => {
-      const sut = new IndexedDbStorageDriver(DeviceEnvironment.of({}))
+      const sut = new IndexedDbStorageDriver(BrowserEnvironment.of({}))
 
       await expect(sut.read('namespace', 'key')).rejects.toThrowError(StorageUnsupportedError)
       await expect(sut.write('namespace', 'key', 'value')).rejects.toThrowError(StorageUnsupportedError)

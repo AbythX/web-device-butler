@@ -1,6 +1,6 @@
 # Microphone
 
-`device.microphone` works like [`device.camera`](camera.md): requirements in, a session out. Microphones are simpler
+`butler.microphone` works like [`butler.camera`](camera.md): requirements in, a session out. Microphones are simpler
 than cameras: there is no facing, and a browser mostly knows what a microphone can do without starting it.
 
 Try it: `pnpm demo`, page `microphone/`.
@@ -8,7 +8,7 @@ Try it: `pnpm demo`, page `microphone/`.
 ## Opening a microphone
 
 ```ts
-const session = await device.microphone.open({
+const session = await butler.microphone.open({
   prefer: { default: true },
   processing: { noiseSuppression: true, echoCancellation: false },
 })
@@ -28,7 +28,7 @@ const session = await device.microphone.open({
 require nothing and switch everything off:
 
 ```ts
-await device.microphone.open({
+await butler.microphone.open({
   processing: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
 })
 ```
@@ -36,9 +36,9 @@ await device.microphone.open({
 ## Looking at the microphones
 
 ```ts
-await device.microphone.list() // never prompts; empty until access has been requested
-await device.microphone.select({ require: { minChannelCount: 2 } })
-await device.microphone.initialize() // { permission, microphones, selected, error }
+await butler.microphone.list() // never prompts; empty until access has been requested
+await butler.microphone.select({ require: { minChannelCount: 2 } })
+await butler.microphone.prepare() // { permission, microphones, selected, error }
 ```
 
 A `MicrophoneDescriptor` has `id`, `label`, `isDefault` and `features`: the three kinds of processing (whether they
@@ -122,7 +122,7 @@ application that must not be recorded twice opens with `exclusive: true`; the ot
 To record a picture with its sound, open both as one session:
 
 ```ts
-await using recording = await device.media.open({
+await using recording = await butler.media.open({
   camera: { facing: 'front' },
   microphone: { processing: { echoCancellation: true } },
 })

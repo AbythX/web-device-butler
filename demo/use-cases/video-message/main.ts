@@ -1,4 +1,9 @@
-import { type CombinedMediaSession, DefaultDevice, type Device, type MediaBusyPolicy } from '../../../src/index.ts'
+import {
+  type CombinedMediaSession,
+  DefaultDeviceButler,
+  type DeviceButler,
+  type MediaBusyPolicy,
+} from '../../../src/index.ts'
 import { DemoPage } from '../../shared/demo-page.ts'
 
 /**
@@ -6,7 +11,7 @@ import { DemoPage } from '../../shared/demo-page.ts'
  * while it records.
  */
 class VideoMessage extends DemoPage {
-  private readonly device: Device
+  private readonly butler: DeviceButler
 
   private session: CombinedMediaSession | undefined
   private recorder: MediaRecorder | undefined
@@ -14,7 +19,7 @@ class VideoMessage extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({
+    this.butler = DefaultDeviceButler.create({
       logger: this.logger,
       camera: { facing: 'front', resolution: { width: 1280, height: 720 } },
       microphone: { processing: { echoCancellation: true, noiseSuppression: true } },
@@ -31,7 +36,7 @@ class VideoMessage extends DemoPage {
     await this.session?.close()
 
     // if the microphone cannot be opened, the camera is closed again: there is a session with both or none
-    const session = await this.device.media.open({ camera: { whenBusy } })
+    const session = await this.butler.media.open({ camera: { whenBusy } })
     session.on('statechange', (state) => this.logger.info(`statechange: ${state}`))
     session.on('ended', ({ reason, source }) => {
       this.session = undefined

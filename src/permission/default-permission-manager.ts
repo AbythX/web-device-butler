@@ -1,6 +1,6 @@
 import '../core/disposable-polyfill.ts'
 
-import type { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { EventEmitter } from '../core/events/event-emitter.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import type { DevicePermissionName, DevicePermissionState, PermissionRequestOptions } from './permission-state.ts'
@@ -21,7 +21,7 @@ export class DefaultPermissionManager extends EventEmitter<PermissionManagerEven
    * @param requesters how each permission is requested
    */
   public constructor(
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly requesters: Readonly<Record<DevicePermissionName, PermissionRequester>>,
     private readonly logger: Logger
   ) {

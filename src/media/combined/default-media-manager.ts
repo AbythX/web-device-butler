@@ -1,4 +1,4 @@
-import type { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import type { CameraManager } from '../camera/camera-manager.ts'
 import type { MicrophoneManager } from '../microphone/microphone-manager.ts'
@@ -14,7 +14,7 @@ export class DefaultMediaManager implements MediaManager {
   public constructor(
     private readonly camera: CameraManager,
     private readonly microphone: MicrophoneManager,
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly logger: Logger
   ) {}
 

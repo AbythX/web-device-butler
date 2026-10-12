@@ -1,6 +1,6 @@
 import '../core/disposable-polyfill.ts'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
@@ -16,10 +16,10 @@ import type { DeviceLocation } from './device-location.ts'
  */
 export class DefaultDeviceLocation implements DeviceLocation {
   /**
-   * For applications that only use the location. Otherwise it is reached through `Device`.
+   * For applications that only use the location. Otherwise it is reached through `DeviceButler`.
    */
   public static create(
-    environment: DeviceEnvironment = DeviceEnvironment.browser(),
+    environment: BrowserEnvironment = BrowserEnvironment.browser(),
     logger: Logger = new NullLogger()
   ): DeviceLocation {
     return new DefaultDeviceLocation(environment, logger)
@@ -28,7 +28,7 @@ export class DefaultDeviceLocation implements DeviceLocation {
   private readonly watches = new Set<LocationWatch>()
 
   public constructor(
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly logger: Logger
   ) {}
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { commands } from 'vitest/browser'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { BinaryCodec } from './codecs/binary-codec.ts'
 import { IndexedDbStorageDriver } from './drivers/indexed-db/indexed-db-storage-driver.ts'
 import { OpfsStorageDriver } from './drivers/opfs/opfs-storage-driver.ts'
@@ -16,7 +16,7 @@ import { StorageDriverContract } from './testing/storage-driver-contract.ts'
 /**
  * These specs run in real browsers, against the real storage APIs, Web Locks and BroadcastChannel.
  */
-const environment = DeviceEnvironment.browser()
+const environment = BrowserEnvironment.browser()
 
 const encoder = new TextEncoder()
 

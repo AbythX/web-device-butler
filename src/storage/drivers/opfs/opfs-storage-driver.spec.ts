@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { StorageAccessDeniedError } from '../../errors/storage-access-denied-error.ts'
 import { StorageQuotaExceededError } from '../../errors/storage-quota-exceeded-error.ts'
 import { StorageUnsupportedError } from '../../errors/storage-unsupported-error.ts'
@@ -10,7 +10,7 @@ import { OpfsName } from './opfs-name.ts'
 import { OpfsStorageDriver } from './opfs-storage-driver.ts'
 
 const environmentOf = (getDirectory: unknown) =>
-  DeviceEnvironment.of({ navigator: { storage: { getDirectory } } as unknown as Navigator })
+  BrowserEnvironment.of({ navigator: { storage: { getDirectory } } as unknown as Navigator })
 
 const decoder = new TextDecoder()
 
@@ -162,8 +162,8 @@ describe('opfs-storage-driver', () => {
     })
 
     test.each([
-      ['there is no navigator', DeviceEnvironment.of({})],
-      ['the browser has no storage manager', DeviceEnvironment.of({ navigator: {} as Navigator })],
+      ['there is no navigator', BrowserEnvironment.of({})],
+      ['the browser has no storage manager', BrowserEnvironment.of({ navigator: {} as Navigator })],
       ['the browser has no file system', environmentOf(undefined)],
       ['the file system refuses access', environmentOf(() => Promise.reject(new DOMException('no', 'SecurityError')))],
     ])('should not be supported if %s', async (_, environment) => {
@@ -184,7 +184,7 @@ describe('opfs-storage-driver', () => {
 
   describe('errors', () => {
     test('should report a missing file system on every operation', async () => {
-      const unsupported = new OpfsStorageDriver(DeviceEnvironment.of({}))
+      const unsupported = new OpfsStorageDriver(BrowserEnvironment.of({}))
 
       await expect(unsupported.read('namespace', 'key')).rejects.toThrowError(StorageUnsupportedError)
       await expect(unsupported.write('namespace', 'key', 'value')).rejects.toThrowError(StorageUnsupportedError)

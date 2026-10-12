@@ -6,7 +6,7 @@ import { UnsupportedError } from '../errors/unsupported-error.ts'
  * The parts of the global scope the library works with. All of them are optional, because none exists during server
  * side rendering and tests only provide what the class under test needs.
  */
-export interface DeviceGlobals {
+export interface BrowserGlobals {
   readonly window?: Window
   readonly navigator?: Navigator
   readonly document?: Document
@@ -26,22 +26,22 @@ export interface DeviceGlobals {
  * The only place that reaches into the global scope. Every class receives it through its constructor, so tests run
  * against fakes. The globals are resolved on each access and never on construction.
  */
-export class DeviceEnvironment {
+export class BrowserEnvironment {
   /**
    * The environment of the running browser.
    */
-  public static browser(): DeviceEnvironment {
-    return new DeviceEnvironment(() => globalThis)
+  public static browser(): BrowserEnvironment {
+    return new BrowserEnvironment(() => globalThis)
   }
 
   /**
    * An environment with fixed globals, for tests.
    */
-  public static of(globals: DeviceGlobals): DeviceEnvironment {
-    return new DeviceEnvironment(() => globals)
+  public static of(globals: BrowserGlobals): BrowserEnvironment {
+    return new BrowserEnvironment(() => globals)
   }
 
-  public constructor(private readonly resolveGlobals: () => DeviceGlobals) {}
+  public constructor(private readonly resolveGlobals: () => BrowserGlobals) {}
 
   /**
    * Whether there is a window and a document, which is not the case on a server.
@@ -193,7 +193,7 @@ export class DeviceEnvironment {
   /**
    * Reading some globals throws where the browser blocks them, for example `localStorage` with blocked cookies.
    */
-  private optional<Value>(read: (globals: DeviceGlobals) => Value | null | undefined): Value | undefined {
+  private optional<Value>(read: (globals: BrowserGlobals) => Value | null | undefined): Value | undefined {
     try {
       return read(this.resolveGlobals()) ?? undefined
     } catch {
@@ -201,7 +201,7 @@ export class DeviceEnvironment {
     }
   }
 
-  private require<K extends 'window' | 'navigator' | 'document'>(name: K): NonNullable<DeviceGlobals[K]> {
+  private require<K extends 'window' | 'navigator' | 'document'>(name: K): NonNullable<BrowserGlobals[K]> {
     const value = this.resolveGlobals()[name]
 
     if (value === undefined || value === null) {

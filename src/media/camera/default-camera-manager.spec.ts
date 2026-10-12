@@ -571,11 +571,11 @@ describe('default-camera-manager', () => {
     })
   })
 
-  describe('#initialize', () => {
+  describe('#prepare', () => {
     test('should request access, look at the cameras and say which one open() would start', async () => {
       sut = load(torchCamera)
 
-      const result = await sut.initialize()
+      const result = await sut.prepare()
 
       expect(result.permission).toBe('granted')
       expect(result.cameras.map((camera) => camera.id)).toEqual(['front-0', 'back-wide', 'back-main', 'front-1'])
@@ -585,7 +585,7 @@ describe('default-camera-manager', () => {
     })
 
     test('should leave no camera running and release the lock', async () => {
-      await load(torchCamera).initialize()
+      await load(torchCamera).prepare()
 
       expect(browser.devices.liveTracks).toEqual([])
       expect(await isLocked()).toBe(false)
@@ -595,12 +595,12 @@ describe('default-camera-manager', () => {
       'should be followed by an open() that starts the selected camera, on the %s visit',
       async (visit) => {
         if (visit === 'next') {
-          await load(torchCamera).initialize()
+          await load(torchCamera).prepare()
         }
 
         sut = load(torchCamera)
 
-        const { selected } = await sut.initialize()
+        const { selected } = await sut.prepare()
         const starts = startedById().length
         const session = await sut.open()
 
@@ -615,10 +615,10 @@ describe('default-camera-manager', () => {
 
     test('should be cheap when it is called again', async () => {
       sut = load(torchCamera)
-      await sut.initialize()
+      await sut.prepare()
       const requests = browser.devices.requests.length
 
-      const result = await sut.initialize()
+      const result = await sut.prepare()
 
       expect(result.selected?.id).toBe('back-main')
       expect(browser.devices.requests).toHaveLength(requests)
@@ -627,24 +627,24 @@ describe('default-camera-manager', () => {
     test('should let a call override the configuration', async () => {
       sut = load(torchCamera)
 
-      const result = await sut.initialize({ facing: 'front', require: {} })
+      const result = await sut.prepare({ facing: 'front', require: {} })
 
       expect(result.selected?.id).toBe('front-0')
     })
 
     test('should say that the selected camera cannot deliver the configured resolution', async () => {
-      const result = await sut.initialize({ facing: 'front', resolution: { width: 3840, height: 2160 } })
+      const result = await sut.prepare({ facing: 'front', resolution: { width: 3840, height: 2160 } })
 
       expect(result.selected?.id).toBe('front-0')
       expect(result.isResolutionAvailable).toBe(false)
     })
 
     test('should not say anything about the resolution if none is configured', async () => {
-      expect((await sut.initialize({ facing: 'back' })).isResolutionAvailable).toBeUndefined()
+      expect((await sut.prepare({ facing: 'back' })).isResolutionAvailable).toBeUndefined()
     })
 
     test('should report that no camera fits instead of throwing', async () => {
-      const result = await sut.initialize({ facing: 'front', require: { torch: true } })
+      const result = await sut.prepare({ facing: 'front', require: { torch: true } })
 
       expect(result.permission).toBe('granted')
       expect(result.selected).toBeUndefined()
@@ -656,7 +656,7 @@ describe('default-camera-manager', () => {
     test('should report a refused permission instead of throwing', async () => {
       browser.devices.permission.camera = 'denied'
 
-      const result = await sut.initialize(torchCamera)
+      const result = await sut.prepare(torchCamera)
 
       expect(result.permission).toBe('denied')
       expect(result.cameras).toEqual([])
@@ -667,7 +667,7 @@ describe('default-camera-manager', () => {
     test('should report a page without cameras, such as one without HTTPS', async () => {
       browser = new FakeMediaBrowser(phone, { isSecureContext: false })
 
-      const result = await load().initialize(torchCamera)
+      const result = await load().prepare(torchCamera)
 
       expect(result.permission).toBe('unsupported')
       expect(result.error).toBeInstanceOf(UnsupportedError)
@@ -677,7 +677,7 @@ describe('default-camera-manager', () => {
       const session = await sut.open({ id: 'front-0' })
       browser.localStorage.clear()
 
-      const result = await load().initialize(torchCamera)
+      const result = await load().prepare(torchCamera)
 
       expect(result.error).toBeInstanceOf(MediaDeviceBusyError)
       expect(result.permission).toBe('unknown')
@@ -688,7 +688,7 @@ describe('default-camera-manager', () => {
       const session = await sut.open(torchCamera)
       const requests = browser.devices.requests.length
 
-      const result = await load(torchCamera).initialize()
+      const result = await load(torchCamera).prepare()
 
       expect(result.selected?.id).toBe('back-main')
       expect(result.permission).toBe('unknown')
@@ -700,7 +700,7 @@ describe('default-camera-manager', () => {
     test('should reject for a call that was aborted', async () => {
       const reason = new Error('the user left')
 
-      await expect(sut.initialize({ signal: AbortSignal.abort(reason) })).rejects.toBe(reason)
+      await expect(sut.prepare({ signal: AbortSignal.abort(reason) })).rejects.toBe(reason)
     })
   })
 

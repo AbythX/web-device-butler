@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceError } from '../../core/errors/device-error.ts'
+import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { StorageSpace } from '../space/storage-space.ts'
 import { StorageAccessDeniedError } from './storage-access-denied-error.ts'
 import { StorageCodecError } from './storage-codec-error.ts'
@@ -22,7 +22,7 @@ describe('storage-error', () => {
     ['StorageLockedError', new StorageLockedError('key', { cause })],
   ])('should name %s after its class and keep the cause', async (name, error) => {
     expect(error).toBeInstanceOf(StorageError)
-    expect(error).toBeInstanceOf(DeviceError)
+    expect(error).toBeInstanceOf(DeviceButlerError)
     expect(error.name).toBe(name)
     expect(error.cause).toBe(cause)
   })

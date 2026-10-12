@@ -27,26 +27,26 @@ import { CrossTabChannel } from './coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from './coordination/lock/cross-tab-lock.ts'
 import { DefaultTabCoordination } from './coordination/default-tab-coordination.ts'
 import type { TabCoordination } from './coordination/tab-coordination.ts'
-import type { DeviceConfiguration } from './device-configuration.ts'
-import { DeviceEnvironment } from './environment/device-environment.ts'
+import type { DeviceButlerConfiguration } from './device-butler-configuration.ts'
+import { BrowserEnvironment } from './environment/browser-environment.ts'
 import { NullLogger } from './logging/null-logger.ts'
 import { ScopedLogger } from './logging/scoped-logger.ts'
-import type { Device, DeviceInitialization, DeviceInitializeOptions } from './device.ts'
+import type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions } from './device-butler.ts'
 
 /**
  * Everything the parts of the library send to the other tabs.
  */
-type DeviceMessages = StorageMessages & MediaMessages
+type DeviceButlerMessages = StorageMessages & MediaMessages
 
 /**
- * What `initialize()` has found so far.
+ * What `prepare()` has found so far.
  */
-type Preparation = { -readonly [Kind in keyof DeviceInitialization]: DeviceInitialization[Kind] }
+type Preparation = { -readonly [Kind in keyof DeviceButlerPreparation]: DeviceButlerPreparation[Kind] }
 
 /**
- * The implementation of {@link Device}.
+ * The implementation of {@link DeviceButler}.
  */
-export class DefaultDevice implements Device {
+export class DefaultDeviceButler implements DeviceButler {
   /**
    * The composition root: builds every part of the library and injects what they share. Nothing of the browser is
    * touched here, so it is safe during server-side rendering and shows no permission prompt.
@@ -54,13 +54,13 @@ export class DefaultDevice implements Device {
    * Every call returns a new object. An application that wants a single one keeps it itself.
    */
   public static create(
-    configuration: DeviceConfiguration = {},
-    environment: DeviceEnvironment = DeviceEnvironment.browser()
-  ): Device {
+    configuration: DeviceButlerConfiguration = {},
+    environment: BrowserEnvironment = BrowserEnvironment.browser()
+  ): DeviceButler {
     const logger = configuration.logger ?? new NullLogger()
 
     const lock = CrossTabLock.create(environment, logger)
-    const channel = CrossTabChannel.create<DeviceMessages>(environment, logger)
+    const channel = CrossTabChannel.create<DeviceButlerMessages>(environment, logger)
 
     const storage = new DefaultStorageManager(configuration.storage ?? {}, environment, lock, channel, logger)
 
@@ -99,7 +99,7 @@ export class DefaultDevice implements Device {
       microphone: configuration.microphone !== undefined,
     }
 
-    return new DefaultDevice(
+    return new DefaultDeviceButler(
       // an application that only configured a camera is not asked for its microphone
       isConfigured.camera || isConfigured.microphone ? isConfigured : { camera: true, microphone: true },
       storage,
@@ -119,7 +119,7 @@ export class DefaultDevice implements Device {
   private disposing: Promise<void> | undefined
 
   private constructor(
-    private readonly prepared: DeviceInitializeOptions,
+    private readonly prepared: DeviceButlerPrepareOptions,
     public readonly storage: StorageManager,
     public readonly camera: CameraManager,
     public readonly microphone: MicrophoneManager,
@@ -130,11 +130,11 @@ export class DefaultDevice implements Device {
     public readonly location: DeviceLocation,
     public readonly platform: DevicePlatform,
     public readonly orientation: DeviceOrientation,
-    private readonly channel: CrossTabChannel<DeviceMessages>,
+    private readonly channel: CrossTabChannel<DeviceButlerMessages>,
     private readonly gates: readonly MediaAccess[]
   ) {}
 
-  public async initialize(options: DeviceInitializeOptions = this.prepared): Promise<DeviceInitialization> {
+  public async prepare(options: DeviceButlerPrepareOptions = this.prepared): Promise<DeviceButlerPreparation> {
     const { camera = false, microphone = false } = options
 
     // a device that was not asked for has no entry
@@ -142,11 +142,11 @@ export class DefaultDevice implements Device {
 
     // one after the other, so the browser shows one prompt at a time
     if (camera !== false) {
-      found.camera = await this.camera.initialize(camera === true ? undefined : camera)
+      found.camera = await this.camera.prepare(camera === true ? undefined : camera)
     }
 
     if (microphone !== false) {
-      found.microphone = await this.microphone.initialize(microphone === true ? undefined : microphone)
+      found.microphone = await this.microphone.prepare(microphone === true ? undefined : microphone)
     }
 
     return found
@@ -159,7 +159,7 @@ export class DefaultDevice implements Device {
   }
 
   /**
-   * Calls {@link dispose} without waiting for it, so the device can be declared with `using`.
+   * Calls {@link dispose} without waiting for it, so the butler can be declared with `using`.
    */
   public [Symbol.dispose](): void {
     void this.dispose()

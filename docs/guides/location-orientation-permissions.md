@@ -8,9 +8,9 @@ Nothing is asked of the browser before `current()` or `watch()` is called, becau
 prompt.
 
 ```ts
-device.location.isSupported // false without HTTPS
+butler.location.isSupported // false without HTTPS
 
-const position = await device.location.current({ highAccuracy: true, timeout: 10_000 })
+const position = await butler.location.current({ highAccuracy: true, timeout: 10_000 })
 ```
 
 | Option         | Meaning                                                                                           |
@@ -39,7 +39,7 @@ What a device cannot tell is `undefined`, never `null` or `NaN`.
 ### Following the device
 
 ```ts
-using watch = device.location.watch({ highAccuracy: true })
+using watch = butler.location.watch({ highAccuracy: true })
 
 watch.on('position', (position) => {})
 watch.on('error', (error) => {})
@@ -57,15 +57,15 @@ Problems arrive as `error` events instead of exceptions, because a watch outlive
 | `LocationTimeoutError`     | goes on                                                         |
 | `PermissionDeniedError`    | has stopped: `isActive` is `false` when the listener is called  |
 
-`device.location.dispose()` and `device.dispose()` stop every watch. See
+`butler.location.dispose()` and `butler.dispose()` stop every watch. See
 [recording a route](../use-cases/track-a-route.md).
 
 ## Orientation
 
 ```ts
-device.orientation.current // 'portrait' | 'landscape'; undefined where there is no page
-device.orientation.isPortrait
-device.orientation.on('change', (orientation) => {})
+butler.orientation.current // 'portrait' | 'landscape'; undefined where there is no page
+butler.orientation.isPortrait
+butler.orientation.on('change', (orientation) => {})
 ```
 
 It follows the shape of the page, not a sensor: a desktop window that is made narrow counts as portrait. That is the
@@ -76,8 +76,8 @@ wider than tall.
 ## Platform
 
 ```ts
-device.platform.isIos // an iPhone or an iPad, whatever browser runs on it
-device.platform.isAndroid
+butler.platform.isIos // an iPhone or an iPad, whatever browser runs on it
+butler.platform.isAndroid
 ```
 
 The library uses it to choose the workarounds a platform needs. An application rarely should: ask for the feature
@@ -92,9 +92,9 @@ One place to ask about every permission, so a permission screen does not have to
 one.
 
 ```ts
-await device.permission.query('camera') // never asks the user, never rejects
-await device.permission.request('geolocation') // asks where the browser has to
-device.permission.on('change', ({ name, state }) => {})
+await butler.permission.query('camera') // never asks the user, never rejects
+await butler.permission.request('geolocation') // asks where the browser has to
+butler.permission.on('change', ({ name, state }) => {})
 ```
 
 The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`.
@@ -113,8 +113,8 @@ The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`.
 - `request('camera')` starts a camera for a moment, because that is the only way to make a browser ask. It requests
   the side that is configured; `request('camera', { facing: 'front' })` names one. While the camera is held, it
   rejects with a `MediaDeviceBusyError`.
-- `request('persistent-storage')` is `device.storage.persist()` as a permission. Whether the user is asked is up to
+- `request('persistent-storage')` is `butler.storage.persist()` as a permission. Whether the user is asked is up to
   the browser: some decide by themselves, by how much the site is used.
 
-For the camera and the microphone, [`device.initialize()`](../use-cases/set-up-screen.md) requests the permission
+For the camera and the microphone, [`butler.prepare()`](../use-cases/set-up-screen.md) requests the permission
 and finds the device in one step.

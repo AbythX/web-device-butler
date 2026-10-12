@@ -27,7 +27,7 @@ export interface StoreEvents {
  * What an application works with: the entries of one namespace of one backend. A store behaves the same on every
  * backend: it owns the codec, expiry, locking and change events and leaves the raw reads and writes to its driver.
  *
- * Stores are opened with `device.storage.open()`.
+ * Stores are opened with `butler.storage.open()`.
  */
 export interface Store<T = unknown> extends Listenable<StoreEvents> {
   /** the name the store was opened with */

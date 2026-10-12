@@ -15,7 +15,7 @@ interface Settings {
 }
 const defaults: Settings = { theme: 'system', name: '' }
 
-const settings = await device.storage.open<Settings>({ driver: ['indexeddb', 'local'], namespace: 'settings' })
+const settings = await butler.storage.open<Settings>({ driver: ['indexeddb', 'local'], namespace: 'settings' })
 ```
 
 `indexeddb` first: tabs read what another tab wrote as soon as the write has returned. `localStorage` passes writes

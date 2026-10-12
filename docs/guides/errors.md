@@ -1,21 +1,21 @@
 # Errors
 
-Every error the library throws extends `DeviceError`. Each sets `name` (so it survives a minifier and a log) and
+Every error the library throws extends `DeviceButlerError`. Each sets `name` (so it survives a minifier and a log) and
 keeps the error of the browser as `cause`. The names of `DOMException` (`NotAllowedError`, `NotReadableError`,
 `OverconstrainedError`, ...) never reach the application: what they mean differs between browsers, and sorting that
 out is the job of the library.
 
 ```ts
-import { DeviceError, MediaDeviceBusyError, PermissionDeniedError } from 'web-device-butler'
+import { DeviceButlerError, MediaDeviceBusyError, PermissionDeniedError } from 'web-device-butler'
 
 try {
-  session = await device.camera.open()
+  session = await butler.camera.open()
 } catch (error) {
   if (error instanceof PermissionDeniedError) {
     showHowToUnblock(error.permission)
   } else if (error instanceof MediaDeviceBusyError) {
     showBusy(error.holder)
-  } else if (error instanceof DeviceError) {
+  } else if (error instanceof DeviceButlerError) {
     showGenericProblem(error)
   } else {
     throw error // not from the library: a bug
@@ -24,7 +24,7 @@ try {
 ```
 
 A `TypeError` from the library means the code calls it wrongly (a store without a namespace, a driver name that is
-not registered). It is not a `DeviceError` on purpose: there is nothing to tell the user.
+not registered). It is not a `DeviceButlerError` on purpose: there is nothing to tell the user.
 
 A call that was aborted through its `signal` rejects with the reason of the signal, as `fetch` does.
 
@@ -38,7 +38,7 @@ A call that was aborted through its `signal` rejects with the reason of the sign
 ## Camera and microphone
 
 All extend `MediaError`. A `MediaError` itself is thrown for what fits none of them, and for a camera or microphone
-that is asked for after its device was disposed.
+that is asked for after its butler was disposed.
 
 | Error                      | Thrown when                                              | Fields                                         | What to do                                                        |
 | -------------------------- | -------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
@@ -47,7 +47,7 @@ that is asked for after its device was disposed.
 | `MediaDeviceNotFoundError` | there is no device of the kind, or none with the id      |                                                | say that there is no camera; forget a stored id                   |
 | `SessionClosedError`       | something was asked of a session that has ended          |                                                | open a new session. Listen to `ended` to know earlier.            |
 
-`initialize()` of the device, the camera and the microphone does not throw these: it reports them as `error` of its
+`prepare()` of the butler, the camera and the microphone does not throw these: it reports them as `error` of its
 result, so a set-up screen can go on without a camera.
 
 ## Location
@@ -90,7 +90,7 @@ What happens after a call has returned cannot be thrown. It arrives as an event:
 
 A refusal is an expected answer, so where the question is "may I?", the answer is a value:
 
-- `device.permission.query()` and `request()` resolve with `'denied'` or `'unsupported'`.
-- `device.camera.requestAccess()` resolves with the access state.
-- `device.storage.space()` never rejects; `space.isKnown` is `false` where the browser gives no estimate.
-- `device.storage.isSupported(driver)` resolves with `false`.
+- `butler.permission.query()` and `request()` resolve with `'denied'` or `'unsupported'`.
+- `butler.camera.requestAccess()` resolves with the access state.
+- `butler.storage.space()` never rejects; `space.isKnown` is `false` where the browser gives no estimate.
+- `butler.storage.isSupported(driver)` resolves with `false`.

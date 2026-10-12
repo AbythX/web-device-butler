@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { DefaultDevice } from '../core/default-device.ts'
+import { DefaultDeviceButler } from '../core/default-device-butler.ts'
 
 /**
  * These specs run in real browsers. They cover what needs no permission: the browsers of the test run have no
@@ -8,30 +8,30 @@ import { DefaultDevice } from '../core/default-device.ts'
  */
 describe('platform, orientation and location in a real browser', () => {
   test('should tell how the page is held', async () => {
-    using device = DefaultDevice.create()
+    using butler = DefaultDeviceButler.create()
 
-    expect(device.orientation.current).toBe(innerHeight >= innerWidth ? 'portrait' : 'landscape')
-    expect(device.orientation.isPortrait).not.toBe(device.orientation.isLandscape)
+    expect(butler.orientation.current).toBe(innerHeight >= innerWidth ? 'portrait' : 'landscape')
+    expect(butler.orientation.isPortrait).not.toBe(butler.orientation.isLandscape)
   })
 
   test('should watch the orientation only while someone listens, without failing', async () => {
-    using device = DefaultDevice.create()
+    using butler = DefaultDeviceButler.create()
 
-    const subscription = device.orientation.on('change', () => undefined)
+    const subscription = butler.orientation.on('change', () => undefined)
 
     expect(() => subscription.unsubscribe()).not.toThrow()
   })
 
   test('should not take a desktop browser for a phone', async () => {
-    using device = DefaultDevice.create()
+    using butler = DefaultDeviceButler.create()
 
-    expect(device.platform.isIos).toBe(false)
-    expect(device.platform.isAndroid).toBe(false)
+    expect(butler.platform.isIos).toBe(false)
+    expect(butler.platform.isAndroid).toBe(false)
   })
 
   test('should have a location on a page that is served securely', async () => {
-    using device = DefaultDevice.create()
+    using butler = DefaultDeviceButler.create()
 
-    expect(device.location.isSupported).toBe('geolocation' in navigator)
+    expect(butler.location.isSupported).toBe('geolocation' in navigator)
   })
 })

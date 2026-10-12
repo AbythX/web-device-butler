@@ -1,7 +1,7 @@
 import { CrossTabChannel } from '../../core/coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from '../../core/coordination/lock/cross-tab-lock.ts'
 import type { LockMode } from '../../core/coordination/lock/lock-manager-like.ts'
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { PageVisibility } from '../../core/environment/page-visibility.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
@@ -16,7 +16,7 @@ import type { MediaInputStart } from '../input/media-input-manager.ts'
 import { BaseMediaInputManager } from '../input/base-media-input-manager.ts'
 import { PlatformQuirks } from '../quirks/platform-quirks.ts'
 import type { TrackSettings } from '../session/track-constraints.ts'
-import type { MicrophoneInitialization } from './microphone-initialization.ts'
+import type { MicrophonePreparation } from './microphone-preparation.ts'
 import { MicrophoneDescriptor } from './model/microphone-descriptor.ts'
 import type { MicrophoneFeatures } from './model/microphone-features.ts'
 import type { MicrophoneConfiguration, MicrophoneRequirements } from './model/microphone-requirements.ts'
@@ -47,11 +47,11 @@ export class DefaultMicrophoneManager
   private static readonly aliasIds: readonly string[] = ['default', 'communications']
 
   /**
-   * For applications that only use the microphone module. Otherwise the manager is reached through `Device`.
+   * For applications that only use the microphone module. Otherwise the manager is reached through `DeviceButler`.
    */
   public static create(
     configuration: MicrophoneConfiguration = {},
-    environment: DeviceEnvironment = DeviceEnvironment.browser(),
+    environment: BrowserEnvironment = BrowserEnvironment.browser(),
     logger: Logger = new NullLogger()
   ): MicrophoneManager {
     const lock = CrossTabLock.create(environment, logger)
@@ -72,7 +72,7 @@ export class DefaultMicrophoneManager
   public static assemble(
     configuration: MicrophoneConfiguration,
     gate: MediaAccess,
-    environment: DeviceEnvironment,
+    environment: BrowserEnvironment,
     logger: Logger,
     timing: MicrophoneTiming = {},
     owned: readonly Disposable[] = []
@@ -139,8 +139,8 @@ export class DefaultMicrophoneManager
     })
   }
 
-  public async initialize(requirements?: Partial<MicrophoneRequirements>): Promise<MicrophoneInitialization> {
-    const { permission, devices: microphones, selected, error } = await this.prepare(requirements)
+  public async prepare(requirements?: Partial<MicrophoneRequirements>): Promise<MicrophonePreparation> {
+    const { permission, devices: microphones, selected, error } = await this.prepareInput(requirements)
 
     return selected === undefined ? { permission, microphones, error } : { permission, microphones, selected }
   }

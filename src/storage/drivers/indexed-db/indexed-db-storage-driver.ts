@@ -1,4 +1,4 @@
-import type { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { StorageErrorFactory } from '../../errors/storage-error-factory.ts'
 import { StorageUnsupportedError } from '../../errors/storage-unsupported-error.ts'
 import { StorageCapabilities } from '../../storage-capabilities.ts'
@@ -46,7 +46,7 @@ export class IndexedDbStorageDriver extends StorageDriver {
   private connection: Promise<IDBDatabase> | undefined
 
   public constructor(
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly databaseName = 'web-device-butler'
   ) {
     super()

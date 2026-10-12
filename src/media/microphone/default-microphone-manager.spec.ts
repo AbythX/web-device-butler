@@ -370,9 +370,9 @@ describe('default-microphone-manager', () => {
     })
   })
 
-  describe('#initialize', () => {
+  describe('#prepare', () => {
     test('should request access and say which microphone open() would start', async () => {
-      const result = await sut.initialize({ require: { echoCancellation: true } })
+      const result = await sut.prepare({ require: { echoCancellation: true } })
 
       expect(result.permission).toBe('granted')
       expect(result.microphones.map((microphone) => microphone.id)).toEqual(['builtin', 'headset', 'stereo'])
@@ -381,7 +381,7 @@ describe('default-microphone-manager', () => {
     })
 
     test('should leave no microphone running and release the lock', async () => {
-      await sut.initialize({ require: { echoCancellation: true } })
+      await sut.prepare({ require: { echoCancellation: true } })
 
       expect(browser.devices.liveTracks).toEqual([])
       expect(await isLocked()).toBe(false)
@@ -389,7 +389,7 @@ describe('default-microphone-manager', () => {
 
     test('should be followed by an open() that starts the selected microphone', async () => {
       sut = load({ require: { minChannelCount: 2 } })
-      const { selected } = await sut.initialize()
+      const { selected } = await sut.prepare()
       const starts = startedById().length
 
       const session = await sut.open()
@@ -399,7 +399,7 @@ describe('default-microphone-manager', () => {
     })
 
     test('should report that no microphone fits instead of throwing', async () => {
-      const result = await sut.initialize({ require: { echoCancellation: true, minChannelCount: 2 } })
+      const result = await sut.prepare({ require: { echoCancellation: true, minChannelCount: 2 } })
 
       expect(result.selected).toBeUndefined()
       expect(result.microphones).toHaveLength(3)
@@ -410,7 +410,7 @@ describe('default-microphone-manager', () => {
     test('should report a refused permission instead of throwing', async () => {
       browser.devices.permission.microphone = 'denied'
 
-      const result = await sut.initialize()
+      const result = await sut.prepare()
 
       expect(result.permission).toBe('denied')
       expect(result.microphones).toEqual([])
@@ -420,7 +420,7 @@ describe('default-microphone-manager', () => {
     test('should report a page without microphones, such as one without HTTPS', async () => {
       browser = new FakeMediaBrowser({ inputs: MicrophoneTestBench.computer() }, { isSecureContext: false })
 
-      const result = await load().initialize()
+      const result = await load().prepare()
 
       expect(result.permission).toBe('unsupported')
       expect(result.error).toBeInstanceOf(UnsupportedError)
@@ -429,7 +429,7 @@ describe('default-microphone-manager', () => {
     test('should reject for a call that was aborted', async () => {
       const reason = new Error('the user left')
 
-      await expect(sut.initialize({ signal: AbortSignal.abort(reason) })).rejects.toBe(reason)
+      await expect(sut.prepare({ signal: AbortSignal.abort(reason) })).rejects.toBe(reason)
     })
   })
 

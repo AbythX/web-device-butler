@@ -1,15 +1,17 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { FakeStorage } from '../../testing/fake-storage.ts'
 import { StorageDriverContract } from '../../testing/storage-driver-contract.ts'
 import { SessionStorageDriver } from './session-storage-driver.ts'
 
 describe('session-storage-driver', () => {
-  StorageDriverContract.run(() => new SessionStorageDriver(DeviceEnvironment.of({ sessionStorage: new FakeStorage() })))
+  StorageDriverContract.run(
+    () => new SessionStorageDriver(BrowserEnvironment.of({ sessionStorage: new FakeStorage() }))
+  )
 
   test('should describe a string driver that lives as long as the tab', async () => {
-    const { capabilities, name } = new SessionStorageDriver(DeviceEnvironment.of({}))
+    const { capabilities, name } = new SessionStorageDriver(BrowserEnvironment.of({}))
 
     expect(name).toBe('session')
     expect(capabilities).toEqual({
@@ -25,7 +27,7 @@ describe('session-storage-driver', () => {
   test('should use the sessionStorage and not the localStorage', async () => {
     const localStorage = new FakeStorage()
     const sessionStorage = new FakeStorage()
-    const sut = new SessionStorageDriver(DeviceEnvironment.of({ localStorage, sessionStorage }))
+    const sut = new SessionStorageDriver(BrowserEnvironment.of({ localStorage, sessionStorage }))
 
     await sut.write('namespace', 'key', 'value')
 

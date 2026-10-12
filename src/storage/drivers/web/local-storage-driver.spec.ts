@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import { FakeStorage } from '../../testing/fake-storage.ts'
 import { StorageDriverContract } from '../../testing/storage-driver-contract.ts'
 import { LocalStorageDriver } from './local-storage-driver.ts'
 
 describe('local-storage-driver', () => {
-  StorageDriverContract.run(() => new LocalStorageDriver(DeviceEnvironment.of({ localStorage: new FakeStorage() })))
+  StorageDriverContract.run(() => new LocalStorageDriver(BrowserEnvironment.of({ localStorage: new FakeStorage() })))
 
   test('should describe a string driver that is shared by the origin', async () => {
-    const { capabilities, name } = new LocalStorageDriver(DeviceEnvironment.of({}))
+    const { capabilities, name } = new LocalStorageDriver(BrowserEnvironment.of({}))
 
     expect(name).toBe('local')
     expect(capabilities).toEqual({
@@ -25,7 +25,7 @@ describe('local-storage-driver', () => {
   test('should use the localStorage and not the sessionStorage', async () => {
     const localStorage = new FakeStorage()
     const sessionStorage = new FakeStorage()
-    const sut = new LocalStorageDriver(DeviceEnvironment.of({ localStorage, sessionStorage }))
+    const sut = new LocalStorageDriver(BrowserEnvironment.of({ localStorage, sessionStorage }))
 
     await sut.write('namespace', 'key', 'value')
 

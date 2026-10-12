@@ -1,7 +1,7 @@
 import '../../core/disposable-polyfill.ts'
 
 import type { LockMode } from '../../core/coordination/lock/lock-manager-like.ts'
-import { DeviceError } from '../../core/errors/device-error.ts'
+import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { EventSubscription } from '../../core/events/event-subscription.ts'
@@ -42,7 +42,7 @@ export abstract class BaseMediaInputManager<
    * @param configuration the defaults of every call
    * @param gate the access gate of the kind of device
    * @param owned what is disposed together with the manager, because nobody else owns it. A gate that is shared
-   *   with the rest of the `Device` is not among it.
+   *   with the rest of the `DeviceButler` is not among it.
    */
   protected constructor(
     configuration: TRequirements,
@@ -265,7 +265,7 @@ export abstract class BaseMediaInputManager<
    * Does the slow and visible work of {@link open} up front: requests access, looks at the devices and says which
    * one would be started. It reports instead of throwing, except for a call that was aborted through its signal.
    */
-  protected async prepare(
+  protected async prepareInput(
     requirements?: Partial<TRequirements>
   ): Promise<MediaInputPreparation<TDescriptor, TRequirements>> {
     const merged = this.merge(this.defaults, requirements)
@@ -286,7 +286,7 @@ export abstract class BaseMediaInputManager<
 
       return { requirements: merged, permission, devices, error: new MediaRequirementsError(reason) }
     } catch (error) {
-      if (!(error instanceof DeviceError)) {
+      if (!(error instanceof DeviceButlerError)) {
         throw error
       }
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
-import { DefaultDevice } from '../../core/default-device.ts'
-import type { Device } from '../../core/device.ts'
+import { DefaultDeviceButler } from '../../core/default-device-butler.ts'
+import type { DeviceButler } from '../../core/device-butler.ts'
 import type { MediaSessionState } from '../session/media-session.ts'
 import { CameraTestBench } from '../camera/testing/camera-test-bench.ts'
 import { MicrophoneTestBench } from '../microphone/testing/microphone-test-bench.ts'
@@ -25,14 +25,14 @@ const backCamera = { facing: 'back', require: { torch: true } } as const
 describe('default-combined-media-session', () => {
   let browser!: FakeMediaBrowser
 
-  let device!: Device
+  let butler!: DeviceButler
 
-  const devices: Device[] = []
+  const butlers: DeviceButler[] = []
 
   /** another page of the browser */
   const load = () => {
-    const loaded = DefaultDevice.create({}, browser.openEnvironment())
-    devices.push(loaded)
+    const loaded = DefaultDeviceButler.create({}, browser.openEnvironment())
+    butlers.push(loaded)
 
     return loaded
   }
@@ -49,11 +49,11 @@ describe('default-combined-media-session', () => {
       oneCameraAtATime: true,
       backNeedsFacingRequest: true,
     })
-    device = load()
+    butler = load()
   })
 
   afterEach(async () => {
-    devices.splice(0).forEach((loaded) => loaded.dispose())
+    butlers.splice(0).forEach((loaded) => loaded.dispose())
     await flush()
 
     browser.close()
@@ -67,7 +67,7 @@ describe('default-combined-media-session', () => {
     let states!: MediaSessionState[]
 
     beforeEach(async () => {
-      sut = await device.media.open({ camera: backCamera })
+      sut = await butler.media.open({ camera: backCamera })
       ends = []
       states = []
       sut.on('ended', (end) => ends.push(end))
@@ -165,7 +165,7 @@ describe('default-combined-media-session', () => {
 
   describe('#stream', () => {
     test('should stay the same stream and carry the new track when the camera is switched', async () => {
-      const sut = await device.media.open({ camera: backCamera })
+      const sut = await butler.media.open({ camera: backCamera })
       const stream = sut.stream
       const previous = sut.camera.track
 
@@ -179,7 +179,7 @@ describe('default-combined-media-session', () => {
     })
 
     test('should carry the new track when the microphone was started again', async () => {
-      const sut = await device.media.open({ camera: backCamera, microphone: { autoRecover: true } })
+      const sut = await butler.media.open({ camera: backCamera, microphone: { autoRecover: true } })
       // the bench shortens this wait for its own managers, a device waits a second
       await new Promise((resolve) => setTimeout(resolve, 1050))
       const previous = sut.microphone.track

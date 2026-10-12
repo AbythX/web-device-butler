@@ -1,17 +1,17 @@
 import type { Listenable } from '../core/events/listenable.ts'
 
-import type { DeviceError } from '../core/errors/device-error.ts'
+import type { DeviceButlerError } from '../core/errors/device-butler-error.ts'
 import type { DevicePosition } from './device-position.ts'
 
 export interface LocationWatchEvents {
   /** the device moved, or determined where it is more precisely */
   position: DevicePosition
   /** a position could not be determined; the watch goes on unless the permission was refused */
-  error: DeviceError
+  error: DeviceButlerError
 }
 
 /**
- * Follows the position of the device until it is stopped. Created by `device.location.watch()`, never by the
+ * Follows the position of the device until it is stopped. Created by `butler.location.watch()`, never by the
  * application.
  */
 export interface LocationWatch extends Listenable<LocationWatchEvents>, Disposable {

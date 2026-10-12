@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
 import { DefaultDeviceLocation } from '../../location/default-device-location.ts'
 import type { DeviceLocation } from '../../location/device-location.ts'
@@ -28,7 +28,7 @@ describe('use-location', () => {
   beforeEach(() => {
     geolocation = new FakeGeolocation()
     location = new DefaultDeviceLocation(
-      DeviceEnvironment.of({ navigator: { geolocation } as unknown as Navigator }),
+      BrowserEnvironment.of({ navigator: { geolocation } as unknown as Navigator }),
       new NullLogger()
     )
   })
@@ -74,7 +74,7 @@ describe('use-location', () => {
   })
 
   test('should expose that the browser has no location', async () => {
-    const state = within(() => useLocation(new DefaultDeviceLocation(DeviceEnvironment.of({}), new NullLogger())))
+    const state = within(() => useLocation(new DefaultDeviceLocation(BrowserEnvironment.of({}), new NullLogger())))
 
     state.start()
 

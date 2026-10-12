@@ -6,7 +6,7 @@ export type { LevelMeter, LevelMeterEvents } from './level/level-meter.ts'
 
 export { DefaultLevelMeter } from './level/default-level-meter.ts'
 
-export type { MicrophoneInitialization } from './microphone-initialization.ts'
+export type { MicrophonePreparation } from './microphone-preparation.ts'
 
 export type { MicrophoneManager, MicrophoneManagerParts } from './microphone-manager.ts'
 

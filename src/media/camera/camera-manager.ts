@@ -2,7 +2,7 @@ import type { PageVisibility } from '../../core/environment/page-visibility.ts'
 import type { MediaAccess } from '../access/media-access.ts'
 import type { MediaInputManager } from '../input/media-input-manager.ts'
 import type { PlatformQuirk } from '../quirks/platform-quirk.ts'
-import type { CameraInitialization } from './camera-initialization.ts'
+import type { CameraPreparation } from './camera-preparation.ts'
 import type { CameraCapabilityReader } from './discovery/camera-capability-reader.ts'
 import type { CameraProbeCache } from './discovery/camera-probe-cache.ts'
 import type { CameraProber } from './discovery/camera-prober.ts'
@@ -21,7 +21,7 @@ export interface CameraListOptions {
 }
 
 /**
- * What a camera manager works with. `DefaultDevice.create()` and `DefaultCameraManager.create()` build these.
+ * What a camera manager works with. `DefaultDeviceButler.create()` and `DefaultCameraManager.create()` build these.
  */
 export interface CameraManagerParts {
   /** the access gate of the cameras */
@@ -37,7 +37,7 @@ export interface CameraManagerParts {
 }
 
 /**
- * The entry to the cameras (`device.camera`): finds out which cameras there are and what they can do, selects one
+ * The entry to the cameras (`butler.camera`): finds out which cameras there are and what they can do, selects one
  * by the features an application needs and opens sessions.
  */
 export interface CameraManager extends MediaInputManager<CameraDescriptor, CameraSession, CameraRequirements> {
@@ -58,7 +58,7 @@ export interface CameraManager extends MediaInputManager<CameraDescriptor, Camer
    *
    * It reports instead of throwing, except for a call that was aborted through its signal.
    */
-  initialize(requirements?: Partial<CameraRequirements>): Promise<CameraInitialization>
+  prepare(requirements?: Partial<CameraRequirements>): Promise<CameraPreparation>
 
   /**
    * Forgets what is remembered about the cameras. The next call that needs to know looks at them again.

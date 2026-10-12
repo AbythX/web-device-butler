@@ -58,19 +58,19 @@ that file.
 ## Getting started
 
 ```ts
-import { DefaultDevice } from 'web-device-butler'
+import { DefaultDeviceButler } from 'web-device-butler'
 
-const device = DefaultDevice.create({
+const butler = DefaultDeviceButler.create({
   camera: { facing: 'back', require: { torch: true }, resolution: { width: 1920, height: 1080 } },
   storage: { namespace: 'my-app' },
 })
 ```
 
-`DefaultDevice.create()` touches nothing of the browser and shows no prompt, so it is safe during server side
-rendering. Every call returns a new object; keep the one you need. `await device.dispose()` releases everything it
+`DefaultDeviceButler.create()` touches nothing of the browser and shows no prompt, so it is safe during server side
+rendering. Every call returns a new object; keep the one you need. `await butler.dispose()` releases everything it
 holds.
 
-What it returns is typed by interfaces (`Device`, `CameraManager`, `CameraSession`, `Store`, ...). Those are the
+What it returns is typed by interfaces (`DeviceButler`, `CameraManager`, `CameraSession`, `Store`, ...). Those are the
 types for your own code; the classes behind them are named `Default...` and only needed to create something. See
 [interfaces and their implementations](docs/guides/getting-started.md#interfaces-and-their-implementations).
 
@@ -80,10 +80,10 @@ Objects that hold a resource also work with `using` and `await using`.
 
 ```ts
 // optional, on a set-up screen: asks for permission and looks at the cameras
-const { camera } = await device.initialize({ camera: true })
+const { camera } = await butler.prepare({ camera: true })
 if (camera?.error) showWhyThereIsNoCamera(camera.error)
 
-await using session = await device.camera.open()
+await using session = await butler.camera.open()
 video.srcObject = session.stream
 
 await session.torch?.set(true) // `undefined` if this camera has no torch
@@ -101,7 +101,7 @@ session.on('ended', ({ reason }) => {
 - `require` never returns a camera without the feature. `prefer` ranks. If nothing fits, `open()` fails with a
   `MediaRequirementsError` that says which requirement removed which camera.
 - To find out what a camera can do, the library has to start it. That happens once; the result is remembered.
-  `device.camera.list({ detail: 'probed' })` looks at every camera, `device.camera.forget()` starts over.
+  `butler.camera.list({ detail: 'probed' })` looks at every camera, `butler.camera.forget()` starts over.
 - Only one tab can run a camera. What happens when another tab holds it is a policy:
   `whenBusy: 'fail'` (default), `'wait'` or `'takeover'`. A session refuses a take-over with
   `session.allowTakeover = false`, for example while it records.
@@ -109,7 +109,7 @@ session.on('ended', ({ reason }) => {
 ## Microphone
 
 ```ts
-await using microphone = await device.microphone.open({ processing: { noiseSuppression: false } })
+await using microphone = await butler.microphone.open({ processing: { noiseSuppression: false } })
 
 await microphone.processing.set({ echoCancellation: false })
 microphone.muted = true
@@ -123,7 +123,7 @@ a new one.
 ### Both together
 
 ```ts
-await using recording = await device.media.open({ camera: { facing: 'back' } })
+await using recording = await butler.media.open({ camera: { facing: 'back' } })
 
 new MediaRecorder(recording.stream).start()
 await recording.camera.torch?.set(true)
@@ -132,7 +132,7 @@ await recording.camera.torch?.set(true)
 ## Storage
 
 ```ts
-const settings = await device.storage.open<Settings>({ driver: ['indexeddb', 'local'], namespace: 'settings' })
+const settings = await butler.storage.open<Settings>({ driver: ['indexeddb', 'local'], namespace: 'settings' })
 
 await settings.set('theme', { dark: true })
 await settings.get('theme')
@@ -149,30 +149,30 @@ settings.on('change', ({ key, origin }) => {
   (`capabilities.streaming`).
 - `localStorage` reaches other tabs with a delay in Firefox and Safari
   (`capabilities.consistentAcrossTabs === false`). Data that several tabs update at once belongs in `indexeddb`.
-- `device.storage.space()` reports quota and usage, `device.storage.persist()` asks the browser not to evict.
+- `butler.storage.space()` reports quota and usage, `butler.storage.persist()` asks the browser not to evict.
 
 ## Location, orientation, platform, permissions
 
 ```ts
-const position = await device.location.current({ highAccuracy: true })
+const position = await butler.location.current({ highAccuracy: true })
 
-using watch = device.location.watch()
+using watch = butler.location.watch()
 watch.on('position', (position) => {
   /* DevicePosition */
 })
 
-device.orientation.current // 'portrait' | 'landscape'
-device.orientation.on('change', (orientation) => {})
+butler.orientation.current // 'portrait' | 'landscape'
+butler.orientation.on('change', (orientation) => {})
 
-device.platform.isIos
+butler.platform.isIos
 
-await device.permission.query('camera') // 'granted' | 'denied' | 'prompt' | 'unknown' | 'unsupported'
-await device.permission.request('geolocation')
+await butler.permission.query('camera') // 'granted' | 'denied' | 'prompt' | 'unknown' | 'unsupported'
+await butler.permission.request('geolocation')
 ```
 
 ## Errors
 
-Every error extends `DeviceError`, sets `name` and keeps the error of the browser as `cause`. The names of
+Every error extends `DeviceButlerError`, sets `name` and keeps the error of the browser as `cause`. The names of
 `DOMException` never reach the application.
 
 | Error                                                  | Meaning                                                    |
@@ -200,10 +200,10 @@ Every error extends `DeviceError`, sets `name` and keeps the error of the browse
 ### Vue
 
 ```ts
-import { useCamera, useDevice, useStoredValue } from 'web-device-butler/vue'
+import { useDeviceButler, useCamera, useStoredValue } from 'web-device-butler/vue'
 
-const device = useDevice() // from app.provide(deviceInjectionKey, device)
-const camera = useCamera(device.camera) // session, state, settings, error, isOpening, open(), close()
+const butler = useDeviceButler() // from app.provide(deviceButlerInjectionKey, butler)
+const camera = useCamera(butler.camera) // session, state, settings, error, isOpening, open(), close()
 const theme = useStoredValue(settingsStore, 'theme') // follows other components and other tabs
 ```
 
@@ -213,10 +213,10 @@ Sessions and watches are closed when the component is unmounted. Also: `useMicro
 ### inversify
 
 ```ts
-import { DeviceBindings, DeviceContainerModule } from 'web-device-butler/inversify'
+import { DeviceButlerBindings, DeviceButlerContainerModule } from 'web-device-butler/inversify'
 
-container.load(new DeviceContainerModule(device))
-container.get(DeviceBindings.Camera) // CameraManager
+container.load(new DeviceButlerContainerModule(butler))
+container.get(DeviceButlerBindings.Camera) // CameraManager
 ```
 
 ### fabric

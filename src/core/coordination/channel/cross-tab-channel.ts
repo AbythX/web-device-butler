@@ -1,7 +1,7 @@
 import '../../disposable-polyfill.ts'
 
 import type { BroadcastChannelLike, BroadcastMessageListener } from './broadcast-channel-like.ts'
-import type { DeviceEnvironment } from '../../environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../environment/browser-environment.ts'
 import { EventEmitter } from '../../events/event-emitter.ts'
 import { InTabBroadcastChannel } from './in-tab-broadcast-channel.ts'
 import type { Logger } from '../../logging/logger.ts'
@@ -27,7 +27,7 @@ export class CrossTabChannel<Messages extends object> extends EventEmitter<Messa
    * The channel all parts of the library share.
    */
   public static create<Messages extends object>(
-    environment: DeviceEnvironment,
+    environment: BrowserEnvironment,
     logger: Logger
   ): CrossTabChannel<Messages> {
     return new CrossTabChannel<Messages>(
@@ -42,7 +42,7 @@ export class CrossTabChannel<Messages extends object> extends EventEmitter<Messa
 
   public constructor(
     private readonly name: string,
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly logger: Logger
   ) {
     super()

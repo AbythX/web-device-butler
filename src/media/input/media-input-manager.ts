@@ -1,6 +1,6 @@
 import type { Listenable } from '../../core/events/listenable.ts'
 
-import type { DeviceError } from '../../core/errors/device-error.ts'
+import type { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import type { DevicePermissionState } from '../../permission/permission-state.ts'
 import type { MediaAvailability } from '../access/media-access.ts'
 import type { MediaAccessState } from '../access/media-access-state.ts'
@@ -34,7 +34,7 @@ export interface MediaInputPreparation<TDescriptor, TRequirements> {
   /** the device `open()` would start; `undefined` if none fits */
   readonly selected?: TDescriptor
   /** why there is no selected device */
-  readonly error?: DeviceError
+  readonly error?: DeviceButlerError
 }
 
 /**

@@ -78,7 +78,7 @@ export const closeCameraInSecondTab: BrowserCommand<[], Promise<void>> = async (
   })
 }
 
-export interface SecondTabCameraInitialization {
+export interface SecondTabCameraPreparation {
   permission: string
   /** the id of the camera `open()` would start */
   selected?: string
@@ -89,11 +89,11 @@ export interface SecondTabCameraInitialization {
 }
 
 /**
- * Loads the application in the second tab, as far as the camera is concerned: a new camera manager that initializes.
+ * Loads the application in the second tab, as far as the camera is concerned: a new camera manager that prepares.
  */
-export const initializeCameraInSecondTab: BrowserCommand<
+export const prepareCameraInSecondTab: BrowserCommand<
   [requirements: Record<string, unknown>],
-  Promise<SecondTabCameraInitialization>
+  Promise<SecondTabCameraPreparation>
 > = async (context, requirements) => {
   const page = await SecondTab.pageOf(context.context, context.page.url())
 
@@ -104,7 +104,7 @@ export const initializeCameraInSecondTab: BrowserCommand<
     const manager = DefaultCameraManager.create(configuration)
 
     try {
-      const result = await manager.initialize()
+      const result = await manager.prepare()
 
       return {
         permission: result.permission,
@@ -130,7 +130,7 @@ declare module 'vitest/browser' {
     openCameraInSecondTab(options: SecondTabCameraOptions): Promise<SecondTabCameraResult>
     cameraInSecondTab(): Promise<SecondTabCameraState>
     closeCameraInSecondTab(): Promise<void>
-    initializeCameraInSecondTab(requirements: Record<string, unknown>): Promise<SecondTabCameraInitialization>
+    prepareCameraInSecondTab(requirements: Record<string, unknown>): Promise<SecondTabCameraPreparation>
     showFirstTab(): Promise<void>
   }
 }

@@ -2,8 +2,8 @@ import {
   type CameraDescriptor,
   type CameraRequirements,
   type CameraSession,
-  DefaultDevice,
-  type Device,
+  DefaultDeviceButler,
+  type DeviceButler,
 } from '../../src/index.ts'
 import { DemoPage } from '../shared/demo-page.ts'
 
@@ -12,7 +12,7 @@ import { DemoPage } from '../shared/demo-page.ts'
  * It is the tool for collecting the device matrix.
  */
 class CameraDemo extends DemoPage {
-  private readonly device: Device
+  private readonly butler: DeviceButler
 
   private cameras: readonly CameraDescriptor[] = []
   private selected: CameraDescriptor | undefined
@@ -20,23 +20,23 @@ class CameraDemo extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({ logger: this.logger })
+    this.butler = DefaultDeviceButler.create({ logger: this.logger })
 
-    this.device.camera.on('accesschange', () => this.showAccess())
-    this.device.camera.on('availabilitychange', (availability) => {
+    this.butler.camera.on('accesschange', () => this.showAccess())
+    this.butler.camera.on('availabilitychange', (availability) => {
       this.logger.info(`availabilitychange: ${availability}`)
       this.showFacts()
     })
-    this.device.camera.on('change', (cameras) => {
+    this.butler.camera.on('change', (cameras) => {
       this.logger.info(`change: ${cameras.length} cameras`)
       this.showCameras(cameras)
     })
 
-    this.onClick('initialize', () => this.initialize())
+    this.onClick('prepare', () => this.prepare())
     this.onClick('open', () => this.open(this.requirements))
-    this.onClick('probe', async () => this.showCameras(await this.device.camera.list({ detail: 'probed' })))
-    this.onClick('list', async () => this.showCameras(await this.device.camera.list()))
-    this.onClick('forget', () => this.device.camera.forget())
+    this.onClick('probe', async () => this.showCameras(await this.butler.camera.list({ detail: 'probed' })))
+    this.onClick('list', async () => this.showCameras(await this.butler.camera.list()))
+    this.onClick('forget', () => this.butler.camera.forget())
     this.onClick('switch', () => this.switchFacing())
     this.onClick('half', () => this.session?.configure({ resolution: { width: 1280, height: 720 } }))
     this.onClick('close', () => this.session?.close())
@@ -77,11 +77,11 @@ class CameraDemo extends DemoPage {
     }
   }
 
-  private async initialize(): Promise<void> {
-    // the form is the configuration: what initialize() prepares is what open() uses afterwards
-    this.device.camera.configure(this.requirements)
+  private async prepare(): Promise<void> {
+    // the form is the configuration: what prepare() prepares is what open() uses afterwards
+    this.butler.camera.configure(this.requirements)
 
-    const { camera } = await this.device.initialize({ camera: true })
+    const { camera } = await this.butler.prepare({ camera: true })
     this.selected = camera?.selected
     this.showCameras(camera?.cameras ?? [])
 
@@ -90,7 +90,7 @@ class CameraDemo extends DemoPage {
     }
 
     this.status(
-      `initialize(): permission ${camera?.permission}, selected '${camera?.selected?.label}', ` +
+      `prepare(): permission ${camera?.permission}, selected '${camera?.selected?.label}', ` +
         `resolution available: ${camera?.isResolutionAvailable}`
     )
   }
@@ -98,7 +98,7 @@ class CameraDemo extends DemoPage {
   private async open(requirements: Partial<CameraRequirements>): Promise<void> {
     await this.session?.close()
 
-    const session = await this.device.camera.open(requirements)
+    const session = await this.butler.camera.open(requirements)
     this.session = session
     this.selected = session.descriptor
     session.allowTakeover = this.element<HTMLInputElement>('allow-takeover').checked
@@ -122,7 +122,7 @@ class CameraDemo extends DemoPage {
       this.showSession()
     })
 
-    this.showCameras(await this.device.camera.list())
+    this.showCameras(await this.butler.camera.list())
     this.showSession()
   }
 
@@ -130,13 +130,13 @@ class CameraDemo extends DemoPage {
     const facing = this.session?.descriptor.facing === 'front' ? 'back' : 'front'
     // the other side of a phone has neither torch nor zoom on most devices
     await this.session?.switchTo({ facing, require: {} })
-    this.showCameras(await this.device.camera.list())
+    this.showCameras(await this.butler.camera.list())
   }
 
   // ---- output ----
 
   private showFacts(): void {
-    const { platform, coordination, camera } = this.device
+    const { platform, coordination, camera } = this.butler
 
     this.describe('facts', {
       'User agent': navigator.userAgent,
@@ -148,7 +148,7 @@ class CameraDemo extends DemoPage {
   }
 
   private showAccess(): void {
-    const { front, back, any } = this.device.camera.access
+    const { front, back, any } = this.butler.camera.access
     this.element('access').textContent = `access: back ${back}, front ${front}, any ${any}`
   }
 
@@ -243,7 +243,7 @@ class CameraDemo extends DemoPage {
   }
 
   private async showReport(): Promise<void> {
-    const { platform, coordination, camera } = this.device
+    const { platform, coordination, camera } = this.butler
 
     const report = {
       date: new Date().toISOString(),

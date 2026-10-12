@@ -1,6 +1,6 @@
 import {
-  DefaultDevice,
-  type Device,
+  DefaultDeviceButler,
+  type DeviceButler,
   type EventSubscription,
   type MicrophoneDescriptor,
   type MicrophoneProcessing,
@@ -21,7 +21,7 @@ class MicrophoneDemo extends DemoPage {
     'autoGainControl',
   ]
 
-  private readonly device: Device
+  private readonly butler: DeviceButler
 
   private microphones: readonly MicrophoneDescriptor[] = []
   private selected: MicrophoneDescriptor | undefined
@@ -31,21 +31,21 @@ class MicrophoneDemo extends DemoPage {
 
   public constructor(page: Document) {
     super(page)
-    this.device = DefaultDevice.create({ logger: this.logger })
+    this.butler = DefaultDeviceButler.create({ logger: this.logger })
 
-    this.device.microphone.on('accesschange', () => this.showAccess())
-    this.device.microphone.on('availabilitychange', (availability) => {
+    this.butler.microphone.on('accesschange', () => this.showAccess())
+    this.butler.microphone.on('availabilitychange', (availability) => {
       this.logger.info(`availabilitychange: ${availability}`)
       this.showFacts()
     })
-    this.device.microphone.on('change', (microphones) => {
+    this.butler.microphone.on('change', (microphones) => {
       this.logger.info(`change: ${microphones.length} microphones`)
       this.showMicrophones(microphones)
     })
 
-    this.onClick('initialize', () => this.initialize())
+    this.onClick('prepare', () => this.prepare())
     this.onClick('open', () => this.open(this.requirements))
-    this.onClick('list', async () => this.showMicrophones(await this.device.microphone.list()))
+    this.onClick('list', async () => this.showMicrophones(await this.butler.microphone.list()))
     this.onClick('close', () => this.session?.close())
     this.onClick('report', () => this.showReport())
     this.onClick('copy', () => navigator.clipboard.writeText(this.element('report-output').textContent ?? ''))
@@ -93,11 +93,11 @@ class MicrophoneDemo extends DemoPage {
     }
   }
 
-  private async initialize(): Promise<void> {
-    // the form is the configuration: what initialize() prepares is what open() uses afterwards
-    this.device.microphone.configure(this.requirements)
+  private async prepare(): Promise<void> {
+    // the form is the configuration: what prepare() prepares is what open() uses afterwards
+    this.butler.microphone.configure(this.requirements)
 
-    const { microphone } = await this.device.initialize({ microphone: true })
+    const { microphone } = await this.butler.prepare({ microphone: true })
     this.selected = microphone?.selected
     this.showMicrophones(microphone?.microphones ?? [])
 
@@ -105,13 +105,13 @@ class MicrophoneDemo extends DemoPage {
       throw microphone.error
     }
 
-    this.status(`initialize(): permission ${microphone?.permission}, selected '${microphone?.selected?.label}'`)
+    this.status(`prepare(): permission ${microphone?.permission}, selected '${microphone?.selected?.label}'`)
   }
 
   private async open(requirements: Partial<MicrophoneRequirements>): Promise<void> {
     await this.session?.close()
 
-    const session = await this.device.microphone.open(requirements)
+    const session = await this.butler.microphone.open(requirements)
     this.session = session
     this.selected = session.descriptor
     session.muted = this.element<HTMLInputElement>('muted').checked
@@ -134,7 +134,7 @@ class MicrophoneDemo extends DemoPage {
     })
 
     this.measure()
-    this.showMicrophones(await this.device.microphone.list())
+    this.showMicrophones(await this.butler.microphone.list())
     this.showSession()
   }
 
@@ -155,7 +155,7 @@ class MicrophoneDemo extends DemoPage {
   // ---- output ----
 
   private showFacts(): void {
-    const { platform, coordination, microphone } = this.device
+    const { platform, coordination, microphone } = this.butler
 
     this.describe('facts', {
       'User agent': navigator.userAgent,
@@ -167,7 +167,7 @@ class MicrophoneDemo extends DemoPage {
   }
 
   private showAccess(): void {
-    this.element('access').textContent = `access: ${this.device.microphone.access.any}`
+    this.element('access').textContent = `access: ${this.butler.microphone.access.any}`
   }
 
   private showMicrophones(microphones: readonly MicrophoneDescriptor[]): void {
@@ -235,7 +235,7 @@ class MicrophoneDemo extends DemoPage {
   }
 
   private showReport(): void {
-    const { platform, coordination, microphone } = this.device
+    const { platform, coordination, microphone } = this.butler
 
     const report = {
       date: new Date().toISOString(),

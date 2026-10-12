@@ -2,14 +2,14 @@
 
 A browser lists cameras as ids and labels. Which of them is the main camera on the back, which one has a torch and
 which one can deliver 1080p is not in the list: a camera has to run before it says what it can do, and a phone has
-up to five of them. `device.camera` hides that. The application says what it needs and gets a running camera.
+up to five of them. `butler.camera` hides that. The application says what it needs and gets a running camera.
 
 Try it: `pnpm demo`, page `camera/`.
 
 ## Saying what you need
 
 ```ts
-const session = await device.camera.open({
+const session = await butler.camera.open({
   facing: 'back',
   require: { torch: true },
   prefer: { zoom: true },
@@ -44,12 +44,12 @@ that means: request access, start the back cameras one after another, read what 
 the permission prompt and waits a moment.
 
 The result is remembered in the storage of the browser. On the next visit only the chosen camera starts. The memory
-is thrown away by itself when the set of cameras changes; `device.camera.forget()` throws it away by hand.
+is thrown away by itself when the set of cameras changes; `butler.camera.forget()` throws it away by hand.
 
-Do this work when it suits the application, with [`initialize()`](../use-cases/set-up-screen.md):
+Do this work when it suits the application, with [`prepare()`](../use-cases/set-up-screen.md):
 
 ```ts
-const result = await device.camera.initialize()
+const result = await butler.camera.prepare()
 
 result.permission // 'granted' | 'denied' | 'prompt' | 'unknown' | 'unsupported'
 result.cameras // every camera that is known
@@ -61,9 +61,9 @@ result.error // why there is no selected camera
 ## Looking at the cameras
 
 ```ts
-await device.camera.list() // never prompts, never starts a camera
-await device.camera.list({ detail: 'probed' }) // requests access and looks at every camera
-await device.camera.select({ facing: 'front' }) // the camera open() would start, without starting a session
+await butler.camera.list() // never prompts, never starts a camera
+await butler.camera.list({ detail: 'probed' }) // requests access and looks at every camera
+await butler.camera.select({ facing: 'front' }) // the camera open() would start, without starting a session
 ```
 
 A `CameraDescriptor` has `id`, `label`, `facing` (`'front' | 'back' | 'external' | 'unknown'`) and `features`:
@@ -77,7 +77,7 @@ How far the features can be trusted is in `descriptor.detail`:
 | `static`  | what the browser knows without starting the camera            |
 | `probed`  | read from the running camera                                  |
 
-The list is empty until access has been requested. `device.camera.access` says how far that went, per side (`front`,
+The list is empty until access has been requested. `butler.camera.access` says how far that went, per side (`front`,
 `back`, `any`): `'locked'` (not requested yet), `'granted'`, `'denied'` or `'unavailable'`. Cameras are requested per
 side, because access that was granted through the front camera does not open the back cameras on every phone.
 
@@ -87,7 +87,7 @@ stable for the origin until the user clears the site data.
 ## The session
 
 ```ts
-const session = await device.camera.open()
+const session = await butler.camera.open()
 
 video.srcObject = session.stream // also for MediaRecorder and WebRTC
 session.descriptor // the camera that runs
@@ -181,9 +181,9 @@ announces `trackchange`; in between its state is `muted`.
 ## Manager events
 
 ```ts
-device.camera.on('change', (cameras) => {}) // a camera was plugged in or removed
-device.camera.on('accesschange', (access) => {})
-device.camera.on('availabilitychange', (availability) => {}) // 'free' | 'held-by-this-tab' | 'held-by-other-tab'
+butler.camera.on('change', (cameras) => {}) // a camera was plugged in or removed
+butler.camera.on('accesschange', (access) => {})
+butler.camera.on('availabilitychange', (availability) => {}) // 'free' | 'held-by-this-tab' | 'held-by-other-tab'
 ```
 
 ## Not verified yet

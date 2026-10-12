@@ -3,7 +3,7 @@ import { InTabBroadcastChannel } from '../../core/coordination/channel/in-tab-br
 import { CrossTabLock } from '../../core/coordination/lock/cross-tab-lock.ts'
 import { InTabLockManager } from '../../core/coordination/lock/in-tab-lock-manager.ts'
 import type { LockMode } from '../../core/coordination/lock/lock-manager-like.ts'
-import { DeviceEnvironment, type DeviceGlobals } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment, type BrowserGlobals } from '../../core/environment/browser-environment.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
 import { FakePermissions } from '../../permission/testing/fake-permissions.ts'
@@ -17,7 +17,7 @@ import { FakeMediaDevices, type FakeMediaDevicesOptions } from './fake-media-dev
 import { FakeMediaStream } from './fake-media-stream.ts'
 
 export interface FakeMediaTab {
-  readonly environment: DeviceEnvironment
+  readonly environment: BrowserEnvironment
   readonly channel: CrossTabChannel<MediaMessages & StorageMessages>
   /** the access gate of the tab */
   readonly access: MediaAccess
@@ -47,7 +47,7 @@ export class FakeMediaBrowser {
 
   public constructor(
     options: FakeMediaDevicesOptions = { inputs: FakeMediaDevices.phone(), oneCameraAtATime: true },
-    private readonly globals: Partial<DeviceGlobals> = {}
+    private readonly globals: Partial<BrowserGlobals> = {}
   ) {
     this.devices = new FakeMediaDevices(options)
 
@@ -65,10 +65,10 @@ export class FakeMediaBrowser {
     }
   }
 
-  public openEnvironment(): DeviceEnvironment {
+  public openEnvironment(): BrowserEnvironment {
     const channelPrefix = this.channelPrefix
 
-    return DeviceEnvironment.of({
+    return BrowserEnvironment.of({
       navigator: {
         locks: this.locks,
         mediaDevices: this.devices,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { MemoryStorageDriver } from './drivers/memory/memory-storage-driver.ts'
 import { StorageUnsupportedError } from './errors/storage-unsupported-error.ts'
 import { StorageSpace } from './space/storage-space.ts'
@@ -41,7 +41,7 @@ describe('default-storage-manager', () => {
     test('should not touch the environment', async () => {
       const resolveGlobals = vi.fn(() => ({}))
 
-      using manager = DefaultStorageManager.create({}, new DeviceEnvironment(resolveGlobals))
+      using manager = DefaultStorageManager.create({}, new BrowserEnvironment(resolveGlobals))
 
       expect(manager).toBeInstanceOf(DefaultStorageManager)
       expect(resolveGlobals).not.toHaveBeenCalled()
@@ -86,7 +86,7 @@ describe('default-storage-manager', () => {
 
     test('should fail if none of the drivers is supported', async () => {
       sut.register(new UnsupportedStorageDriver())
-      const environment = DeviceEnvironment.of({})
+      const environment = BrowserEnvironment.of({})
       using withoutStorage = DefaultStorageManager.create({}, environment)
       withoutStorage.register(new UnsupportedStorageDriver())
 
@@ -208,7 +208,7 @@ describe('default-storage-manager', () => {
     })
 
     test('should not support the storage of the browser where there is none', async () => {
-      using manager = DefaultStorageManager.create({}, DeviceEnvironment.of({}))
+      using manager = DefaultStorageManager.create({}, BrowserEnvironment.of({}))
 
       expect(await manager.isSupported('local')).toBe(false)
       expect(await manager.isSupported('session')).toBe(false)
@@ -230,7 +230,7 @@ describe('default-storage-manager', () => {
     })
 
     test('should report an unknown space where the browser gives no estimate', async () => {
-      using manager = DefaultStorageManager.create({}, DeviceEnvironment.of({}))
+      using manager = DefaultStorageManager.create({}, BrowserEnvironment.of({}))
 
       expect((await manager.space()).isKnown).toBe(false)
       expect(await manager.persist()).toBe(false)

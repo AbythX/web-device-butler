@@ -1,9 +1,9 @@
 import type { DeviceLocation } from '../location/device-location.ts'
-import type { CameraInitialization } from '../media/camera/camera-initialization.ts'
+import type { CameraPreparation } from '../media/camera/camera-preparation.ts'
 import type { CameraManager } from '../media/camera/camera-manager.ts'
 import type { CameraRequirements } from '../media/camera/model/camera-requirements.ts'
 import type { MediaManager } from '../media/combined/media-manager.ts'
-import type { MicrophoneInitialization } from '../media/microphone/microphone-initialization.ts'
+import type { MicrophonePreparation } from '../media/microphone/microphone-preparation.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../media/microphone/model/microphone-requirements.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
@@ -13,10 +13,10 @@ import type { StorageManager } from '../storage/storage-manager.ts'
 import type { TabCoordination } from './coordination/tab-coordination.ts'
 
 /**
- * What `device.initialize()` prepares. Without options it prepares the devices that have a section in the
+ * What `butler.prepare()` prepares. Without options it prepares the devices that have a section in the
  * configuration, and both if neither has one.
  */
-export interface DeviceInitializeOptions {
+export interface DeviceButlerPrepareOptions {
   /** `true` for the configured camera, or requirements that override the configuration for this call */
   camera?: boolean | Partial<CameraRequirements>
   /** `true` for the configured microphone, or requirements that override the configuration for this call */
@@ -24,17 +24,17 @@ export interface DeviceInitializeOptions {
 }
 
 /**
- * What `device.initialize()` found out, per device that was asked for.
+ * What `butler.prepare()` found out, per device that was asked for.
  */
-export interface DeviceInitialization {
-  readonly camera?: CameraInitialization
-  readonly microphone?: MicrophoneInitialization
+export interface DeviceButlerPreparation {
+  readonly camera?: CameraPreparation
+  readonly microphone?: MicrophonePreparation
 }
 
 /**
  * The root object of the library. Every area (storage, camera, microphone, ...) is reached through it.
  */
-export interface Device extends Disposable, AsyncDisposable {
+export interface DeviceButler extends Disposable, AsyncDisposable {
   /** stored data: stores on several backends, the space that is left and persistence */
   readonly storage: StorageManager
 
@@ -72,11 +72,11 @@ export interface Device extends Disposable, AsyncDisposable {
    *
    * It reports per device instead of throwing, and leaves no device running.
    */
-  initialize(options?: DeviceInitializeOptions): Promise<DeviceInitialization>
+  prepare(options?: DeviceButlerPrepareOptions): Promise<DeviceButlerPreparation>
 
   /**
-   * Releases everything the device holds. Cameras and microphones stop at once and cannot be opened through this
-   * device any more; the other tabs get them a moment later.
+   * Releases everything the butler holds. Cameras and microphones stop at once and cannot be opened through this
+   * butler any more; the other tabs get them a moment later.
    *
    * @returns a promise that resolves once the cameras and microphones are free for others
    */

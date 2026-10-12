@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { mock } from 'vitest-mock-extended'
 
-import { DeviceEnvironment } from '../../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
 import type { Logger } from '../../../core/logging/logger.ts'
 import { NullLogger } from '../../../core/logging/null-logger.ts'
 import { MediaDeviceBusyError } from '../../errors/media-device-busy-error.ts'
@@ -410,7 +410,7 @@ describe('default-microphone-session', () => {
         }
       }
 
-      const environment = DeviceEnvironment.of({ AudioContext: suspended as unknown as new () => AudioContext })
+      const environment = BrowserEnvironment.of({ AudioContext: suspended as unknown as new () => AudioContext })
       const meter = new DefaultLevelMeter(sut.stream, environment, new NullLogger(), 1)
       const levels: number[] = []
 
@@ -433,7 +433,7 @@ describe('default-microphone-session', () => {
     })
 
     test('should use the audio context under the name Safari had for it', async () => {
-      const environment = DeviceEnvironment.of({
+      const environment = BrowserEnvironment.of({
         webkitAudioContext: FakeAudioContext as unknown as new () => AudioContext,
       })
 
@@ -453,7 +453,7 @@ describe('default-microphone-session', () => {
     test('should log and stay silent if the audio context cannot be used', async () => {
       const logger = mock<Logger>()
 
-      const environment = DeviceEnvironment.of({
+      const environment = BrowserEnvironment.of({
         AudioContext: class {
           public constructor() {
             throw new Error('too many audio contexts')

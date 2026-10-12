@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { DefaultDevicePlatform } from './default-device-platform.ts'
 
 const platformOf = (navigator: object) =>
-  new DefaultDevicePlatform(DeviceEnvironment.of({ navigator: navigator as Navigator }))
+  new DefaultDevicePlatform(BrowserEnvironment.of({ navigator: navigator as Navigator }))
 
 const macUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15'
 
@@ -45,7 +45,7 @@ describe('default-device-platform', () => {
     })
 
     test('should be false where there is no browser', async () => {
-      expect(new DefaultDevicePlatform(DeviceEnvironment.of({})).isIos).toBe(false)
+      expect(new DefaultDevicePlatform(BrowserEnvironment.of({})).isIos).toBe(false)
     })
   })
 
@@ -68,7 +68,7 @@ describe('default-device-platform', () => {
     })
 
     test('should be false where there is no browser', async () => {
-      expect(new DefaultDevicePlatform(DeviceEnvironment.of({})).isAndroid).toBe(false)
+      expect(new DefaultDevicePlatform(BrowserEnvironment.of({})).isAndroid).toBe(false)
     })
   })
 })

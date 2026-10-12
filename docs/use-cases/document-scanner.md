@@ -9,7 +9,7 @@ them. The photos survive a reload and do not fill the memory.
 ## The camera
 
 ```ts
-const device = DefaultDevice.create({
+const butler = DefaultDeviceButler.create({
   camera: {
     facing: 'back',
     prefer: { torch: true, zoom: true },
@@ -25,7 +25,7 @@ const device = DefaultDevice.create({
 - `autoRecover`: a user who switches to another application to look something up comes back to a running camera.
 
 ```ts
-const session = await device.camera.open()
+const session = await butler.camera.open()
 video.srcObject = session.stream
 
 // the camera was started again: there is a new stream
@@ -69,12 +69,12 @@ const picture = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolv
 Two stores: the pictures as bytes where large data belongs, and what is known about them as JSON.
 
 ```ts
-const pictures = await device.storage.open({
+const pictures = await butler.storage.open({
   driver: ['opfs', 'indexeddb', 'memory'],
   namespace: 'scans',
   codec: new BinaryCodec(),
 })
-const scans = await device.storage.open<Scan>({ driver: ['indexeddb', 'local', 'memory'], namespace: 'scan-index' })
+const scans = await butler.storage.open<Scan>({ driver: ['indexeddb', 'local', 'memory'], namespace: 'scan-index' })
 
 const id = crypto.randomUUID()
 await pictures.set(id, new Uint8Array(await picture.arrayBuffer()))
@@ -113,8 +113,8 @@ try {
 }
 ```
 
-`(await device.storage.space()).hasRoomFor(bytes.byteLength)` can warn before the user takes the photo, but it is an
-estimate: the `catch` stays. `device.storage.persist()` asks the browser not to evict the scans under storage
+`(await butler.storage.space()).hasRoomFor(bytes.byteLength)` can warn before the user takes the photo, but it is an
+estimate: the `catch` stays. `butler.storage.persist()` asks the browser not to evict the scans under storage
 pressure, which is worth a call once the user has scanned something.
 
 ## A second tab
@@ -127,7 +127,7 @@ pressure, which is worth a call once the user has scanned something.
 
 ## Variations
 
-- **A camera picker**: `device.camera.list({ detail: 'probed' })` on a settings screen, `open({ id })` afterwards.
+- **A camera picker**: `butler.camera.list({ detail: 'probed' })` on a settings screen, `open({ id })` afterwards.
 - **Macro shots**: `prefer: { focus: true }`, then `session.focus?.setMode('manual')` and
   `session.focus?.setDistance()`.
 - **Photos at full resolution**: `resolution: descriptor.features.maxResolution` of the selected camera.

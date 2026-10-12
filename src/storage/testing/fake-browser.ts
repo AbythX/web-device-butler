@@ -4,7 +4,7 @@ import { InTabBroadcastChannel } from '../../core/coordination/channel/in-tab-br
 import { CrossTabChannel } from '../../core/coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from '../../core/coordination/lock/cross-tab-lock.ts'
 import { InTabLockManager } from '../../core/coordination/lock/in-tab-lock-manager.ts'
-import { DeviceEnvironment, type DeviceGlobals } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment, type BrowserGlobals } from '../../core/environment/browser-environment.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
 import type { StorageConfiguration } from '../storage-configuration.ts'
@@ -32,13 +32,13 @@ export class FakeBrowser {
   private readonly channelPrefix = `fake-browser-${FakeBrowser.instances++}:`
 
   public constructor(
-    private readonly sharedGlobals: Partial<DeviceGlobals> = {},
+    private readonly sharedGlobals: Partial<BrowserGlobals> = {},
     localStorage = new FakeStorage()
   ) {
     this.localStorage = localStorage
   }
 
-  public openEnvironment(): DeviceEnvironment {
+  public openEnvironment(): BrowserEnvironment {
     const channelPrefix = this.channelPrefix
 
     const navigator = {
@@ -55,7 +55,7 @@ export class FakeBrowser {
       },
     } as unknown as Navigator
 
-    return DeviceEnvironment.of({
+    return BrowserEnvironment.of({
       navigator,
       localStorage: this.localStorage,
       sessionStorage: new FakeStorage(),

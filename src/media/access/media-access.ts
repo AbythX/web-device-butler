@@ -4,7 +4,7 @@ import type { CrossTabChannel } from '../../core/coordination/channel/cross-tab-
 import type { CrossTabLock } from '../../core/coordination/lock/cross-tab-lock.ts'
 import type { CrossTabLockHandle } from '../../core/coordination/lock/cross-tab-lock-handle.ts'
 import type { LockMode } from '../../core/coordination/lock/lock-manager-like.ts'
-import type { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { EventSubscription } from '../../core/events/event-subscription.ts'
@@ -27,7 +27,7 @@ import type { MediaMessages } from './media-messages.ts'
 
 /**
  * Whether the device can be opened as far as the tabs of this library are concerned. `held-by-this-tab` means this
- * `Device` object holds it.
+ * `DeviceButler` object holds it.
  */
 export type MediaAvailability = 'free' | 'held-by-this-tab' | 'held-by-other-tab'
 
@@ -78,7 +78,7 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
    */
   public static create(
     kind: MediaKind,
-    environment: DeviceEnvironment,
+    environment: BrowserEnvironment,
     lock: CrossTabLock,
     channel: CrossTabChannel<MediaMessages>,
     logger: Logger
@@ -111,7 +111,7 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
   public constructor(
     public readonly kind: MediaKind,
     private readonly mode: LockMode,
-    private readonly environment: DeviceEnvironment,
+    private readonly environment: BrowserEnvironment,
     private readonly lock: CrossTabLock,
     private readonly channel: CrossTabChannel<MediaMessages>,
     private readonly logger: Logger,

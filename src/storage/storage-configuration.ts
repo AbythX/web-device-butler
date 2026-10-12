@@ -1,5 +1,5 @@
 /**
- * The storage section of the configuration passed to `DefaultDevice.create()`.
+ * The storage section of the configuration passed to `DefaultDeviceButler.create()`.
  */
 export interface StorageConfiguration {
   /**

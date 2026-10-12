@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { DefaultDevicePlatform } from '../../platform/default-device-platform.ts'
 import { PlatformQuirks } from './platform-quirks.ts'
 
 const platformOf = (navigator: Partial<Navigator>) =>
-  new DefaultDevicePlatform(DeviceEnvironment.of({ navigator: navigator as Navigator }))
+  new DefaultDevicePlatform(BrowserEnvironment.of({ navigator: navigator as Navigator }))
 
 describe('platform-quirks', () => {
   describe('.for', () => {

@@ -2,22 +2,22 @@ import { describe, expect, test, vi } from 'vitest'
 import { mock } from 'vitest-mock-extended'
 
 import type { BroadcastChannelLike } from '../coordination/channel/broadcast-channel-like.ts'
-import { DeviceEnvironment, type DeviceGlobals } from './device-environment.ts'
+import { BrowserEnvironment, type BrowserGlobals } from './browser-environment.ts'
 import { UnsupportedError } from '../errors/unsupported-error.ts'
 
-describe('device-environment', () => {
+describe('browser-environment', () => {
   test('should not resolve the globals on construction', async () => {
     const resolveGlobals = vi.fn(() => ({}))
 
-    const sut = new DeviceEnvironment(resolveGlobals)
+    const sut = new BrowserEnvironment(resolveGlobals)
 
-    expect(sut).toBeInstanceOf(DeviceEnvironment)
+    expect(sut).toBeInstanceOf(BrowserEnvironment)
     expect(resolveGlobals).not.toHaveBeenCalled()
   })
 
   test('should resolve the globals on every access', async () => {
     const globals: { navigator?: Navigator } = {}
-    const sut = new DeviceEnvironment(() => globals)
+    const sut = new BrowserEnvironment(() => globals)
     expect(() => sut.navigator).toThrowError(UnsupportedError)
 
     globals.navigator = mock<Navigator>()
@@ -27,7 +27,7 @@ describe('device-environment', () => {
 
   test('should return the provided globals', async () => {
     const globals = { window: mock<Window>(), navigator: mock<Navigator>(), document: mock<Document>() }
-    const sut = DeviceEnvironment.of(globals)
+    const sut = BrowserEnvironment.of(globals)
 
     expect(sut.window).toBe(globals.window)
     expect(sut.navigator).toBe(globals.navigator)
@@ -35,7 +35,7 @@ describe('device-environment', () => {
   })
 
   test.each(['window', 'navigator', 'document'] as const)('should throw if there is no %s', async (name) => {
-    const sut = DeviceEnvironment.of({})
+    const sut = BrowserEnvironment.of({})
 
     expect(() => sut[name]).toThrowError(UnsupportedError)
     expect(() => sut[name]).toThrowError(expect.objectContaining({ feature: name }))
@@ -47,7 +47,7 @@ describe('device-environment', () => {
       vi.stubGlobal('navigator', navigator)
 
       try {
-        expect(DeviceEnvironment.browser().navigator).toBe(navigator)
+        expect(BrowserEnvironment.browser().navigator).toBe(navigator)
       } finally {
         vi.unstubAllGlobals()
       }
@@ -55,13 +55,13 @@ describe('device-environment', () => {
   })
 
   describe('#isBrowser', () => {
-    test.each<[boolean, DeviceGlobals]>([
+    test.each<[boolean, BrowserGlobals]>([
       [true, { window: mock<Window>(), document: mock<Document>() }],
       [false, { window: mock<Window>() }],
       [false, { document: mock<Document>() }],
       [false, {}],
     ])('should be %s for the globals %#', async (expected, globals) => {
-      expect(DeviceEnvironment.of(globals).isBrowser).toBe(expected)
+      expect(BrowserEnvironment.of(globals).isBrowser).toBe(expected)
     })
   })
 
@@ -69,12 +69,12 @@ describe('device-environment', () => {
     test('should return the lock manager of the navigator', async () => {
       const navigator = mock<Navigator>()
 
-      expect(DeviceEnvironment.of({ navigator }).locks).toBe(navigator.locks)
+      expect(BrowserEnvironment.of({ navigator }).locks).toBe(navigator.locks)
     })
 
     test('should be undefined without a navigator or without Web Locks', async () => {
-      expect(DeviceEnvironment.of({}).locks).toBeUndefined()
-      expect(DeviceEnvironment.of({ navigator: {} as Navigator }).locks).toBeUndefined()
+      expect(BrowserEnvironment.of({}).locks).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).locks).toBeUndefined()
     })
   })
 
@@ -82,12 +82,12 @@ describe('device-environment', () => {
     test('should return the media devices of the navigator', async () => {
       const navigator = mock<Navigator>()
 
-      expect(DeviceEnvironment.of({ navigator }).mediaDevices).toBe(navigator.mediaDevices)
+      expect(BrowserEnvironment.of({ navigator }).mediaDevices).toBe(navigator.mediaDevices)
     })
 
     test('should be undefined without a navigator or without media devices', async () => {
-      expect(DeviceEnvironment.of({}).mediaDevices).toBeUndefined()
-      expect(DeviceEnvironment.of({ navigator: {} as Navigator }).mediaDevices).toBeUndefined()
+      expect(BrowserEnvironment.of({}).mediaDevices).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).mediaDevices).toBeUndefined()
     })
   })
 
@@ -95,12 +95,12 @@ describe('device-environment', () => {
     test('should return the Permissions API of the navigator', async () => {
       const navigator = mock<Navigator>()
 
-      expect(DeviceEnvironment.of({ navigator }).permissions).toBe(navigator.permissions)
+      expect(BrowserEnvironment.of({ navigator }).permissions).toBe(navigator.permissions)
     })
 
     test('should be undefined without a navigator or without the Permissions API', async () => {
-      expect(DeviceEnvironment.of({}).permissions).toBeUndefined()
-      expect(DeviceEnvironment.of({ navigator: {} as Navigator }).permissions).toBeUndefined()
+      expect(BrowserEnvironment.of({}).permissions).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).permissions).toBeUndefined()
     })
   })
 
@@ -108,20 +108,20 @@ describe('device-environment', () => {
     test('should return the geolocation of the navigator', async () => {
       const navigator = mock<Navigator>()
 
-      expect(DeviceEnvironment.of({ navigator }).geolocation).toBe(navigator.geolocation)
+      expect(BrowserEnvironment.of({ navigator }).geolocation).toBe(navigator.geolocation)
     })
 
     test('should be undefined without a navigator or without geolocation', async () => {
-      expect(DeviceEnvironment.of({}).geolocation).toBeUndefined()
-      expect(DeviceEnvironment.of({ navigator: {} as Navigator }).geolocation).toBeUndefined()
+      expect(BrowserEnvironment.of({}).geolocation).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).geolocation).toBeUndefined()
     })
   })
 
   describe('#isSecureContext', () => {
     test('should only be false where the browser says so', async () => {
-      expect(DeviceEnvironment.of({ isSecureContext: false }).isSecureContext).toBe(false)
-      expect(DeviceEnvironment.of({ isSecureContext: true }).isSecureContext).toBe(true)
-      expect(DeviceEnvironment.of({}).isSecureContext).toBe(true)
+      expect(BrowserEnvironment.of({ isSecureContext: false }).isSecureContext).toBe(false)
+      expect(BrowserEnvironment.of({ isSecureContext: true }).isSecureContext).toBe(true)
+      expect(BrowserEnvironment.of({}).isSecureContext).toBe(true)
     })
   })
 
@@ -131,14 +131,14 @@ describe('device-environment', () => {
         this.name = name
       }) as unknown as new (name: string) => BroadcastChannelLike
 
-      const channel = DeviceEnvironment.of({ BroadcastChannel }).openBroadcastChannel('my-channel')
+      const channel = BrowserEnvironment.of({ BroadcastChannel }).openBroadcastChannel('my-channel')
 
       expect(channel).toBeInstanceOf(BroadcastChannel)
       expect(channel).toEqual({ name: 'my-channel' })
     })
 
     test('should return undefined without BroadcastChannel', async () => {
-      expect(DeviceEnvironment.of({}).openBroadcastChannel('my-channel')).toBeUndefined()
+      expect(BrowserEnvironment.of({}).openBroadcastChannel('my-channel')).toBeUndefined()
     })
   })
 })

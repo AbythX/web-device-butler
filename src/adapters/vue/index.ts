@@ -2,7 +2,7 @@ export { useCamera } from './use-camera.ts'
 
 export type { UseCamera } from './use-camera.ts'
 
-export { deviceInjectionKey, provideDevice, useDevice } from './use-device.ts'
+export { deviceButlerInjectionKey, provideDeviceButler, useDeviceButler } from './use-device-butler.ts'
 
 export { useLocation } from './use-location.ts'
 

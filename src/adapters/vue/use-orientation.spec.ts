@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
 import { DefaultDeviceOrientation } from '../../platform/default-device-orientation.ts'
 import { useOrientation } from './use-orientation.ts'
@@ -33,7 +33,7 @@ describe('use-orientation', () => {
     } as unknown as Window
 
     const orientation = new DefaultDeviceOrientation(
-      DeviceEnvironment.of({ window, document: {} as Document }),
+      BrowserEnvironment.of({ window, document: {} as Document }),
       new NullLogger()
     )
 
@@ -48,7 +48,7 @@ describe('use-orientation', () => {
   })
 
   test('should not know where there is no page', async () => {
-    const orientation = new DefaultDeviceOrientation(DeviceEnvironment.of({}), new NullLogger())
+    const orientation = new DefaultDeviceOrientation(BrowserEnvironment.of({}), new NullLogger())
 
     expect(within(() => useOrientation(orientation)).value).toBeUndefined()
   })

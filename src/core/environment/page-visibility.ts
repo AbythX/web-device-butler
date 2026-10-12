@@ -1,10 +1,10 @@
-import type { DeviceEnvironment } from './device-environment.ts'
+import type { BrowserEnvironment } from './browser-environment.ts'
 
 /**
  * Whether the user can see the page. Browsers pause or end devices of a page that is in the background.
  */
 export class PageVisibility {
-  public constructor(private readonly environment: DeviceEnvironment) {}
+  public constructor(private readonly environment: BrowserEnvironment) {}
 
   /**
    * `false` where there is no page, as during server-side rendering.

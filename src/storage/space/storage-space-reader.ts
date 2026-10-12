@@ -1,11 +1,11 @@
-import type { DeviceEnvironment } from '../../core/environment/device-environment.ts'
+import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { StorageSpace } from './storage-space.ts'
 
 /**
  * Reads the space of the origin from the browser (`navigator.storage`).
  */
 export class StorageSpaceReader {
-  public constructor(private readonly environment: DeviceEnvironment) {}
+  public constructor(private readonly environment: BrowserEnvironment) {}
 
   /**
    * Never rejects. Where the browser has no estimate, the result is not known.
