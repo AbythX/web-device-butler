@@ -1,5 +1,7 @@
 import './disposable-polyfill.ts'
 
+import { DefaultDeviceFiles } from '../files/default-device-files.ts'
+import type { DeviceFiles } from '../files/device-files.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
 import { MediaAccess } from '../media/access/media-access.ts'
@@ -10,15 +12,35 @@ import type { CameraManager } from '../media/camera/camera-manager.ts'
 import { DefaultMediaManager } from '../media/combined/default-media-manager.ts'
 import type { MediaManager } from '../media/combined/media-manager.ts'
 import { DefaultMicrophoneManager } from '../media/microphone/default-microphone-manager.ts'
+import type { AudioOutputManager } from '../media/output/audio-output-manager.ts'
+import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
+import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
+import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
+import { DefaultDeviceNetwork } from '../network/default-device-network.ts'
+import type { DeviceNetwork } from '../network/device-network.ts'
+import { DefaultOutboxManager } from '../outbox/default-outbox-manager.ts'
+import type { OutboxManager } from '../outbox/outbox.ts'
+import { DefaultScreenFullscreen } from '../screen/fullscreen/default-screen-fullscreen.ts'
+import type { ScreenFullscreen } from '../screen/fullscreen/screen-fullscreen.ts'
+import { DefaultScreenWakeLock } from '../screen/wake-lock/default-screen-wake-lock.ts'
+import type { ScreenWakeLock } from '../screen/wake-lock/screen-wake-lock.ts'
+import { DefaultDeviceClipboard } from '../sharing/clipboard/default-device-clipboard.ts'
+import type { DeviceClipboard } from '../sharing/clipboard/device-clipboard.ts'
+import { DefaultDeviceShare } from '../sharing/share/default-device-share.ts'
+import type { DeviceShare } from '../sharing/share/device-share.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import { DefaultPermissionManager } from '../permission/default-permission-manager.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
+import { ClipboardReadPermissionRequester } from '../permission/requesters/clipboard-read-permission-requester.ts'
 import { GeolocationPermissionRequester } from '../permission/requesters/geolocation-permission-requester.ts'
+import { WakeLockPermissionRequester } from '../permission/requesters/wake-lock-permission-requester.ts'
 import { PersistentStoragePermissionRequester } from '../permission/requesters/persistent-storage-permission-requester.ts'
 import { DefaultDeviceOrientation } from '../platform/default-device-orientation.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
 import type { DevicePlatform } from '../platform/device-platform.ts'
+import { DefaultPageLifecycle } from '../platform/page/default-page-lifecycle.ts'
+import type { PageLifecycle } from '../platform/page/page-lifecycle.ts'
 import { DefaultStorageManager } from '../storage/default-storage-manager.ts'
 import type { StorageManager } from '../storage/storage-manager.ts'
 import type { StorageMessages } from '../storage/store/store-change.ts'
@@ -75,6 +97,10 @@ export class DefaultDeviceButler implements DeviceButler {
       logger
     )
 
+    const wakeLock = new DefaultScreenWakeLock(environment, new ScopedLogger('ScreenWakeLock', logger))
+    const page = new DefaultPageLifecycle(environment, new ScopedLogger('PageLifecycle', logger))
+    const network = new DefaultDeviceNetwork(environment, new ScopedLogger('DeviceNetwork', logger))
+
     const permission = new DefaultPermissionManager(
       environment,
       {
@@ -83,6 +109,8 @@ export class DefaultDeviceButler implements DeviceButler {
         microphone: new MediaPermissionRequester(microphoneGate, ['any']),
         geolocation: new GeolocationPermissionRequester(environment),
         'persistent-storage': new PersistentStoragePermissionRequester(environment),
+        'clipboard-read': new ClipboardReadPermissionRequester(environment),
+        'screen-wake-lock': new WakeLockPermissionRequester(wakeLock),
       },
       new ScopedLogger('PermissionManager', logger)
     )
@@ -108,6 +136,18 @@ export class DefaultDeviceButler implements DeviceButler {
       new DefaultDeviceLocation(environment, new ScopedLogger('DeviceLocation', logger), configuration.location),
       new DefaultDevicePlatform(environment),
       new DefaultDeviceOrientation(environment, new ScopedLogger('DeviceOrientation', logger)),
+      page,
+      // the recordings share the wake lock and the page of the butler
+      new DefaultMediaRecordingManager(environment, wakeLock, page, new ScopedLogger('MediaRecordingManager', logger)),
+      new DefaultAudioOutputManager(environment, new ScopedLogger('AudioOutputManager', logger)),
+      network,
+      wakeLock,
+      new DefaultScreenFullscreen(environment, new ScopedLogger('ScreenFullscreen', logger)),
+      new DefaultDeviceShare(environment),
+      new DefaultDeviceClipboard(environment),
+      new DefaultDeviceFiles(environment, new ScopedLogger('DeviceFiles', logger)),
+      // the outboxes keep their items in the storage of the butler and send under its lock
+      new DefaultOutboxManager(storage, lock, network, logger),
       channel,
       [cameraGate, microphoneGate]
     )
@@ -127,6 +167,16 @@ export class DefaultDeviceButler implements DeviceButler {
     public readonly location: DeviceLocation,
     public readonly platform: DevicePlatform,
     public readonly orientation: DeviceOrientation,
+    public readonly page: PageLifecycle,
+    public readonly recorder: MediaRecordingManager,
+    public readonly audioOutput: AudioOutputManager,
+    public readonly network: DeviceNetwork,
+    public readonly wakeLock: ScreenWakeLock,
+    public readonly fullscreen: ScreenFullscreen,
+    public readonly share: DeviceShare,
+    public readonly clipboard: DeviceClipboard,
+    public readonly files: DeviceFiles,
+    public readonly outbox: OutboxManager,
     private readonly channel: CrossTabChannel<DeviceButlerMessages>,
     private readonly gates: readonly MediaAccess[]
   ) {}
@@ -184,8 +234,15 @@ export class DefaultDeviceButler implements DeviceButler {
       ...this.gates.map((gate) => gate.dispose()),
     ])
 
+    // before the storage and the network it works with
+    this.outbox.dispose()
     this.location.dispose()
     this.orientation.dispose()
+    this.page.dispose()
+    this.audioOutput.dispose()
+    this.network.dispose()
+    this.wakeLock.dispose()
+    this.fullscreen.dispose()
     this.storage.dispose()
     this.permission.dispose()
 

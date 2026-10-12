@@ -1,6 +1,15 @@
+import type { DeviceFiles } from '../files/device-files.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
 import type { LocationPreparation } from '../location/location-preparation.ts'
 import type { CameraPreparation } from '../media/camera/camera-preparation.ts'
+import type { AudioOutputManager } from '../media/output/audio-output-manager.ts'
+import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
+import type { DeviceNetwork } from '../network/device-network.ts'
+import type { OutboxManager } from '../outbox/outbox.ts'
+import type { ScreenFullscreen } from '../screen/fullscreen/screen-fullscreen.ts'
+import type { ScreenWakeLock } from '../screen/wake-lock/screen-wake-lock.ts'
+import type { DeviceClipboard } from '../sharing/clipboard/device-clipboard.ts'
+import type { DeviceShare } from '../sharing/share/device-share.ts'
 import type { CameraManager } from '../media/camera/camera-manager.ts'
 import type { CameraRequirements } from '../media/camera/model/camera-requirements.ts'
 import type { MediaManager } from '../media/combined/media-manager.ts'
@@ -10,6 +19,7 @@ import type { MicrophoneRequirements } from '../media/microphone/model/microphon
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import type { DevicePlatform } from '../platform/device-platform.ts'
+import type { PageLifecycle } from '../platform/page/page-lifecycle.ts'
 import type { StorageRequirements } from '../storage/selection/storage-requirements.ts'
 import type { StorageManager } from '../storage/storage-manager.ts'
 import type { StoragePreparation } from '../storage/storage-preparation.ts'
@@ -68,8 +78,38 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
   /** which system the device runs */
   readonly platform: DevicePlatform
 
-  /** how the device is held */
+  /** how the device is held, and keeping the page that way */
   readonly orientation: DeviceOrientation
+
+  /** whether the user can see the page, and when it is about to go */
+  readonly page: PageLifecycle
+
+  /** records what a camera or a microphone delivers */
+  readonly recorder: MediaRecordingManager
+
+  /** the speakers and headsets, and sending sound to one of them */
+  readonly audioOutput: AudioOutputManager
+
+  /** whether the device has a network */
+  readonly network: DeviceNetwork
+
+  /** keeps the screen on */
+  readonly wakeLock: ScreenWakeLock
+
+  /** fills the screen with one element of the page */
+  readonly fullscreen: ScreenFullscreen
+
+  /** hands something over to another application through the share sheet of the system */
+  readonly share: DeviceShare
+
+  /** the clipboard of the system */
+  readonly clipboard: DeviceClipboard
+
+  /** saves files to the device and takes files the user chooses */
+  readonly files: DeviceFiles
+
+  /** keeps what should be sent until the device has a network, and sends it then */
+  readonly outbox: OutboxManager
 
   /**
    * The one explicit, awaited step that does the slow and user-visible work up front: it requests the permissions

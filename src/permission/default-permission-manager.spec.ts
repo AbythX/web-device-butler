@@ -46,6 +46,8 @@ describe('default-permission-manager', () => {
       microphone: new StubRequester(),
       geolocation: new StubRequester(),
       'persistent-storage': new StubRequester(),
+      'clipboard-read': new StubRequester(),
+      'screen-wake-lock': new StubRequester(),
     }
     sut = createSut()
   })

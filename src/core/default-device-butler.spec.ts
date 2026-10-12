@@ -18,6 +18,16 @@ import { DefaultDeviceOrientation } from '../platform/default-device-orientation
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
 import { DefaultPermissionManager } from '../permission/default-permission-manager.ts'
 import { DefaultTabCoordination } from './coordination/default-tab-coordination.ts'
+import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
+import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
+import { DefaultDeviceFiles } from '../files/default-device-files.ts'
+import { DefaultDeviceNetwork } from '../network/default-device-network.ts'
+import { DefaultOutboxManager } from '../outbox/default-outbox-manager.ts'
+import { DefaultPageLifecycle } from '../platform/page/default-page-lifecycle.ts'
+import { DefaultScreenFullscreen } from '../screen/fullscreen/default-screen-fullscreen.ts'
+import { DefaultScreenWakeLock } from '../screen/wake-lock/default-screen-wake-lock.ts'
+import { DefaultDeviceClipboard } from '../sharing/clipboard/default-device-clipboard.ts'
+import { DefaultDeviceShare } from '../sharing/share/default-device-share.ts'
 
 describe('default-device-butler', () => {
   describe('#create', () => {
@@ -75,6 +85,8 @@ describe('default-device-butler', () => {
       expect(await sut.permission.query('microphone')).toBe('unsupported')
       expect(await sut.permission.query('geolocation')).toBe('unsupported')
       expect(await sut.permission.query('persistent-storage')).toBe('unsupported')
+      expect(await sut.permission.query('clipboard-read')).toBe('unsupported')
+      expect(await sut.permission.query('screen-wake-lock')).toBe('unsupported')
     })
 
     test('should request the camera for both facings and the microphone, each under its lock', async () => {
@@ -376,6 +388,69 @@ describe('default-device-butler', () => {
 
       expect(sut.orientation).toBeInstanceOf(DefaultDeviceOrientation)
       expect(sut.orientation.current).toBe('landscape')
+    })
+  })
+
+  describe('the parts around the screen, the network and sharing', () => {
+    test('should have every part, each working where the browser has nothing for it', async () => {
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.recorder).toBeInstanceOf(DefaultMediaRecordingManager)
+      expect(sut.recorder.isSupported).toBe(false)
+      expect(sut.audioOutput).toBeInstanceOf(DefaultAudioOutputManager)
+      expect(await sut.audioOutput.list()).toEqual([])
+      expect(sut.network).toBeInstanceOf(DefaultDeviceNetwork)
+      expect(sut.network.isOnline).toBeUndefined()
+      expect(sut.wakeLock).toBeInstanceOf(DefaultScreenWakeLock)
+      expect(sut.wakeLock.isSupported).toBe(false)
+      expect(sut.fullscreen).toBeInstanceOf(DefaultScreenFullscreen)
+      expect(sut.fullscreen.isSupported).toBe(false)
+      expect(sut.share).toBeInstanceOf(DefaultDeviceShare)
+      expect(sut.share.isSupported).toBe(false)
+      expect(sut.clipboard).toBeInstanceOf(DefaultDeviceClipboard)
+      expect(sut.clipboard.isSupported).toBe(false)
+      expect(sut.files).toBeInstanceOf(DefaultDeviceFiles)
+      expect(sut.files.canChooseWhereToSave).toBe(false)
+      expect(sut.page).toBeInstanceOf(DefaultPageLifecycle)
+      expect(sut.page.state).toBeUndefined()
+      expect(sut.outbox).toBeInstanceOf(DefaultOutboxManager)
+    })
+
+    test('should send what an outbox is given, and stop when the butler is disposed', async () => {
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+      const sent: string[] = []
+      const outbox = await sut.outbox.open<string>({ namespace: 'uploads', send: async (item) => void sent.push(item) })
+
+      await outbox.add('first')
+      await outbox.flush()
+      expect(sent).toEqual(['first'])
+
+      await sut.dispose()
+      await outbox.add('second')
+      await outbox.flush()
+
+      expect(sent).toEqual(['first'])
+    })
+
+    test('should tell whether the device has a network', async () => {
+      const navigator = { onLine: false } as Navigator
+
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ navigator }))
+
+      expect(sut.network.isOnline).toBe(false)
+    })
+
+    test('should let the screen sleep again when the butler is disposed', async () => {
+      const release = vi.fn(async () => undefined)
+      const sentinel = { addEventListener: () => undefined, release }
+      const navigator = { wakeLock: { request: async () => sentinel } } as unknown as Navigator
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ navigator }))
+      const hold = await sut.wakeLock.request()
+
+      await sut.dispose()
+
+      expect(hold.isReleased).toBe(true)
+      expect(release).toHaveBeenCalledOnce()
     })
   })
 
