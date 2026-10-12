@@ -1,24 +1,32 @@
 # web-device-butler
 
-One library for the browser APIs that are tied to the device: storage, camera, microphone, location, orientation.
+One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, location,
+screen, network, sharing.
 An application says what it needs, not how the browser provides it.
 
 - **Storage**: one interface over `localStorage`, `sessionStorage`, OPFS, IndexedDB and memory.
 - **Camera and microphone**: choose a device by what it can do ("a back camera with a torch"), not by guessing a
   `deviceId`.
+- **Recording and photos**: a format the browser can write, a recording that survives a camera that is started
+  again, a photo from every browser.
 - **Several tabs**: the same application in two tabs does not lose stored updates and does not fight over the camera.
-- **No runtime dependencies** in the core. Vue, inversify and fabric are optional entry points.
+- **Not losing what was captured**: files saved where the user finds them, an outbox that sends once there is a
+  network, recordings that are handed over before the page goes away.
+- **No runtime dependencies** in the core. Vue, React, inversify and fabric are optional entry points.
 
 This page is a tour. The rest is in [`docs`](docs/README.md):
 
 - **Guides** per area: [getting started](docs/guides/getting-started.md), [camera](docs/guides/camera.md),
-  [microphone](docs/guides/microphone.md), [storage](docs/guides/storage.md),
+  [microphone](docs/guides/microphone.md), [recording](docs/guides/recording.md),
+  [storage](docs/guides/storage.md), [screen, network, sharing](docs/guides/screen-network-sharing.md),
+  [files, the outbox, the page](docs/guides/files-outbox-page.md),
   [location, orientation, permissions](docs/guides/location-orientation-permissions.md),
   [several tabs](docs/guides/multiple-tabs.md), [errors](docs/guides/errors.md).
 - **Use cases** with complete code: a [document scanner](docs/use-cases/document-scanner.md),
   [voice memos](docs/use-cases/voice-memo.md), a [video message](docs/use-cases/video-message.md),
   [settings in several tabs](docs/use-cases/settings-across-tabs.md), a [set-up screen](docs/use-cases/set-up-screen.md),
-  a [camera with an overlay](docs/use-cases/camera-with-overlay.md), [recording a route](docs/use-cases/track-a-route.md).
+  a [camera with an overlay](docs/use-cases/camera-with-overlay.md), [recording a route](docs/use-cases/track-a-route.md),
+  a [field report](docs/use-cases/field-report.md) that is sent once there is a network.
 - **Demos** that run them: `pnpm demo`, see [`demo`](demo/README.md).
 
 > **Status.** Early releases, on GitHub Packages only. Everything is tested against fakes and in Chromium and Firefox with the fake
@@ -87,6 +95,7 @@ await session.torch?.set(true) // `undefined` if this camera has no torch
 await session.zoom?.set(2)
 await session.configure({ width: 1280, height: 720 })
 await session.switchTo({ require: { facing: 'front' } })
+const photo = await session.takePhoto() // a Blob
 
 session.on('ended', ({ reason }) => {
   /* 'closed' | 'taken-over' | 'device' */
@@ -122,11 +131,28 @@ a new one.
 ### Both together
 
 ```ts
-await using recording = await butler.media.open({ camera: { require: { facing: 'back' } } })
+await using both = await butler.media.open({ camera: { require: { facing: 'back' } } })
 
-new MediaRecorder(recording.stream).start()
-await recording.camera.torch?.set(true)
+await both.camera.torch?.set(true)
 ```
+
+## Recording
+
+```ts
+const recording = await butler.recorder.record(both, { keepAwake: true })
+
+recording.pause()
+recording.resume()
+
+const { blob, mimeType, duration } = await recording.stop()
+```
+
+- The format is the first of the common ones the browser can write, MP4 before WebM, or the first of yours:
+  `format: ['video/webm;codecs=vp9', 'video/mp4']`. `butler.recorder.formats('video')` lists them.
+- While it runs, other tabs cannot take the device, and with `keepAwake` the screen stays on.
+- A device that is started again or switched continues the recording in a new segment (`result.segments`), because
+  a browser cannot continue a file with another track.
+- `into: (segment) => store.writeStream(key)` writes the recording into a stream instead of memory.
 
 ## Storage
 
@@ -184,6 +210,43 @@ await butler.permission.query('camera') // 'granted' | 'denied' | 'prompt' | 'un
 await butler.permission.request('geolocation')
 ```
 
+## Screen, network, sharing
+
+```ts
+using hold = await butler.wakeLock.request() // the screen stays on, also after the page was in the background
+
+await butler.fullscreen.enter(preview) // in answer to a click
+await butler.orientation.lock('landscape')
+
+butler.network.isOnline // false: no network
+butler.network.on('change', (isOnline) => {})
+
+await butler.share.share({ title: 'Scan', files: [file] }) // false if the user closed the sheet
+await butler.clipboard.writeText(link)
+
+await butler.audioOutput.route(player, (await butler.audioOutput.list())[1])
+```
+
+Each part says whether the browser has it (`isSupported`, `canEnter()`, `canShare()`, `canRoute()`).
+
+## Files, the outbox, the page
+
+```ts
+await butler.files.save(photo, { name: 'scan.jpg' }) // 'saved' | 'downloaded' | 'cancelled'
+const [picked] = await butler.files.pick({ accept: 'image/*', capture: 'environment' })
+
+const uploads = await butler.outbox.open<Upload>({ namespace: 'uploads', send: (item, { id, signal }) => post(item) })
+await uploads.add(upload) // sent now, or once there is a network, also after the page was closed
+
+butler.page.on('change', (state) => {
+  if (state !== 'visible') save() // the last moment a page on a phone can count on
+})
+```
+
+- The outbox sends in order and from one tab at a time. A failure keeps the item and is tried again after a wait
+  that grows, when the network returns, or with `flush()`.
+- A recording uses the page itself: it has the browser hand over its data when the page is hidden.
+
 ## Errors
 
 Every error extends `DeviceButlerError`, sets `name` and keeps the error of the browser as `cause`. The names of
@@ -200,17 +263,21 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 | `LocationUnavailableError`, `LocationTimeoutError`     | the position could not be determined                       |
 | `LocationRequirementsError`                            | no position had what was required in time                  |
 | `StorageQuotaExceededError`, `StorageLockedError`, ... | see `StorageError`                                         |
+| `ScreenError`, `SharingError`, `FileError`             | the browser did not fill the screen, share, copy or save   |
 
 ## Entry points
 
-| Import                                                             | Contains                                    |
-| ------------------------------------------------------------------ | ------------------------------------------- |
-| `web-device-butler`                                                | the whole core                              |
-| `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory   |
-| `web-device-butler/media`, `/permission`, `/platform`              | the combined session, permissions, platform |
-| `web-device-butler/vue`                                            | composables, needs `vue`                    |
-| `web-device-butler/inversify`                                      | container module, needs `inversify` 8       |
-| `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric` |
+| Import                                                             | Contains                                                              |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `web-device-butler`                                                | the whole core                                                        |
+| `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                             |
+| `web-device-butler/media`, `/permission`, `/platform`              | the combined session, recording, audio outputs, permissions, platform |
+| `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard     |
+| `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network            |
+| `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                      |
+| `web-device-butler/vue`                                            | composables, needs `vue`                                              |
+| `web-device-butler/inversify`                                      | container module, needs `inversify` 8                                 |
+| `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric`                           |
 
 ### Vue
 
@@ -223,7 +290,31 @@ const theme = useStoredValue(settingsStore, 'theme') // follows other components
 ```
 
 Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useOrientation`,
-`useLocation`.
+`useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
+
+### React
+
+```tsx
+import { DeviceButlerContext, useDeviceButler, useCamera, useRecording } from 'web-device-butler/react'
+
+const App = () => (
+  <DeviceButlerContext value={butler}>
+    <Capture />
+  </DeviceButlerContext>
+)
+
+const Capture = () => {
+  const butler = useDeviceButler()
+  const camera = useCamera(butler.camera) // session, state, settings, error, isOpening, open(), close()
+  const recording = useRecording(butler.recorder) // state, duration, result, start(), stop()
+  // ...
+}
+```
+
+The same hooks as the Vue composables, with plain values instead of refs: `useMicrophone` (with `setMuted()`),
+`useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
+recordings and watches are closed when the component is unmounted. Before React 19 the provider is
+`<DeviceButlerContext.Provider value={butler}>`.
 
 ### inversify
 

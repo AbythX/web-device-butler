@@ -118,6 +118,9 @@ question a layout asks. It is not the rotation of the phone in degrees, and it n
 reason a phone that is held upright can report `landscape` while its keyboard is open: the keyboard leaves the page
 wider than tall.
 
+`butler.orientation.lock('landscape')` keeps the page from turning, which most browsers only do for a page that
+fills the screen. See [filling the screen](screen-network-sharing.md#keeping-the-page-from-turning).
+
 ## Platform
 
 ```ts
@@ -142,7 +145,8 @@ await butler.permission.request('geolocation') // asks where the browser has to
 butler.permission.on('change', ({ name, state }) => {})
 ```
 
-The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`.
+The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`, `'clipboard-read'`,
+`'screen-wake-lock'`.
 
 | State         | Meaning                                                                          | A permission screen shows          |
 | ------------- | -------------------------------------------------------------------------------- | ---------------------------------- |
@@ -158,6 +162,8 @@ The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`.
 - `request('camera')` starts a camera for a moment, because that is the only way to make a browser ask. It requests
   the side that is configured; `request('camera', { facing: 'front' })` names one. While the camera is held, it
   rejects with a `MediaDeviceBusyError`.
+- `request('clipboard-read')` reads the clipboard once, and `request('screen-wake-lock')` keeps the screen on for
+  a moment, because using the feature is the only way to find out.
 - `request('persistent-storage')` is `butler.storage.persist()` as a permission. Whether the user is asked is up to
   the browser: some decide by themselves, by how much the site is used.
 

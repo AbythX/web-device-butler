@@ -47,8 +47,22 @@ that is asked for after its butler was disposed.
 | `MediaDeviceNotFoundError` | there is no device of the kind, or none with the id      |                                                | say that there is no camera; forget a stored id                   |
 | `SessionClosedError`       | something was asked of a session that has ended          |                                                | open a new session. Listen to `ended` to know earlier.            |
 
+A recording that could not be written rejects with a `MediaError` whose `cause` says why; see
+[recording](recording.md#how-it-ends).
+
 `prepare()` of the butler, the camera, the microphone and the storage does not throw these: it reports them as `error` of its
 result, so a set-up screen can go on without a camera.
+
+## Screen and sharing
+
+| Error          | Thrown when                                                              | What to do                                                    |
+| -------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `ScreenError`  | the browser did not fill the screen, return to the page or keep it from turning | call it in answer to a click; lock the orientation only while the page fills the screen |
+| `SharingError` | the share sheet or the clipboard failed for a reason that is not a refusal | offer another way, such as a download; `cause` has the details |
+| `FileError`    | a file could not be written where the user chose                         | say so, and offer to save it again                            |
+
+A refusal is a `PermissionDeniedError` whose `permission` is `screen-wake-lock`, `share`, `clipboard` or
+`speaker-selection`. A share sheet the user closes is not an error: `share()` resolves with `false`.
 
 ## Location
 

@@ -43,19 +43,15 @@ await butler.media.open({ camera: { require: { facing: 'back' } }, microphone: {
 ## Recording
 
 ```ts
-const recorder = new MediaRecorder(session.stream)
-const pieces: Blob[] = []
-recorder.addEventListener('dataavailable', ({ data }) => pieces.push(data))
-recorder.addEventListener('stop', () => {
-  session.allowTakeover = true
-  send(new Blob(pieces, { type: recorder.mimeType }))
-})
+const recording = await butler.recorder.record(session, { keepAwake: true })
 
-session.allowTakeover = false
-recorder.start()
+// when the user is done
+const { blob } = await recording.stop()
+send(blob)
 ```
 
-A short message fits in memory. For a long one, write the pieces to a store as a stream, as the
+The library chooses a format the browser can write; `recording.mimeType` and `blob.type` say which. A short message
+fits in memory. For a long one, write the pieces to a store as a stream, as the
 [voice memos](voice-memo.md#recording-into-the-storage) do.
 
 ## Not being interrupted
@@ -63,13 +59,13 @@ A short message fits in memory. For a long one, write the pieces to a store as a
 Only one tab can run a camera. Another tab that wants it asks with `whenBusy: 'takeover'`, and by default gets it:
 the session here ends with the reason `'taken-over'`.
 
-`session.allowTakeover = false` refuses. The other tab gets a `MediaDeviceBusyError` and can tell its user that a
-recording runs elsewhere. Set it back when the recording is over, so the preview does not block the camera for
-good.
+A recording refuses for as long as it runs: it sets `session.allowTakeover` to `false` and back when it is over,
+so the preview does not block the camera for good. The other tab gets a `MediaDeviceBusyError` and can tell its
+user that a recording runs elsewhere. Set `session.allowTakeover = false` yourself to refuse at other times.
 
 What it does not cover: a phone call, another application or the system can still take the camera. That arrives as
-`statechange` to `muted`, or as `ended` with the reason `'device'`. A recorder stops by itself when its tracks end
-and keeps what it has, so the `stop` listener above still delivers the message.
+`statechange` to `muted`, or as `ended` with the reason `'device'`. A recording ends by itself when its session
+ends and keeps what it has: `await recording.finished` delivers the message however the recording ended.
 
 ## Switching the camera before recording
 
@@ -78,4 +74,5 @@ await session.camera.switchTo({ require: { facing: 'back' } })
 ```
 
 The combined session keeps delivering through the same `stream`, so the preview needs no new `srcObject`. Do it
-before the recording starts: a `MediaRecorder` does not follow a track that is replaced.
+before the recording starts: a browser cannot continue a file with another track, so a camera that is switched
+while it records continues the recording in a [second segment](../guides/recording.md#segments).
