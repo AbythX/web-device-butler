@@ -7,6 +7,7 @@ import type { ZoomControl } from '../controls/zoom-control.ts'
 import type { CameraDescriptor } from '../model/camera-descriptor.ts'
 import type { CameraRequirements } from '../model/camera-requirements.ts'
 import type { CameraSettings } from '../model/camera-settings.ts'
+import type { CameraPhotoOptions } from '../photo/camera-photo-options.ts'
 
 export interface CameraSessionEvents extends MediaSessionEvents {
   /** the camera delivers another resolution or frame rate than before */
@@ -37,6 +38,8 @@ export interface CameraSessionHost {
   merge(requirements: CameraRequirements, changes: Partial<CameraRequirements>): CameraRequirements
   /** resolves once the user can see the page */
   whenVisible(): Promise<void>
+  /** takes a photo with the camera that delivers the stream */
+  photograph(stream: MediaStream, options?: CameraPhotoOptions): Promise<Blob>
 }
 
 /**
@@ -89,4 +92,17 @@ export interface CameraSession extends MediaSession<CameraSessionEvents> {
    * @throws SessionClosedError if the session has ended
    */
   switchTo(requirements: Partial<CameraRequirements>): Promise<void>
+
+  /**
+   * Takes a photo. Where the browser can ask the camera for a still picture, that is the photo: it can be larger
+   * than the picture of the stream, and the camera may adjust its exposure for it. Everywhere else, and with
+   * `source: 'frame'`, the photo is the picture of the stream at that moment.
+   *
+   * The session keeps running. A photo is not taken while the camera is switched or started again.
+   *
+   * @throws SessionClosedError if the session has ended
+   * @throws MediaError if the camera delivers no picture
+   * @throws UnsupportedError where there is no page to draw the picture of the stream on
+   */
+  takePhoto(options?: CameraPhotoOptions): Promise<Blob>
 }

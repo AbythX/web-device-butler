@@ -28,6 +28,7 @@ import type { CameraTiming } from './discovery/camera-timing.ts'
 import { CameraDescriptor } from './model/camera-descriptor.ts'
 import { CameraFeatures } from './model/camera-features.ts'
 import type { CameraConfiguration, CameraRequirements } from './model/camera-requirements.ts'
+import { CameraPhotographer } from './photo/camera-photographer.ts'
 import { CameraConstraints } from './session/camera-constraints.ts'
 import type { CameraSession, CameraSessionHost } from './session/camera-session.ts'
 import { DefaultCameraSession } from './session/default-camera-session.ts'
@@ -88,6 +89,7 @@ export class DefaultCameraManager
         cache: CameraProbeCache.in(storage, new ScopedLogger('CameraProbeCache', logger)),
         selector: new CameraSelector(),
         visibility: new PageVisibility(environment),
+        photographer: new CameraPhotographer(environment, new ScopedLogger('CameraPhotographer', logger)),
         quirks: () => PlatformQuirks.for(platform, 'camera'),
         timing,
       },
@@ -110,6 +112,7 @@ export class DefaultCameraManager
       restart: (requirements, lease) => this.start(requirements, lease),
       merge: (requirements, changes) => this.merge(requirements, changes),
       whenVisible: () => parts.visibility.whenVisible(),
+      photograph: (stream, options) => parts.photographer.take(stream, options),
     }
   }
 

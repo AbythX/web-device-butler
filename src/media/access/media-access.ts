@@ -63,7 +63,8 @@ export interface MediaAccessTiming {
 }
 
 /**
- * The access gate of one kind of device, and the only class that works with `navigator.mediaDevices`.
+ * The access gate of one kind of device, and the only class that asks `navigator.mediaDevices` for cameras and
+ * microphones.
  *
  * It enforces two rules. Devices are not listed before access has been requested through `getUserMedia`, and not opened
  * by id before access has been requested for their facing, because some phones report nothing or fail otherwise. And no

@@ -15,6 +15,7 @@ import type { CameraDescriptor } from '../model/camera-descriptor.ts'
 import { CameraFeatures } from '../model/camera-features.ts'
 import type { CameraRequirements } from '../model/camera-requirements.ts'
 import { CameraSettings } from '../model/camera-settings.ts'
+import type { CameraPhotoOptions } from '../photo/camera-photo-options.ts'
 import { CameraConstraints } from './camera-constraints.ts'
 import type { CameraSession, CameraSessionChanges, CameraSessionEvents, CameraSessionHost } from './camera-session.ts'
 
@@ -103,6 +104,15 @@ export class DefaultCameraSession extends BaseMediaSession<CameraSessionEvents> 
         await this.restore(hardware)
         throw error
       }
+    })
+  }
+
+  public takePhoto(options?: CameraPhotoOptions): Promise<Blob> {
+    // not while the camera is switched or started again: there is no picture to take then
+    return this.exclusively(async () => {
+      this.assertOpen()
+
+      return this.host.photograph(this.stream, options)
     })
   }
 
