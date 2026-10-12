@@ -15,7 +15,7 @@ const session = await butler.microphone.open({
 ```
 
 Decide the processing here, not during the recording: a browser that cannot change it in place makes the session
-start the microphone again, with a new stream that a running `MediaRecorder` does not follow. See
+start the microphone again, with a new stream, and the recording continues in a second file. See
 [Microphone](../guides/microphone.md#processing).
 
 ## The level
@@ -28,7 +28,7 @@ The level is measured only while this listener exists. It is `undefined` where t
 
 ## Recording into the storage
 
-The recorder of the browser delivers pieces; each goes straight into a stream of the store.
+`butler.recorder` hands every piece the browser records straight to a stream of the store.
 
 ```ts
 const sounds = await butler.storage.open({
@@ -38,45 +38,37 @@ const sounds = await butler.storage.open({
 })
 
 const id = crypto.randomUUID()
-const writer = (await sounds.writeStream(id)).getWriter()
-const recorder = new MediaRecorder(session.stream)
 
-// the pieces arrive faster than they are converted, so the writes are chained to keep their order
-let writing = Promise.resolve()
-recorder.addEventListener('dataavailable', ({ data }) => {
-  writing = writing.then(async () => writer.write(new Uint8Array(await data.arrayBuffer())))
+const recording = await butler.recorder.record(session, {
+  into: (segment) => sounds.writeStream(segment === 0 ? id : `${id}-${segment}`),
+  keepAwake: true, // the phone does not lock in the middle of a memo
 })
 
-recorder.start(1000) // a piece every second
+recording.on('progress', ({ duration, bytes }) => showProgress(duration, bytes))
 ```
 
 Until the stream is closed the entry does not exist for anyone else, and no other tab can write or delete it.
+
+`into` is asked once per segment. There is one, unless the microphone is started again while it records; see
+[segments](../guides/recording.md#segments).
 
 ## Stopping
 
 ```ts
 try {
-  // the recorder delivers its last piece before it reports that it stopped
-  await new Promise((resolve) => {
-    recorder.addEventListener('stop', resolve, { once: true })
-    recorder.stop()
-  })
-  await writing
-  await writer.close() // now the memo is there, in one step
+  // the last piece is written and the stream closed: now the memo is there, in one step
+  const { duration, mimeType, segments } = await recording.stop()
 
-  await memos.set(id, { id, recordedAt, duration, mimeType: recorder.mimeType })
-} catch (error) {
-  await writer.abort(error) // nothing is kept of a recording that could not be written to its end
-  throw error
+  await memos.set(id, { id, recordedAt, duration, mimeType, segments: segments.length })
 } finally {
   await session.close()
 }
 ```
 
 - `memos` is a second store, opened without a codec, that holds what is known about each memo as JSON.
-- Keep `recorder.mimeType` with the memo. Browsers record in different formats, and the player has to be told.
-- The stream has to be closed or aborted on every path. An abandoned stream keeps the entry locked until the tab is
-  closed.
+- Keep the `mimeType` with the memo. Browsers record in different formats, and the player has to be told.
+- A recording that could not be written to its end rejects, and nothing is kept of it: the stream is aborted, so
+  the entry stays as it was. `recording.discard()` does the same on purpose.
 
 ## Before the storage is full
 
@@ -93,10 +85,10 @@ not fit, and with `abort()` the whole recording.
 A headset is unplugged, or the user stops the microphone in the browser:
 
 ```ts
-session.on('ended', ({ reason }) => {
-  if (reason !== 'closed') stop() // keep what was recorded
-})
+const { segments } = await recording.finished // resolves however the recording ended
 ```
+
+The recording ends by itself when its session does, and keeps what was recorded until then.
 
 ## Playing a memo
 

@@ -2,6 +2,7 @@ import {
   BinaryCodec,
   DefaultDeviceButler,
   type DeviceButler,
+  type MediaRecording,
   type MicrophoneSession,
   type StorageSpaceWatch,
   type Store,
@@ -19,19 +20,18 @@ interface Memo {
   /** what the recorder of this browser produced, which the player has to be told */
   mimeType: string
   bytes: number
+  /** how many entries hold the sound; more than one if the microphone was started again while it recorded */
+  segments?: number
 }
 
 /**
- * A recording that runs: the microphone, the recorder of the browser and the entry the sound is written to.
+ * A recording that runs: the microphone, what records it and the watch on the space that is left.
  */
 interface Recording {
   readonly memo: Memo
   readonly session: MicrophoneSession
-  readonly recorder: MediaRecorder
-  readonly writer: WritableStreamDefaultWriter<Uint8Array>
+  readonly recording: MediaRecording
   readonly space: StorageSpaceWatch
-  /** the pieces are written one after another, in the order the recorder delivered them */
-  writing: Promise<void>
 }
 
 /**
@@ -102,31 +102,28 @@ class VoiceMemos extends DemoPage {
     try {
       session.muted = this.element<HTMLInputElement>('muted').checked
 
-      const recorder = new MediaRecorder(session.stream)
+      const memo: Memo = { id: crypto.randomUUID(), recordedAt: Date.now(), duration: 0, mimeType: '', bytes: 0 }
+      const sounds = await this.sounds
 
-      const memo: Memo = {
-        id: crypto.randomUUID(),
-        recordedAt: Date.now(),
-        duration: 0,
-        mimeType: recorder.mimeType,
-        bytes: 0,
-      }
+      // every piece goes straight into a stream of the store. Until the stream is closed, the entry does not exist
+      // for anyone else. The screen stays on, so the phone does not lock in the middle of a memo.
+      const running = await this.butler.recorder.record(session, {
+        into: (segment) => sounds.writeStream(VoiceMemos.keyOf(memo, segment)),
+        keepAwake: true,
+      })
 
-      // until the stream is closed, the entry does not exist for anyone else
-      const writer = (await (await this.sounds).writeStream(memo.id)).getWriter()
+      memo.mimeType = running.mimeType
+
       const space = this.butler.storage.watchSpace({ interval: 2000, lowBelow: VoiceMemos.reserve })
-      const recording: Recording = { memo, session, recorder, writer, space, writing: Promise.resolve() }
+      const recording: Recording = { memo, session, recording: running, space }
 
-      recorder.addEventListener('dataavailable', ({ data }) => {
-        recording.writing = recording.writing.then(async () => {
-          await writer.write(new Uint8Array(await data.arrayBuffer()))
-          memo.bytes += data.size
-          memo.duration = Date.now() - memo.recordedAt
-          this.showRecording()
-        })
+      running.on('progress', ({ duration, bytes }) => {
+        memo.duration = duration
+        memo.bytes = bytes
+        this.showRecording()
       })
       space.on('low', () => void this.run('The storage is almost full, stopping', () => this.finish()))
-      // the microphone was unplugged, or the browser or the user stopped it
+      // the microphone was unplugged, or the browser or the user stopped it: the recording has ended by itself
       session.on('ended', () => {
         if (this.recording === recording) {
           void this.run('The microphone stopped', () => this.finish())
@@ -137,7 +134,6 @@ class VoiceMemos extends DemoPage {
       session.level?.on('change', (level) => (meter.value = level))
 
       this.recording = recording
-      recorder.start(1000)
     } catch (error) {
       await session.close()
       throw error
@@ -155,25 +151,16 @@ class VoiceMemos extends DemoPage {
     }
 
     this.recording = undefined
-    const { memo, session, recorder, writer, space } = recording
+    const { memo, session, space } = recording
 
     try {
-      if (recorder.state !== 'inactive') {
-        // the recorder delivers its last piece before it reports that it stopped
-        await new Promise((resolve) => {
-          recorder.addEventListener('stop', resolve, { once: true })
-          recorder.stop()
-        })
-      }
+      // the last piece is written and the stream closed: now the entry is there, in one step. A recording that
+      // could not be written to its end rejects here, and nothing is kept of it.
+      const { duration, bytes, segments } = await recording.recording.stop()
 
-      await recording.writing
-      // now the entry is there, in one step
-      await writer.close()
-      await (await this.memos).set(memo.id, memo)
-    } catch (error) {
-      // nothing is kept of a recording that could not be written to its end
-      await writer.abort(error).catch(() => undefined)
-      throw error
+      if (segments.length > 0) {
+        await (await this.memos).set(memo.id, { ...memo, duration, bytes, segments: segments.length })
+      }
     } finally {
       space.dispose()
       await session.close()
@@ -183,7 +170,8 @@ class VoiceMemos extends DemoPage {
   }
 
   private async play(memo: Memo): Promise<void> {
-    const stream = await (await this.sounds).readStream(memo.id)
+    // a memo in several segments is several files; this page plays the first
+    const stream = await (await this.sounds).readStream(VoiceMemos.keyOf(memo, 0))
 
     if (stream === undefined) {
       throw new Error('The sound of this memo is gone')
@@ -205,7 +193,11 @@ class VoiceMemos extends DemoPage {
 
   private async remove(memo: Memo): Promise<void> {
     await (await this.memos).delete(memo.id)
-    await (await this.sounds).delete(memo.id)
+
+    for (let segment = 0; segment < (memo.segments ?? 1); segment++) {
+      await (await this.sounds).delete(VoiceMemos.keyOf(memo, segment))
+    }
+
     await this.showMemos()
   }
 
@@ -255,6 +247,13 @@ class VoiceMemos extends DemoPage {
     this.element('space').textContent =
       `${memos.length} on '${(await this.sounds).capabilities.driver}'` +
       (space.isKnown ? `, ${DemoPage.bytes(space.available)} free` : '')
+  }
+
+  /**
+   * The entry that holds a segment of the sound of a memo.
+   */
+  private static keyOf(memo: Memo, segment: number): string {
+    return segment === 0 ? memo.id : `${memo.id}-${segment}`
   }
 
   private static duration(milliseconds: number): string {

@@ -1,8 +1,10 @@
 import '../core/disposable-polyfill.ts'
 
 import type { BrowserEnvironment } from '../core/environment/browser-environment.ts'
+import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../core/events/event-emitter.ts'
 import type { Logger } from '../core/logging/logger.ts'
+import { ScreenError } from '../screen/errors/screen-error.ts'
 import type { DeviceOrientation, DeviceOrientationEvents, OrientationKind } from './device-orientation.ts'
 
 /**
@@ -38,6 +40,35 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
     return this.current === 'landscape'
   }
 
+  public get canLock(): boolean {
+    return typeof this.environment.screenOrientation?.lock === 'function'
+  }
+
+  public async lock(orientation: OrientationKind): Promise<void> {
+    const screenOrientation = this.environment.screenOrientation
+
+    if (screenOrientation === undefined || typeof screenOrientation.lock !== 'function') {
+      throw new UnsupportedError('orientation lock')
+    }
+
+    try {
+      await screenOrientation.lock(orientation)
+    } catch (error) {
+      // a device that cannot be turned, such as a desktop, has the call and rejects it
+      throw DefaultDeviceOrientation.isNotSupported(error)
+        ? new UnsupportedError('orientation lock', { cause: error })
+        : new ScreenError(`The browser did not keep the page in ${orientation}`, { cause: error })
+    }
+  }
+
+  public unlock(): void {
+    try {
+      this.environment.screenOrientation?.unlock?.()
+    } catch (error) {
+      this.logger.debug('Could not let the page turn again', error)
+    }
+  }
+
   public dispose(): void {
     this.removeAllListeners()
     this.unwatch()
@@ -61,6 +92,10 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
 
   private readonly changed = (event: Pick<MediaQueryListEvent, 'matches'>): void => {
     this.emitSafely('change', event.matches ? 'portrait' : 'landscape', this.logger)
+  }
+
+  private static isNotSupported(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotSupportedError'
   }
 
   private unwatch(): void {

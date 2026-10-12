@@ -36,6 +36,16 @@ describe('device-butler-container-module', () => {
     expect(container.get(DeviceButlerBindings.Location)).toBe(butler.location)
     expect(container.get(DeviceButlerBindings.Platform)).toBe(butler.platform)
     expect(container.get(DeviceButlerBindings.Orientation)).toBe(butler.orientation)
+    expect(container.get(DeviceButlerBindings.Page)).toBe(butler.page)
+    expect(container.get(DeviceButlerBindings.Recorder)).toBe(butler.recorder)
+    expect(container.get(DeviceButlerBindings.AudioOutput)).toBe(butler.audioOutput)
+    expect(container.get(DeviceButlerBindings.Network)).toBe(butler.network)
+    expect(container.get(DeviceButlerBindings.WakeLock)).toBe(butler.wakeLock)
+    expect(container.get(DeviceButlerBindings.Fullscreen)).toBe(butler.fullscreen)
+    expect(container.get(DeviceButlerBindings.Share)).toBe(butler.share)
+    expect(container.get(DeviceButlerBindings.Clipboard)).toBe(butler.clipboard)
+    expect(container.get(DeviceButlerBindings.Files)).toBe(butler.files)
+    expect(container.get(DeviceButlerBindings.Outbox)).toBe(butler.outbox)
   })
 
   test('should keep the type of what an identifier stands for', async () => {
@@ -48,8 +58,8 @@ describe('device-butler-container-module', () => {
   test('should use identifiers that do not collide with each other', async () => {
     const identifiers = Object.values(DeviceButlerBindings)
 
-    expect(identifiers).toHaveLength(10)
-    expect(new Set(identifiers).size).toBe(10)
+    expect(identifiers).toHaveLength(20)
+    expect(new Set(identifiers).size).toBe(20)
   })
 
   test('should be unloadable', async () => {

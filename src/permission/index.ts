@@ -11,8 +11,12 @@ export type {
   PermissionRequestOptions,
 } from './permission-state.ts'
 
+export { ClipboardReadPermissionRequester } from './requesters/clipboard-read-permission-requester.ts'
+
 export { GeolocationPermissionRequester } from './requesters/geolocation-permission-requester.ts'
 
 export type { PermissionRequester } from './requesters/permission-requester.ts'
 
 export { PersistentStoragePermissionRequester } from './requesters/persistent-storage-permission-requester.ts'
+
+export { WakeLockPermissionRequester } from './requesters/wake-lock-permission-requester.ts'

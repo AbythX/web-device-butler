@@ -1,7 +1,13 @@
 /**
  * The permissions the library can ask about and request.
  */
-export type DevicePermissionName = 'camera' | 'microphone' | 'geolocation' | 'persistent-storage'
+export type DevicePermissionName =
+  | 'camera'
+  | 'microphone'
+  | 'geolocation'
+  | 'persistent-storage'
+  | 'clipboard-read'
+  | 'screen-wake-lock'
 
 /**
  * - `prompt`: the browser asks the user when the permission is requested

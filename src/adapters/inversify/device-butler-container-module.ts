@@ -27,6 +27,16 @@ export class DeviceButlerContainerModule extends ContainerModule {
       bind(DeviceButlerBindings.Location).toConstantValue(butler.location)
       bind(DeviceButlerBindings.Platform).toConstantValue(butler.platform)
       bind(DeviceButlerBindings.Orientation).toConstantValue(butler.orientation)
+      bind(DeviceButlerBindings.Page).toConstantValue(butler.page)
+      bind(DeviceButlerBindings.Recorder).toConstantValue(butler.recorder)
+      bind(DeviceButlerBindings.AudioOutput).toConstantValue(butler.audioOutput)
+      bind(DeviceButlerBindings.Network).toConstantValue(butler.network)
+      bind(DeviceButlerBindings.WakeLock).toConstantValue(butler.wakeLock)
+      bind(DeviceButlerBindings.Fullscreen).toConstantValue(butler.fullscreen)
+      bind(DeviceButlerBindings.Share).toConstantValue(butler.share)
+      bind(DeviceButlerBindings.Clipboard).toConstantValue(butler.clipboard)
+      bind(DeviceButlerBindings.Files).toConstantValue(butler.files)
+      bind(DeviceButlerBindings.Outbox).toConstantValue(butler.outbox)
     })
   }
 }

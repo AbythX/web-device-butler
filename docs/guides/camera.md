@@ -119,7 +119,7 @@ stable for the origin until the user clears the site data.
 ```ts
 const session = await butler.camera.open()
 
-video.srcObject = session.stream // also for MediaRecorder and WebRTC
+video.srcObject = session.stream // also for WebRTC; to record it, see the recording guide
 session.descriptor // the camera that runs
 session.settings // what it delivers right now: resolution, frameRate
 session.state // 'live' | 'muted' | 'ended'
@@ -176,6 +176,25 @@ not have, and keeps what the session prefers. If no camera fits, the session ret
 The running camera is stopped before the next one starts, because a phone cannot run two. In between the state of
 the session is `muted`. A session that lands on the camera it had, after a switch or after `autoRecover`, continues
 with the torch, zoom and focus it had; another camera starts the way it is.
+
+### Taking a photo
+
+```ts
+const photo = await session.takePhoto() // a Blob
+
+const preview = await session.takePhoto({ source: 'frame', type: 'image/png' })
+```
+
+Some browsers can ask the camera for a still picture. Where that works, it is the photo: it can be larger than the
+picture of the stream, and the camera may adjust its exposure for it. Everywhere else the photo is the picture of
+the stream at that moment, which is also what `source: 'frame'` always takes: exactly what a preview shows.
+
+- `type` and `quality` say how a picture of the stream is written: `image/jpeg` (default), `image/png` or
+  `image/webp`, and from 0 to 1. A still picture of the camera comes in the format the camera delivers. Read
+  `photo.type`.
+- The session keeps running. A photo that is asked for while the camera is switched or started again is taken
+  once the next camera delivers.
+- To record instead, see [recording](recording.md).
 
 ### Events
 

@@ -1,6 +1,8 @@
 import type { BroadcastChannelLike } from '../coordination/channel/broadcast-channel-like.ts'
 import type { LockManagerLike } from '../coordination/lock/lock-manager-like.ts'
 import { UnsupportedError } from '../errors/unsupported-error.ts'
+import type { NetworkInformationLike } from './network-information-like.ts'
+import type { ScreenOrientationLike } from './screen-orientation-like.ts'
 
 /**
  * The parts of the global scope the library works with. All of them are optional, because none exists during server
@@ -20,7 +22,55 @@ export interface BrowserGlobals {
   /** the name Safari had for it */
   readonly webkitAudioContext?: new () => AudioContext
   readonly MediaStream?: new (tracks: MediaStreamTrack[]) => MediaStream
+  readonly ClipboardItem?: ClipboardItemFactory
+  readonly ImageCapture?: ImageCaptureFactory
+  readonly MediaRecorder?: MediaRecorderFactory
+  readonly Blob?: new (parts: BlobPart[], options: { type: string }) => Blob
+  readonly URL?: Pick<typeof URL, 'createObjectURL' | 'revokeObjectURL'>
 }
+
+/**
+ * The share sheet of the system, as `navigator` offers it. Browsers from before files could be shared cannot be asked
+ * what they share.
+ */
+export interface ShareSheet {
+  share(data: ShareData): Promise<void>
+  canShare?(data: ShareData): boolean
+}
+
+/**
+ * The constructor of what a browser wraps copied data in. Older browsers cannot be asked which types they copy.
+ */
+export interface ClipboardItemFactory {
+  new (items: Record<string, Blob>): ClipboardItem
+  supports?(type: string): boolean
+}
+
+/**
+ * The constructor of what asks a running camera for a still picture, which only some browsers have.
+ */
+export type ImageCaptureFactory = new (track: MediaStreamTrack) => { takePhoto(): Promise<Blob> }
+
+/**
+ * The constructor of the recorder of the browser. Older browsers cannot be asked which formats they write.
+ */
+export interface MediaRecorderFactory {
+  new (stream: MediaStream, options?: MediaRecorderOptions): MediaRecorder
+  isTypeSupported?(type: string): boolean
+}
+
+/**
+ * What the save dialog of the browser takes. The DOM types do not know the dialog yet.
+ */
+export interface SaveFilePickerOptions {
+  suggestedName?: string
+  types?: { description?: string; accept: Record<string, string[]> }[]
+}
+
+/**
+ * Shows the save dialog of the browser and resolves with the file the user chose to write.
+ */
+export type SaveFilePicker = (options?: SaveFilePickerOptions) => Promise<FileSystemFileHandle>
 
 /**
  * The only place that reaches into the global scope. Every class receives it through its constructor, so tests run
@@ -150,6 +200,126 @@ export class BrowserEnvironment {
    */
   public get geolocation(): Geolocation | undefined {
     return this.optional((globals) => globals.navigator?.geolocation)
+  }
+
+  /**
+   * Whether the device is connected to a network, as `navigator.onLine` says. `undefined` where there is no browser.
+   */
+  public get isOnline(): boolean | undefined {
+    return this.optional((globals) => globals.navigator?.onLine)
+  }
+
+  /**
+   * The Network Information API (`navigator.connection`), or `undefined` where the browser does not have it.
+   */
+  public get connection(): NetworkInformationLike | undefined {
+    // SAFETY: the DOM types do not know the property; Partial keeps it optional, and every field of it is checked
+    // where it is read
+    return this.optional(
+      (globals) => (globals.navigator as Partial<{ connection: NetworkInformationLike }>)?.connection
+    )
+  }
+
+  /**
+   * The Screen Wake Lock API (`navigator.wakeLock`), or `undefined` where the browser does not have it.
+   */
+  public get wakeLock(): WakeLock | undefined {
+    return this.optional((globals) => globals.navigator?.wakeLock)
+  }
+
+  /**
+   * How the screen is turned and the calls that keep it that way (`screen.orientation`), or `undefined` where the
+   * browser does not have it.
+   */
+  public get screenOrientation(): ScreenOrientationLike | undefined {
+    return this.optional((globals) => globals.window?.screen?.orientation)
+  }
+
+  /**
+   * The share sheet of the system (`navigator.share`), or `undefined` where the browser does not have it.
+   */
+  public get shareSheet(): ShareSheet | undefined {
+    return this.optional((globals) => (typeof globals.navigator?.share === 'function' ? globals.navigator : undefined))
+  }
+
+  /**
+   * The clipboard of the system (`navigator.clipboard`), or `undefined` where the browser gives pages none.
+   */
+  public get clipboard(): Clipboard | undefined {
+    return this.optional((globals) => globals.navigator?.clipboard)
+  }
+
+  /**
+   * The constructor of what copied data is wrapped in, or `undefined` where the browser only copies text.
+   */
+  public get ClipboardItem(): ClipboardItemFactory | undefined {
+    return this.optional((globals) => globals.ClipboardItem)
+  }
+
+  /**
+   * The constructor of what asks a running camera for a still picture, or `undefined` where the browser cannot.
+   */
+  public get ImageCapture(): ImageCaptureFactory | undefined {
+    return this.optional((globals) => globals.ImageCapture)
+  }
+
+  /**
+   * The constructor of the recorder of the browser, or `undefined` where the browser cannot record.
+   */
+  public get MediaRecorder(): MediaRecorderFactory | undefined {
+    return this.optional((globals) => globals.MediaRecorder)
+  }
+
+  /**
+   * One blob of the given parts.
+   *
+   * @throws UnsupportedError where there are no blobs
+   */
+  public createBlob(parts: BlobPart[], type: string): Blob {
+    const Blob = this.optional((globals) => globals.Blob)
+
+    if (Blob === undefined) {
+      throw new UnsupportedError('Blob')
+    }
+
+    return new Blob(parts, { type })
+  }
+
+  /**
+   * The save dialog of the browser (`showSaveFilePicker`), or `undefined` where the browser has none.
+   */
+  public get saveFilePicker(): SaveFilePicker | undefined {
+    return this.optional((globals) => {
+      // SAFETY: the DOM types do not know the call; Partial keeps it optional, and it is checked before it is used
+      const window = globals.window as Partial<{ showSaveFilePicker: SaveFilePicker }> | undefined
+
+      return typeof window?.showSaveFilePicker === 'function'
+        ? (options?: SaveFilePickerOptions) =>
+            window.showSaveFilePicker?.(options) ?? Promise.reject(new UnsupportedError('showSaveFilePicker'))
+        : undefined
+    })
+  }
+
+  /**
+   * An address under which the page can reach the data, until it is given back with {@link revokeObjectUrl}.
+   *
+   * @throws UnsupportedError where the browser has no such addresses
+   */
+  public createObjectUrl(data: Blob): string {
+    const URL = this.optional((globals) => globals.URL)
+
+    if (URL === undefined) {
+      throw new UnsupportedError('URL.createObjectURL')
+    }
+
+    return URL.createObjectURL(data)
+  }
+
+  /**
+   * Gives back an address of {@link createObjectUrl}, so the browser can let go of the data.
+   */
+  public revokeObjectUrl(url: string): void {
+    this.optional((globals) => globals.URL)?.revokeObjectURL(url)
   }
 
   /**

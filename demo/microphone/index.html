@@ -11,8 +11,8 @@
       <nav><a href="../">All demos</a></nav>
       <h1>Microphones of this device</h1>
       <p class="hint">
-        Shows what the library finds out about every microphone and lets you try the processing, the level and muting.
-        Nothing is requested before you press a button.
+        Shows what the library finds out about every microphone and lets you try the processing, the level, muting and
+        the audio outputs. Nothing is requested before you press a button.
       </p>
 
       <section>
@@ -116,6 +116,33 @@
           <label><input type="checkbox" id="measure" checked /> measure the level</label>
           <label><input type="checkbox" id="muted" /> muted</label>
           <button id="close">close()</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Audio outputs <small id="output-facts"></small></h2>
+        <p class="hint">
+          Where the tone below is played. Most browsers list the outputs once a microphone was opened; until then the
+          list is empty.
+        </p>
+        <audio id="player" controls loop></audio>
+        <div class="actions">
+          <button id="outputs">audioOutput.list()</button>
+          <button id="choose">audioOutput.choose()</button>
+          <button id="route-default">route(player)</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Default</th>
+                <th>Plays the tone</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="output-list"></tbody>
+          </table>
         </div>
       </section>
 

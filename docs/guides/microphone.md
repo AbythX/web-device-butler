@@ -95,8 +95,9 @@ start either, the session ends with the reason `device`.
 
 Two consequences:
 
-- A `MediaRecorder` records the stream it was created with. Decide the processing before the recording starts, or
-  create a new recorder on `trackchange`.
+- A recording cannot continue its file with another track. Decide the processing before the recording starts;
+  changed while `butler.recorder` records, the recording continues in a
+  [second segment](recording.md#segments).
 - Read the getters afterwards instead of assuming. With the fake microphone of Chromium, switching echo
   cancellation off also switched noise suppression and auto gain off, because they had been left to the browser. Set
   every field you care about.
@@ -147,7 +148,7 @@ await using recording = await butler.media.open({
 })
 
 video.srcObject = recording.stream // one stream with both tracks
-new MediaRecorder(recording.stream).start()
+await butler.recorder.record(recording) // see the recording guide
 
 await recording.camera.torch?.set(true) // each part is a full session
 recording.microphone.muted = true
@@ -159,6 +160,27 @@ recording.microphone.muted = true
   the application did not close the session, the `source` (`'camera'` or `'microphone'`) that ended first.
 - `recording.allowTakeover = false` keeps other tabs from taking the camera, see
   [the video message](../use-cases/video-message.md).
+
+## Where the sound is played
+
+```ts
+const outputs = await butler.audioOutput.list() // speakers and headsets, each once; `isDefault` marks one
+
+if (butler.audioOutput.canRoute(player)) {
+  await butler.audioOutput.route(player, outputs[1])
+}
+
+await butler.audioOutput.route(player) // back to the default of the system
+```
+
+- Not every browser lets a page choose where its sound goes. `canRoute(element)` says; without it the sound goes
+  where the system sends it.
+- Most browsers list the outputs once a microphone was opened. Until then the list is empty.
+- Where `butler.audioOutput.canChoose` is `true`, `choose()` shows a list of the browser, in answer to a click,
+  and returns the output the user chose, or `undefined`. The page may use that output from then on.
+- `change` announces the new list when an output is plugged in or removed.
+- `route()` fails with a `MediaDeviceNotFoundError` for an output that is gone, and with a
+  `PermissionDeniedError` for one the page may not use.
 
 ## Not verified yet
 
