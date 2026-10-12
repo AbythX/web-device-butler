@@ -59,6 +59,10 @@ export { Resolution } from './model/resolution.ts'
 
 export type { ResolutionLike } from './model/resolution.ts'
 
+export type { CameraPhotoOptions } from './photo/camera-photo-options.ts'
+
+export { CameraPhotographer } from './photo/camera-photographer.ts'
+
 export { CameraConstraints } from './session/camera-constraints.ts'
 
 export type { CameraDelivery } from './session/camera-constraints.ts'

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: sharing and files</title>
+    <link rel="stylesheet" href="../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../">All demos</a></nav>
+      <h1>Sharing and files</h1>
+      <p class="hint">
+        Handing a text or a picture to another application, to the clipboard or to a file, and taking a file from the
+        device. Every button here opens something of the system, so nothing happens before you press one.
+      </p>
+
+      <section>
+        <h2>Device</h2>
+        <dl id="facts"></dl>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>What is handed over</h2>
+        <form id="content">
+          <label>Text <input type="text" name="text" value="Sent with web-device-butler" /></label>
+        </form>
+        <img id="picture" class="preview" alt="The picture that is shared, copied and saved" />
+        <p class="hint" id="picture-facts"></p>
+      </section>
+
+      <section>
+        <h2>Share sheet</h2>
+        <div class="actions">
+          <button id="share-text">share({ text })</button>
+          <button id="share-url">share({ url })</button>
+          <button id="share-picture">share({ files })</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Clipboard</h2>
+        <div class="actions">
+          <button id="copy-text">writeText()</button>
+          <button id="paste-text">readText()</button>
+          <button id="copy-picture">write(picture)</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Files</h2>
+        <div class="actions">
+          <button id="save">save(picture)</button>
+        </div>
+        <form id="pick-options">
+          <label>
+            accept
+            <input type="text" name="accept" value="image/*" placeholder="every file" />
+          </label>
+          <label><input type="checkbox" name="multiple" /> multiple</label>
+          <label>
+            capture
+            <select name="capture">
+              <option value="" selected>choose a file</option>
+              <option value="environment">environment</option>
+              <option value="user">user</option>
+            </select>
+          </label>
+        </form>
+        <div class="actions">
+          <button id="pick">pick()</button>
+          <button id="abort">abort the signal of pick()</button>
+        </div>
+        <p class="hint">A picture that was picked becomes the picture above.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Changed</th>
+              </tr>
+            </thead>
+            <tbody id="picked"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

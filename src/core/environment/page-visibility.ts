@@ -7,13 +7,6 @@ export class PageVisibility {
   public constructor(private readonly environment: BrowserEnvironment) {}
 
   /**
-   * `false` where there is no page, as during server-side rendering.
-   */
-  public get isHidden(): boolean {
-    return this.document?.visibilityState === 'hidden'
-  }
-
-  /**
    * Resolves once the page is visible, which is at once if it is visible already.
    */
   public whenVisible(): Promise<void> {

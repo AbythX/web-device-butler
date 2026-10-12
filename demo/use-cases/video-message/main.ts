@@ -3,6 +3,7 @@ import {
   DefaultDeviceButler,
   type DeviceButler,
   type MediaBusyPolicy,
+  type MediaRecording,
 } from '../../../src/index.ts'
 import { DemoPage } from '../../shared/demo-page.ts'
 
@@ -14,7 +15,7 @@ class VideoMessage extends DemoPage {
   private readonly butler: DeviceButler
 
   private session: CombinedMediaSession | undefined
-  private recorder: MediaRecorder | undefined
+  private recording: MediaRecording | undefined
   private message: string | undefined
 
   public constructor(page: Document) {
@@ -28,7 +29,7 @@ class VideoMessage extends DemoPage {
     this.onClick('start', () => this.start('fail'))
     this.onClick('takeover', () => this.start('takeover'))
     this.onClick('record', () => this.record())
-    this.onClick('finish', () => this.recorder?.stop())
+    this.onClick('finish', () => this.recording?.stop())
     this.onClick('close', () => this.session?.close())
   }
 
@@ -40,7 +41,7 @@ class VideoMessage extends DemoPage {
     session.on('statechange', (state) => this.logger.info(`statechange: ${state}`))
     session.on('ended', ({ reason, source }) => {
       this.session = undefined
-      // a recorder stops by itself when its tracks end, and keeps what it has
+      // a recording ends by itself when its session ends, and keeps what it has
       this.showSession()
 
       if (reason !== 'closed') {
@@ -50,34 +51,40 @@ class VideoMessage extends DemoPage {
     this.session = session
   }
 
-  private record(): void {
+  private async record(): Promise<void> {
     const session = this.session
 
     if (session === undefined) {
       return
     }
 
-    const recorder = new MediaRecorder(session.stream)
-    const pieces: Blob[] = []
-    recorder.addEventListener('dataavailable', ({ data }) => pieces.push(data))
-    recorder.addEventListener('stop', () => {
-      session.allowTakeover = true
-      this.recorder = undefined
-      this.showMessage(new Blob(pieces, { type: recorder.mimeType }))
-      this.showSession()
-    })
+    // While it runs, a tab that asks with `whenBusy: 'takeover'` gets a MediaDeviceBusyError, and the screen stays
+    // on. A short message fits in memory.
+    const recording = await this.butler.recorder.record(session, { keepAwake: true })
+    this.recording = recording
 
-    // a tab that asks with `whenBusy: 'takeover'` gets a MediaDeviceBusyError until the recording is over
-    session.allowTakeover = false
-    this.recorder = recorder
-    recorder.start()
+    // however it ends: stopped here, or because the session ended
+    void recording.finished
+      .then(({ blob, segments }) => {
+        // one segment, unless a device was started again while it recorded; then this page shows the first
+        const message = blob ?? segments[0]?.blob
+
+        if (message !== undefined) {
+          this.showMessage(message)
+        }
+      })
+      .catch((error: unknown) => this.status(`The recording failed: ${String(error)}`, true))
+      .finally(() => {
+        this.recording = undefined
+        this.showSession()
+      })
   }
 
   // ---- output ----
 
   private showSession(): void {
     const session = this.session
-    const isRecording = this.recorder !== undefined
+    const isRecording = this.recording !== undefined
 
     const preview = this.element<HTMLVideoElement>('preview')
     preview.hidden = session === undefined

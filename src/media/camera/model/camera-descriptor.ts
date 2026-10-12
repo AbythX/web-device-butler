@@ -188,25 +188,4 @@ export class CameraDescriptor extends MediaInputDescriptor {
 
     return width === undefined ? `height of at least ${height}` : `width of at least ${width}`
   }
-
-  private static staticCapabilitiesOf(device: MediaDeviceInfo): TrackCapabilities | undefined {
-    // SAFETY: only looks for a method some browsers have; Partial keeps it optional, and it is checked before the call
-    const read = (device as Partial<InputDeviceInfo>).getCapabilities
-
-    if (typeof read !== 'function') {
-      return undefined
-    }
-
-    try {
-      // SAFETY: TrackCapabilities is what the browser returns plus an index for settings the DOM types do not know
-      const capabilities = read.call(device) as TrackCapabilities
-
-      // some browsers answer with an empty object, which says nothing
-      return Object.keys(capabilities).some((name) => name !== 'deviceId' && name !== 'groupId')
-        ? capabilities
-        : undefined
-    } catch {
-      return undefined
-    }
-  }
 }

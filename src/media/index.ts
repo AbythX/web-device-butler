@@ -42,6 +42,14 @@ export { MediaRequirementsError } from './errors/media-requirements-error.ts'
 
 export { SessionClosedError } from './errors/session-closed-error.ts'
 
+export type {
+  AudioOutputDescriptor,
+  AudioOutputManager,
+  AudioOutputManagerEvents,
+} from './output/audio-output-manager.ts'
+
+export { DefaultAudioOutputManager } from './output/default-audio-output-manager.ts'
+
 export { MediaInputDescriptor } from './input/media-input-descriptor.ts'
 
 export type { MediaInputDetail } from './input/media-input-descriptor.ts'
@@ -60,6 +68,26 @@ export type { MediaInputRequirements } from './input/media-input-requirements.ts
 export { MediaInputSelection } from './input/media-input-selection.ts'
 
 export type { MediaInputRejection } from './input/media-input-selection.ts'
+
+export type {
+  MediaRecording,
+  MediaRecordingEvents,
+  MediaRecordingState,
+  RecordedSegment,
+  RecordingOptions,
+  RecordingProgress,
+  RecordingResult,
+  RecordingSource,
+  RecordingSourceEvents,
+} from './recording/media-recording.ts'
+
+export { DefaultMediaRecording } from './recording/default-media-recording.ts'
+
+export type { MediaRecordingManager } from './recording/media-recording-manager.ts'
+
+export { DefaultMediaRecordingManager } from './recording/default-media-recording-manager.ts'
+
+export { WebmDuration } from './recording/webm/webm-duration.ts'
 
 export { IosTorchResetsOnZoomQuirk } from './quirks/ios-torch-resets-on-zoom-quirk.ts'
 

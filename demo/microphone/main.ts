@@ -1,4 +1,5 @@
 import {
+  type AudioOutputDescriptor,
   DefaultDeviceButler,
   type DeviceButler,
   type EventSubscription,
@@ -48,7 +49,21 @@ class MicrophoneDemo extends DemoPage {
     this.onClick('list', async () => this.showMicrophones(await this.butler.microphone.list()))
     this.onClick('close', () => this.session?.close())
     this.onClick('report', () => this.showReport())
-    this.onClick('copy', () => navigator.clipboard.writeText(this.element('report-output').textContent ?? ''))
+    this.onClick('copy', () => this.butler.clipboard.writeText(this.element('report-output').textContent ?? ''))
+
+    this.butler.audioOutput.on('change', (outputs) => {
+      this.logger.info(`audioOutput change: ${outputs.length} outputs`)
+      this.showOutputs(outputs)
+    })
+    this.onClick('outputs', async () => this.showOutputs(await this.butler.audioOutput.list()))
+    this.onClick('choose', async () => {
+      const chosen = await this.butler.audioOutput.choose()
+
+      this.status(`choose(): ${chosen === undefined ? 'the user closed the list' : `'${chosen.label}'`}`)
+      this.showOutputs(await this.butler.audioOutput.list())
+    })
+    this.onClick('route-default', () => this.route(undefined))
+    this.player.src = URL.createObjectURL(MicrophoneDemo.tone())
 
     const muted = this.element<HTMLInputElement>('muted')
     muted.addEventListener('change', () => {
@@ -102,6 +117,18 @@ class MicrophoneDemo extends DemoPage {
       exclusive: form.has('exclusive'),
       autoRecover: form.has('autoRecover'),
     }
+  }
+
+  private get player(): HTMLAudioElement {
+    return this.element<HTMLAudioElement>('player')
+  }
+
+  /**
+   * Sends the tone to an output, or back to the default of the system.
+   */
+  private async route(output: AudioOutputDescriptor | undefined): Promise<void> {
+    await this.butler.audioOutput.route(this.player, output)
+    this.showOutputs(await this.butler.audioOutput.list())
   }
 
   private async prepare(): Promise<void> {
@@ -210,6 +237,25 @@ class MicrophoneDemo extends DemoPage {
     this.element('microphones').replaceChildren(...rows)
   }
 
+  private showOutputs(outputs: readonly AudioOutputDescriptor[]): void {
+    const { audioOutput } = this.butler
+    const routed = audioOutput.routeOf(this.player)
+
+    const rows = outputs.map((output) =>
+      this.row(
+        output.label || output.id || '(no label)',
+        output.isDefault ? 'yes' : '',
+        // without a route the sound goes to the default of the system
+        (routed === undefined ? output.isDefault : output.id === routed) ? 'yes' : '',
+        this.button('route(player, output)', () => this.route(output))
+      )
+    )
+
+    this.element('output-list').replaceChildren(...rows)
+    this.element('output-facts').textContent =
+      `canChoose: ${audioOutput.canChoose}, canRoute: ${audioOutput.canRoute(this.player)}`
+  }
+
   private showSession(): void {
     const session = this.session
     this.element('session').hidden = session === undefined
@@ -245,6 +291,42 @@ class MicrophoneDemo extends DemoPage {
     return enabled ? 'on' : 'off'
   }
 
+  /**
+   * Two seconds of a tone as a WAV file, so the outputs have something to play that needs no microphone.
+   */
+  private static tone(): Blob {
+    const rate = 8000
+    const samples = rate * 2
+    const wav = new DataView(new ArrayBuffer(44 + samples * 2))
+
+    const text = (offset: number, value: string): void => {
+      for (let index = 0; index < value.length; index++) {
+        wav.setUint8(offset + index, value.charCodeAt(index))
+      }
+    }
+
+    // the header of a file with one channel of 16 bits
+    text(0, 'RIFF')
+    wav.setUint32(4, 36 + samples * 2, true)
+    text(8, 'WAVEfmt ')
+    wav.setUint32(16, 16, true)
+    wav.setUint16(20, 1, true)
+    wav.setUint16(22, 1, true)
+    wav.setUint32(24, rate, true)
+    wav.setUint32(28, rate * 2, true)
+    wav.setUint16(32, 2, true)
+    wav.setUint16(34, 16, true)
+    text(36, 'data')
+    wav.setUint32(40, samples * 2, true)
+
+    for (let sample = 0; sample < samples; sample++) {
+      // 440 Hz fits into two seconds a whole number of times, so the loop has no click
+      wav.setInt16(44 + sample * 2, Math.sin((sample / rate) * 2 * Math.PI * 440) * 6000, true)
+    }
+
+    return new Blob([wav], { type: 'audio/wav' })
+  }
+
   private showReport(): void {
     const { platform, coordination, microphone } = this.butler
 
@@ -257,6 +339,11 @@ class MicrophoneDemo extends DemoPage {
       access: microphone.access.any,
       requirements: this.requirements,
       selected: this.selected?.id,
+      audioOutput: {
+        canChoose: this.butler.audioOutput.canChoose,
+        canRoute: this.butler.audioOutput.canRoute(this.player),
+        routedTo: this.butler.audioOutput.routeOf(this.player),
+      },
       microphones: this.microphones.map((descriptor) => ({
         id: descriptor.id,
         label: descriptor.label,

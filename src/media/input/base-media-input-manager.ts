@@ -85,9 +85,7 @@ export abstract class BaseMediaInputManager<
   }
 
   public async list(): Promise<TDescriptor[]> {
-    const devices = await this.gate.enumerate()
-
-    return devices.map((device) => this.describe(device))
+    return this.describe(await this.gate.enumerate())
   }
 
   public async select(requirements?: Partial<TRequirements>): Promise<TDescriptor | undefined> {
@@ -140,9 +138,9 @@ export abstract class BaseMediaInputManager<
   }
 
   /**
-   * Turns what the browser lists into the descriptor of the kind.
+   * Turns what the browser lists into the descriptors of the kind.
    */
-  protected abstract describe(device: MediaDeviceInfo): TDescriptor
+  protected abstract describe(devices: readonly MediaDeviceInfo[]): TDescriptor[]
 
   /**
    * The access the requirements need, in the order in which it is requested.

@@ -67,10 +67,20 @@ export * from './media/index.ts'
 
 export * from './media/microphone/index.ts'
 
+export * from './files/index.ts'
+
+export * from './network/index.ts'
+
+export * from './outbox/index.ts'
+
 export * from './permission/index.ts'
 
 export * from './location/index.ts'
 
 export * from './platform/index.ts'
+
+export * from './screen/index.ts'
+
+export * from './sharing/index.ts'
 
 export * from './storage/index.ts'

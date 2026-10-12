@@ -14,6 +14,7 @@ import type { CameraDescriptor } from '../model/camera-descriptor.ts'
 import type { CameraRequirements } from '../model/camera-requirements.ts'
 import type { CameraSettings } from '../model/camera-settings.ts'
 import { CameraTestBench } from '../testing/camera-test-bench.ts'
+import { FakePhotoPage } from '../testing/fake-photo-page.ts'
 import type { CameraSession } from './camera-session.ts'
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve))
@@ -29,6 +30,9 @@ const fakeTrackOf = (session: CameraSession) => session.track as unknown as Fake
 /** a page the user can look at or put in the background */
 class FakeDocument {
   public visibilityState: 'visible' | 'hidden' = 'visible'
+  /** what the page draws photos with */
+  public readonly photos = new FakePhotoPage()
+  public readonly createElement = this.photos.createElement
   private readonly listeners = new Set<() => void>()
 
   public addEventListener(_type: 'visibilitychange', listener: () => void): void {
@@ -76,6 +80,33 @@ describe('default-camera-session', () => {
     browser.close()
     browser.devices.assertNothingRuns()
     browser.devices.assertNoViolations()
+  })
+
+  describe('#takePhoto', () => {
+    test('should take a photo of what the camera delivers and keep running', async () => {
+      const photo = await sut.takePhoto({ type: 'image/png' })
+
+      expect(photo).toMatchObject({ kind: 'frame', type: 'image/png', width: 640, height: 480 })
+      expect(page.photos.videos[0]?.srcObject).toBeNull()
+      expect(sut.state).toBe('live')
+    })
+
+    test('should take the photo with the camera the session switched to', async () => {
+      const switching = sut.switchTo({ require: { facing: 'front' } })
+      const taking = sut.takePhoto()
+
+      await switching
+      await taking
+
+      expect(sut.descriptor.facing).toBe('front')
+      expect(page.photos.videos).toHaveLength(1)
+    })
+
+    test('should refuse a session that has ended', async () => {
+      await sut.close()
+
+      await expect(sut.takePhoto()).rejects.toThrow(SessionClosedError)
+    })
   })
 
   describe('#descriptor', () => {

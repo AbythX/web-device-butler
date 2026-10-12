@@ -1,8 +1,7 @@
 # Device matrix
 
-What the cameras and microphones of real devices do, collected with the [demo pages](../../demo/README.md). The
-results decide the open questions of [the plan](../plan/device-library.md) and which quirk classes the library
-needs.
+What real devices do, collected with the [demo pages](../../demo/README.md): the cameras and microphones first, then
+the parts around the screen, sharing and files. The results decide which quirk classes the library needs.
 
 No device has been recorded yet.
 
@@ -61,3 +60,32 @@ as `docs/device-matrix/<device>-<browser>-microphone.json`. Open for them:
 - Which browsers change the processing of a running microphone? Chromium does not, so the library starts the
   microphone again.
 - Does the level meter report once the user has interacted with the page in Firefox and Safari?
+
+## The screen, sharing, files and the outbox
+
+These pages build no report. Write what you saw into the notes of the camera report of the same device.
+
+- `screen/`: `request()`, leave the phone alone for longer than its screen timeout, then switch to another
+  application and back. `enter(element)`, `lock('landscape')`, then `enter(video)`.
+- `sharing/`: every button of the share sheet and the clipboard, `save(picture)`, `pick()` with and without
+  `capture`.
+- `network/`: flight mode on and off while the page is open, then the steps under
+  [things to try without a network](../../demo/README.md#things-to-try-without-a-network).
+- `microphone/`: with a headset connected, `audioOutput.list()` before and after `open()`, then
+  `route(player, output)` while the tone plays.
+
+Open for them:
+
+- When does a phone refuse a wake lock: while it saves energy, with a low battery, in a page that was installed?
+- Does the screen stay on after the return from another application, without another click?
+- Which phones fill the screen with a video only, and does `canEnter()` tell them apart?
+- Does `lock()` keep the page from turning outside of fullscreen anywhere?
+- Which browsers share files, and which kinds? Does `canShare()` agree with what the share sheet then does?
+- Does closing the share sheet end `share()` with `false` everywhere, or does a browser never answer?
+- Does `readText()` ask the user every time in Safari and Firefox?
+- Does `save()` end as `saved` on any phone, or always as `downloaded`? Where does the download go on iOS?
+- Does `pick()` with `capture` open the camera application directly? Which phones offer a choice instead?
+- Which browsers do not say that the file dialog was closed, so `pick()` only ends through its `signal`?
+- Does a phone that returns from flight mode report `change` before a request can succeed?
+- Is a page told `hidden` when the screen is locked, and `frozen` at all on iOS?
+- Which browsers list audio outputs without an open microphone, and which route the sound of an element?

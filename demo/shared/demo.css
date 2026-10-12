@@ -180,3 +180,18 @@ tr.remote {
   content: '● ';
   color: #c0392b;
 }
+
+.stage {
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 0.4rem;
+  /* an element that fills the screen brings its own background, or it stands on black */
+  background: Canvas;
+  color: CanvasText;
+}
+
+.preview {
+  max-width: 12rem;
+  max-height: 12rem;
+  display: block;
+}

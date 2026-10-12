@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: field report</title>
+    <link rel="stylesheet" href="../../shared/demo.css" />
+  </head>
+  <body>
+    <main>
+      <nav><a href="../../">All demos</a></nav>
+      <h1>Field report</h1>
+      <p class="hint">
+        A photo and a note that reach the server whenever the device has a network, and are kept until then. Try it in
+        flight mode, and close the page before you switch the network back on. Described in
+        <code>docs/use-cases/field-report.md</code>.
+      </p>
+
+      <section>
+        <h2>New report <small id="network"></small></h2>
+        <div class="actions">
+          <button id="take">Take a photo</button>
+          <button id="choose">Choose a photo</button>
+        </div>
+        <img id="photo" class="preview" alt="The photo of the report" hidden />
+        <textarea id="note" rows="3" placeholder="What is to be reported"></textarea>
+        <div class="actions">
+          <button id="queue">Send</button>
+        </div>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section>
+        <h2>Waiting to be sent <small id="waiting-facts"></small></h2>
+        <div class="actions">
+          <button id="flush">Try now</button>
+          <label><input type="checkbox" id="answers" checked /> the server answers</label>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Taken</th>
+                <th>Note</th>
+                <th>Tries</th>
+                <th>Last error</th>
+                <th></th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="waiting"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>On the server</h2>
+        <p class="hint">
+          This page has no server. A store of the browser stands for it, under the id of each report, so a report that
+          is delivered twice is there once.
+        </p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Received</th>
+                <th>Note</th>
+                <th>Photo</th>
+              </tr>
+            </thead>
+            <tbody id="received"></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button id="clear">Empty the server</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

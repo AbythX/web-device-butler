@@ -10,6 +10,7 @@ import type { CameraSelector } from './discovery/camera-selector.ts'
 import type { CameraTiming } from './discovery/camera-timing.ts'
 import type { CameraDescriptor } from './model/camera-descriptor.ts'
 import type { CameraRequirements } from './model/camera-requirements.ts'
+import type { CameraPhotographer } from './photo/camera-photographer.ts'
 import type { CameraSession } from './session/camera-session.ts'
 
 export interface CameraListOptions {
@@ -31,6 +32,8 @@ export interface CameraManagerParts {
   readonly cache: CameraProbeCache
   readonly selector: CameraSelector
   readonly visibility: PageVisibility
+  /** takes the photos of the sessions */
+  readonly photographer: CameraPhotographer
   /** the quirks a new session is composed with */
   quirks(): PlatformQuirk[]
   readonly timing?: CameraTiming

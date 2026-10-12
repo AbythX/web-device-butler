@@ -21,14 +21,20 @@ export default defineConfig({
         location: 'src/location/index.ts',
         permission: 'src/permission/index.ts',
         platform: 'src/platform/index.ts',
+        network: 'src/network/index.ts',
+        files: 'src/files/index.ts',
+        outbox: 'src/outbox/index.ts',
+        screen: 'src/screen/index.ts',
+        sharing: 'src/sharing/index.ts',
         fabric: 'src/adapters/fabric/index.ts',
         inversify: 'src/adapters/inversify/index.ts',
         vue: 'src/adapters/vue/index.ts',
+        react: 'src/adapters/react/index.ts',
       },
     },
     rolldownOptions: {
       // only the adapters have dependencies, and the application that uses them provides them
-      external: [/^fabric/, /^vue/, /^inversify/],
+      external: [/^fabric/, /^vue/, /^inversify/, /^react/],
     },
   },
   test: {
@@ -44,7 +50,7 @@ export default defineConfig({
       },
       {
         // prepared up front: a dependency that is discovered during a run makes the test server reload a spec
-        optimizeDeps: { include: ['fabric'] },
+        optimizeDeps: { include: ['fabric', 'react', 'react-dom/client'] },
         // the real browser APIs, including a second tab
         test: {
           name: 'browser',

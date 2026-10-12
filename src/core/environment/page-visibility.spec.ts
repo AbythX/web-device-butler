@@ -34,21 +34,6 @@ const settled = async (promise: Promise<void>) => {
 }
 
 describe('page-visibility', () => {
-  describe('#isHidden', () => {
-    test('should follow the page', async () => {
-      const document = new FakeDocument('visible')
-      const sut = visibilityOf(document)
-
-      expect(sut.isHidden).toBe(false)
-      document.change('hidden')
-      expect(sut.isHidden).toBe(true)
-    })
-
-    test('should be false where there is no page', async () => {
-      expect(new PageVisibility(BrowserEnvironment.of({})).isHidden).toBe(false)
-    })
-  })
-
   describe('#whenVisible', () => {
     test('should resolve at once for a page that is visible', async () => {
       const document = new FakeDocument('visible')

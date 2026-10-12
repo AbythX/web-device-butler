@@ -42,7 +42,7 @@ class CameraDemo extends DemoPage {
     this.onClick('half', () => this.session?.configure({ width: 1280, height: 720 }))
     this.onClick('close', () => this.session?.close())
     this.onClick('report', async () => this.showReport())
-    this.onClick('copy', () => navigator.clipboard.writeText(this.element('report-output').textContent ?? ''))
+    this.onClick('copy', () => this.butler.clipboard.writeText(this.element('report-output').textContent ?? ''))
 
     const allowTakeover = this.element<HTMLInputElement>('allow-takeover')
     allowTakeover.addEventListener('change', () => {

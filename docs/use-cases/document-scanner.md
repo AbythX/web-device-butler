@@ -52,16 +52,13 @@ The slider can call `zoom.set()` on every movement; the session applies the chan
 
 ## Taking the photo
 
-The library delivers the stream; the photo is a frame of the video, drawn to a canvas:
-
 ```ts
-const canvas = document.createElement('canvas')
-canvas.width = video.videoWidth
-canvas.height = video.videoHeight
-canvas.getContext('2d')?.drawImage(video, 0, 0)
-
-const picture = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+const picture = await session.takePhoto({ quality: 0.9 }) // a Blob
 ```
+
+Where the browser can ask the camera for a still picture, that is the photo, and it can be larger than the
+preview. Everywhere else it is the picture of the stream at that moment. `{ source: 'frame' }` always takes the
+latter, exactly what the user sees. See [taking a photo](../guides/camera.md#taking-a-photo).
 
 ## Keeping the photos
 

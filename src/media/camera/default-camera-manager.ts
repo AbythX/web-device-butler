@@ -28,6 +28,7 @@ import type { CameraTiming } from './discovery/camera-timing.ts'
 import { CameraDescriptor } from './model/camera-descriptor.ts'
 import { CameraFeatures } from './model/camera-features.ts'
 import type { CameraConfiguration, CameraRequirements } from './model/camera-requirements.ts'
+import { CameraPhotographer } from './photo/camera-photographer.ts'
 import { CameraConstraints } from './session/camera-constraints.ts'
 import type { CameraSession, CameraSessionHost } from './session/camera-session.ts'
 import { DefaultCameraSession } from './session/default-camera-session.ts'
@@ -88,6 +89,7 @@ export class DefaultCameraManager
         cache: CameraProbeCache.in(storage, new ScopedLogger('CameraProbeCache', logger)),
         selector: new CameraSelector(),
         visibility: new PageVisibility(environment),
+        photographer: new CameraPhotographer(environment, new ScopedLogger('CameraPhotographer', logger)),
         quirks: () => PlatformQuirks.for(platform, 'camera'),
         timing,
       },
@@ -110,6 +112,7 @@ export class DefaultCameraManager
       restart: (requirements, lease) => this.start(requirements, lease),
       merge: (requirements, changes) => this.merge(requirements, changes),
       whenVisible: () => parts.visibility.whenVisible(),
+      photograph: (stream, options) => parts.photographer.take(stream, options),
     }
   }
 
@@ -147,20 +150,25 @@ export class DefaultCameraManager
     return this.parts.cache.clear()
   }
 
-  protected describe(device: MediaDeviceInfo): CameraDescriptor {
-    return CameraDescriptor.listed(device)
+  protected describe(devices: readonly MediaDeviceInfo[]): CameraDescriptor[] {
+    return devices.map((device) => CameraDescriptor.listed(device))
   }
 
   /**
-   * A required side is the only one that is requested. Otherwise both are, the preferred one first; without a
-   * preference the back first: it is the one applications need most.
+   * The access the requirements need, in the order in which it is requested. A required side is the only one that
+   * is requested. Otherwise both are, the preferred one first; without a preference the back first: it is the one
+   * applications need most.
    */
-  protected accessScopes({ require = {}, prefer = {} }: CameraRequirements): readonly MediaAccessScope[] {
+  public static scopesFor({ require = {}, prefer = {} }: CameraRequirements): MediaAccessScope[] {
     if (require.facing !== undefined) {
       return [require.facing]
     }
 
     return prefer.facing === 'front' ? ['front', 'back'] : ['back', 'front']
+  }
+
+  protected accessScopes(requirements: CameraRequirements): readonly MediaAccessScope[] {
+    return DefaultCameraManager.scopesFor(requirements)
   }
 
   /**
