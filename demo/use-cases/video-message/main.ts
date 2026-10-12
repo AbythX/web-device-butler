@@ -21,8 +21,8 @@ class VideoMessage extends DemoPage {
     super(page)
     this.butler = DefaultDeviceButler.create({
       logger: this.logger,
-      camera: { facing: 'front', resolution: { width: 1280, height: 720 } },
-      microphone: { processing: { echoCancellation: true, noiseSuppression: true } },
+      camera: { require: { facing: 'front' }, prefer: { width: 1280, height: 720 } },
+      microphone: { prefer: { echoCancellation: true, noiseSuppression: true } },
     })
 
     this.onClick('start', () => this.start('fail'))

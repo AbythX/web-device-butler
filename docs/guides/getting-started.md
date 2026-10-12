@@ -9,8 +9,8 @@ import { ConsoleLogger, DefaultDeviceButler } from 'web-device-butler'
 
 const butler = DefaultDeviceButler.create({
   logger: new ConsoleLogger(),
-  camera: { facing: 'back', require: { torch: true }, resolution: { width: 1920, height: 1080 } },
-  microphone: { processing: { noiseSuppression: true } },
+  camera: { require: { facing: 'back', torch: true }, prefer: { width: 1920, height: 1080 } },
+  microphone: { prefer: { noiseSuppression: true } },
   storage: { namespace: 'my-app' },
 })
 ```
@@ -79,14 +79,22 @@ The `camera` and `microphone` sections have the same shape as the argument of `o
 the application usually wants; a call overrides single fields of it:
 
 ```ts
-const butler = DefaultDeviceButler.create({ camera: { facing: 'back', require: { torch: true } } })
+const butler = DefaultDeviceButler.create({
+  camera: { require: { facing: 'back', torch: true }, prefer: { width: 1920, height: 1080 } },
+})
 
 await butler.camera.open() // a back camera with a torch
-await butler.camera.open({ facing: 'front', require: {} }) // a front camera, torch not required
+await butler.camera.open({ require: { facing: 'front' } }) // a front camera, torch not required
 ```
 
-A field of the call replaces the configured field as a whole: `require: {}` above removes the requirement for a
-torch, it does not merge with it.
+`require` says what a device must have, `prefer` what it should have; both take the same traits. A field of the
+call replaces the configured field as a whole: the `require` above removes the requirement for a torch, it does not
+merge with it. The same holds for `prefer`: a call that prefers something else no longer prefers the configured
+width and height, unless it names them again.
+
+The other sections work the same way. `storage` takes a `require` and a `prefer` for the backend of a store, and
+`location` for the position that comes back; see [Storage](storage.md#letting-the-library-choose) and
+[Location](location-orientation-permissions.md#asking-for-a-position-that-is-good-enough).
 
 `butler.camera.configure(changes)` changes the defaults later, for example when the user picks another resolution in
 the settings of the application.
@@ -98,8 +106,8 @@ start cameras to find out what they can do. `prepare()` does that work at a mome
 set-up screen:
 
 ```ts
-// without options: the devices that have a section in the configuration, both if neither has one
-const { camera, microphone } = await butler.prepare()
+// without options: what has a section in the configuration, and the camera and the microphone if neither has one
+const { camera, microphone, storage, location } = await butler.prepare()
 
 if (camera?.error) {
   // PermissionDeniedError, MediaRequirementsError, UnsupportedError, ...
@@ -107,7 +115,10 @@ if (camera?.error) {
 camera?.selected // the camera open() will start
 ```
 
-It reports per device instead of throwing, leaves no device running, and is cheap when it is called again. It is
+For the storage it says which backend the stores are kept in and asks for the protection against eviction the
+configuration names; for the location it requests the permission.
+
+It reports per section instead of throwing, leaves no device running, and is cheap when it is called again. It is
 optional: `open()` does the same on demand. See [the set-up screen](../use-cases/set-up-screen.md).
 
 ## Lifetimes

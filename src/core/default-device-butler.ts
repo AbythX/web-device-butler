@@ -78,9 +78,13 @@ export class DefaultDeviceButler implements DeviceButler {
 
     // a request without a facing asks for what the application configured
     const cameraScopes = (): MediaAccessScope[] => {
-      const { facing } = camera.configuration
+      const { require = {}, prefer = {} } = camera.configuration
 
-      return facing === undefined ? ['back', 'front'] : [facing]
+      if (require.facing !== undefined) {
+        return [require.facing]
+      }
+
+      return prefer.facing === 'front' ? ['front', 'back'] : ['back', 'front']
     }
 
     const permission = new DefaultPermissionManager(
@@ -100,15 +104,19 @@ export class DefaultDeviceButler implements DeviceButler {
     }
 
     return new DefaultDeviceButler(
-      // an application that only configured a camera is not asked for its microphone
-      isConfigured.camera || isConfigured.microphone ? isConfigured : { camera: true, microphone: true },
+      {
+        // an application that only configured a camera is not asked for its microphone
+        ...(isConfigured.camera || isConfigured.microphone ? isConfigured : { camera: true, microphone: true }),
+        storage: configuration.storage !== undefined,
+        location: configuration.location !== undefined,
+      },
       storage,
       camera,
       microphone,
       new DefaultMediaManager(camera, microphone, environment, new ScopedLogger('MediaManager', logger)),
       permission,
       new DefaultTabCoordination(lock),
-      new DefaultDeviceLocation(environment, new ScopedLogger('DeviceLocation', logger)),
+      new DefaultDeviceLocation(environment, new ScopedLogger('DeviceLocation', logger), configuration.location),
       new DefaultDevicePlatform(environment),
       new DefaultDeviceOrientation(environment, new ScopedLogger('DeviceOrientation', logger)),
       channel,
@@ -135,18 +143,26 @@ export class DefaultDeviceButler implements DeviceButler {
   ) {}
 
   public async prepare(options: DeviceButlerPrepareOptions = this.prepared): Promise<DeviceButlerPreparation> {
-    const { camera = false, microphone = false } = options
+    const { storage = false, camera = false, microphone = false, location = false } = options
 
-    // a device that was not asked for has no entry
+    // what was not asked for has no entry
     const found: Preparation = {}
 
     // one after the other, so the browser shows one prompt at a time
+    if (storage !== false) {
+      found.storage = await this.storage.prepare(storage === true ? undefined : storage)
+    }
+
     if (camera !== false) {
       found.camera = await this.camera.prepare(camera === true ? undefined : camera)
     }
 
     if (microphone !== false) {
       found.microphone = await this.microphone.prepare(microphone === true ? undefined : microphone)
+    }
+
+    if (location) {
+      found.location = { permission: await this.permission.request('geolocation') }
     }
 
     return found

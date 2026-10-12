@@ -47,7 +47,7 @@ reports for itself.
 ```ts
 if (camera?.selected) {
   showReady(`Camera: ${camera.selected.label}`)
-  if (camera.isResolutionAvailable === false) showNote('This camera cannot record in the configured resolution.')
+  if (camera.isResolutionAvailable === false) showNote('This camera cannot record in the preferred resolution.')
 } else {
   showProblem(explain(camera?.error))
 }
@@ -70,11 +70,23 @@ Afterwards no camera runs. `butler.camera.open()` starts the selected one withou
 
 ```ts
 await butler.prepare({ camera: true }) // no microphone prompt for an application that only scans
-await butler.prepare({ camera: { facing: 'front', require: {} } }) // other requirements for this call
+await butler.prepare({ camera: { require: { facing: 'front' } } }) // other requirements for this call
 ```
 
-The location has no `prepare()`. Its prompt comes with the first `butler.location.current()`, or earlier with
-`butler.permission.request('geolocation')`.
+`prepare()` also covers the storage and the location, for an application that has a section for them in its
+configuration or asks for them in the call:
+
+```ts
+const { storage, location } = await butler.prepare({ storage: true, location: true })
+
+storage?.capabilities // what the backend of the stores can do; undefined if none fits
+storage?.isPersistent // whether the browser protects the data against eviction
+storage?.error
+location?.permission // 'granted' | 'denied' | 'unknown' | 'unsupported'
+```
+
+For the location this requests the permission, which shows the prompt. Without it the prompt comes with the first
+`butler.location.current()`.
 
 ## Letting the user choose a camera
 

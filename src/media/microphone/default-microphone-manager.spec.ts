@@ -150,7 +150,7 @@ describe('default-microphone-manager', () => {
     })
 
     test('should start the microphones to find out about a feature that is required', async () => {
-      const microphone = await sut.select({ require: { minChannelCount: 2 } })
+      const microphone = await sut.select({ require: { channelCount: 2 } })
 
       expect(microphone?.id).toBe('stereo')
       expect(microphone?.detail).toBe('probed')
@@ -175,19 +175,19 @@ describe('default-microphone-manager', () => {
       inputs.forEach((input) => (input.staticCapabilities = input.capabilities))
       use(inputs)
 
-      expect((await sut.select({ require: { minChannelCount: 2 } }))?.id).toBe('stereo')
+      expect((await sut.select({ require: { channelCount: 2 } }))?.id).toBe('stereo')
       expect(startedById()).toEqual([])
     })
 
     test('should use the configured defaults and let a call override single fields', async () => {
-      sut = load({ require: { minChannelCount: 2 } })
+      sut = load({ require: { channelCount: 2 } })
 
       expect((await sut.select())?.id).toBe('stereo')
       expect((await sut.select({ require: {} }))?.id).toBe('headset')
     })
 
     test('should return nothing if no microphone has what is required', async () => {
-      expect(await sut.select({ require: { echoCancellation: true, minChannelCount: 2 } })).toBeUndefined()
+      expect(await sut.select({ require: { echoCancellation: true, channelCount: 2 } })).toBeUndefined()
     })
 
     test('should return nothing if access is refused', async () => {
@@ -219,7 +219,7 @@ describe('default-microphone-manager', () => {
         }
       }
 
-      const microphone = await sut.select({ require: { minChannelCount: 2 } })
+      const microphone = await sut.select({ require: { channelCount: 2 } })
 
       expect(microphone?.id).toBe('stereo')
       expect((await sut.list())[0]?.detail).toBe('listed')
@@ -254,20 +254,50 @@ describe('default-microphone-manager', () => {
     })
 
     test('should open the microphone that has what is required', async () => {
-      const session = await sut.open({ require: { minChannelCount: 2 }, channelCount: 2 })
+      const session = await sut.open({ require: { channelCount: 2 } })
 
       expect(session.descriptor.id).toBe('stereo')
       expect(session.settings.channelCount).toBe(2)
     })
 
     test('should start with the processing of the configuration', async () => {
-      sut = load({ processing: { noiseSuppression: false } })
+      sut = load({ prefer: { noiseSuppression: false } })
 
       const session = await sut.open()
 
       expect(session.settings).toMatchObject({ echoCancellation: true, noiseSuppression: false, autoGainControl: true })
       expect(browser.devices.requests.at(-1)).toEqual({
         audio: { noiseSuppression: false, deviceId: { exact: 'headset' } },
+      })
+    })
+
+    test('should switch on a processing that is required or preferred', async () => {
+      const session = await sut.open({ require: { echoCancellation: true }, prefer: { noiseSuppression: true } })
+
+      expect(session.settings).toMatchObject({ echoCancellation: true, noiseSuppression: true })
+      expect(browser.devices.requests.at(-1)).toEqual({
+        audio: { echoCancellation: true, noiseSuppression: true, deviceId: { exact: 'headset' } },
+      })
+    })
+
+    test('should not choose a microphone by a processing that is switched off', async () => {
+      const session = await sut.open({ require: { echoCancellation: false }, prefer: { noiseSuppression: false } })
+
+      expect(session.descriptor.id).toBe('headset')
+      expect(session.settings).toMatchObject({ echoCancellation: false, noiseSuppression: false })
+    })
+
+    test('should open the default microphone of the system if it is required', async () => {
+      const session = await sut.open({ require: { default: true, echoCancellation: true } })
+
+      expect(session.descriptor.isDefault).toBe(true)
+    })
+
+    test('should ask for the preferred channel count and sample rate', async () => {
+      await sut.open({ id: 'stereo', require: { channelCount: 1 }, prefer: { channelCount: 2, sampleRate: 48_000 } })
+
+      expect(browser.devices.requests.at(-1)).toEqual({
+        audio: { channelCount: { ideal: 2 }, sampleRate: { ideal: 48_000 }, deviceId: { exact: 'stereo' } },
       })
     })
 
@@ -292,7 +322,7 @@ describe('default-microphone-manager', () => {
     })
 
     test('should say which requirement removed which microphone if none fits', async () => {
-      const opening = sut.open({ require: { echoCancellation: true, minChannelCount: 2 } })
+      const opening = sut.open({ require: { echoCancellation: true, channelCount: 2 } })
 
       await expect(opening).rejects.toThrow(MediaRequirementsError)
       await expect(opening).rejects.toThrow(
@@ -388,7 +418,7 @@ describe('default-microphone-manager', () => {
     })
 
     test('should be followed by an open() that starts the selected microphone', async () => {
-      sut = load({ require: { minChannelCount: 2 } })
+      sut = load({ require: { channelCount: 2 } })
       const { selected } = await sut.prepare()
       const starts = startedById().length
 
@@ -399,7 +429,7 @@ describe('default-microphone-manager', () => {
     })
 
     test('should report that no microphone fits instead of throwing', async () => {
-      const result = await sut.prepare({ require: { echoCancellation: true, minChannelCount: 2 } })
+      const result = await sut.prepare({ require: { echoCancellation: true, channelCount: 2 } })
 
       expect(result.selected).toBeUndefined()
       expect(result.microphones).toHaveLength(3)

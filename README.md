@@ -61,7 +61,7 @@ that file.
 import { DefaultDeviceButler } from 'web-device-butler'
 
 const butler = DefaultDeviceButler.create({
-  camera: { facing: 'back', require: { torch: true }, resolution: { width: 1920, height: 1080 } },
+  camera: { require: { facing: 'back', torch: true }, prefer: { width: 1920, height: 1080 } },
   storage: { namespace: 'my-app' },
 })
 ```
@@ -88,8 +88,8 @@ video.srcObject = session.stream
 
 await session.torch?.set(true) // `undefined` if this camera has no torch
 await session.zoom?.set(2)
-await session.configure({ resolution: { width: 1280, height: 720 } })
-await session.switchTo({ facing: 'front', require: {} })
+await session.configure({ width: 1280, height: 720 })
+await session.switchTo({ require: { facing: 'front' } })
 
 session.on('ended', ({ reason }) => {
   /* 'closed' | 'taken-over' | 'device' */
@@ -98,8 +98,10 @@ session.on('ended', ({ reason }) => {
 
 - `open(requirements)` merges the requirements over the configured defaults. A field of the call replaces the
   configured field as a whole.
-- `require` never returns a camera without the feature. `prefer` ranks. If nothing fits, `open()` fails with a
-  `MediaRequirementsError` that says which requirement removed which camera.
+- `require` and `prefer` take the same traits: the side, torch, zoom, focus, width, height, frame rate. `require`
+  never returns a camera without them. `prefer` ranks the cameras that are left and says what the running camera
+  is asked to deliver. If nothing fits, `open()` fails with a `MediaRequirementsError` that says which requirement
+  removed which camera.
 - To find out what a camera can do, the library has to start it. That happens once; the result is remembered.
   `butler.camera.list({ detail: 'probed' })` looks at every camera, `butler.camera.forget()` starts over.
 - Only one tab can run a camera. What happens when another tab holds it is a policy:
@@ -109,7 +111,7 @@ session.on('ended', ({ reason }) => {
 ## Microphone
 
 ```ts
-await using microphone = await butler.microphone.open({ processing: { noiseSuppression: false } })
+await using microphone = await butler.microphone.open({ prefer: { noiseSuppression: false } })
 
 await microphone.processing.set({ echoCancellation: false })
 microphone.muted = true
@@ -123,7 +125,7 @@ a new one.
 ### Both together
 
 ```ts
-await using recording = await butler.media.open({ camera: { facing: 'back' } })
+await using recording = await butler.media.open({ camera: { require: { facing: 'back' } } })
 
 new MediaRecorder(recording.stream).start()
 await recording.camera.torch?.set(true)
@@ -133,6 +135,13 @@ await recording.camera.torch?.set(true)
 
 ```ts
 const settings = await butler.storage.open<Settings>({ driver: ['indexeddb', 'local'], namespace: 'settings' })
+
+// or say what the store needs and let the library choose the backend
+const recordings = await butler.storage.open({
+  namespace: 'recordings',
+  require: { persistence: 'origin', binary: true },
+  prefer: { streaming: true },
+})
 
 await settings.set('theme', { dark: true })
 await settings.get('theme')
@@ -155,6 +164,14 @@ settings.on('change', ({ key, origin }) => {
 
 ```ts
 const position = await butler.location.current({ highAccuracy: true })
+
+// never further off than 100 m, and within 10 m if that arrives in time
+const precise = await butler.location.current({
+  require: { accuracy: 100 },
+  prefer: { accuracy: 10 },
+  highAccuracy: true,
+  timeout: 15_000,
+})
 
 using watch = butler.location.watch()
 watch.on('position', (position) => {
@@ -184,6 +201,7 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 | `MediaDeviceNotFoundError`                             | there is no such device                                    |
 | `SessionClosedError`                                   | the session has ended                                      |
 | `LocationUnavailableError`, `LocationTimeoutError`     | the position could not be determined                       |
+| `LocationRequirementsError`                            | no position had what was required in time                  |
 | `StorageQuotaExceededError`, `StorageLockedError`, ... | see `StorageError`                                         |
 
 ## Entry points

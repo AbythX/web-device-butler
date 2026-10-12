@@ -58,7 +58,7 @@ describe('use-camera', () => {
   test('should open a session and expose it as state', async () => {
     const camera = within(() => useCamera(manager))
 
-    const opening = camera.open({ facing: 'back', require: { torch: true } })
+    const opening = camera.open({ require: { facing: 'back', torch: true } })
     expect(camera.isOpening.value).toBe(true)
     const session = await opening
 
@@ -73,7 +73,7 @@ describe('use-camera', () => {
   test('should put a failure into the state instead of throwing', async () => {
     const camera = within(() => useCamera(manager))
 
-    const session = await camera.open({ facing: 'front', require: { torch: true } })
+    const session = await camera.open({ require: { facing: 'front', torch: true } })
 
     expect(session).toBeUndefined()
     expect(camera.session.value).toBeUndefined()
@@ -85,25 +85,25 @@ describe('use-camera', () => {
     const camera = within(() => useCamera(manager))
     await camera.open({ id: 'gone' })
 
-    await camera.open({ facing: 'back' })
+    await camera.open({ require: { facing: 'back' } })
 
     expect(camera.error.value).toBeUndefined()
   })
 
   test('should follow the camera and its settings', async () => {
     const camera = within(() => useCamera(manager))
-    const session = await camera.open({ facing: 'back', require: { torch: true } })
+    const session = await camera.open({ require: { facing: 'back', torch: true } })
 
-    await session?.configure({ resolution: { width: 1280, height: 720 } })
+    await session?.configure({ width: 1280, height: 720 })
     expect(camera.settings.value?.resolution?.toString()).toBe('1280x720')
 
-    await session?.switchTo({ facing: 'front', require: {} })
+    await session?.switchTo({ require: { facing: 'front' } })
     expect(camera.descriptor.value?.facing).toBe('front')
   })
 
   test('should follow the state of the session', async () => {
     const camera = within(() => useCamera(manager))
-    const session = await camera.open({ facing: 'back' })
+    const session = await camera.open({ require: { facing: 'back' } })
 
     fake(session).mute()
 
@@ -112,7 +112,7 @@ describe('use-camera', () => {
 
   test('should forget a session that ended and say why', async () => {
     const camera = within(() => useCamera(manager))
-    const session = await camera.open({ facing: 'back' })
+    const session = await camera.open({ require: { facing: 'back' } })
 
     fake(session).end()
     await waitFor(() => camera.session.value === undefined)
@@ -125,9 +125,9 @@ describe('use-camera', () => {
 
   test('should close the open session before it opens another one', async () => {
     const camera = within(() => useCamera(manager))
-    const first = await camera.open({ facing: 'back' })
+    const first = await camera.open({ require: { facing: 'back' } })
 
-    const second = await camera.open({ facing: 'front' })
+    const second = await camera.open({ require: { facing: 'front' } })
 
     expect(first?.state).toBe('ended')
     expect(camera.session.value).toBe(second)
@@ -136,7 +136,7 @@ describe('use-camera', () => {
 
   test('should close the session', async () => {
     const camera = within(() => useCamera(manager))
-    const session = await camera.open({ facing: 'back' })
+    const session = await camera.open({ require: { facing: 'back' } })
 
     await camera.close()
 
@@ -147,7 +147,7 @@ describe('use-camera', () => {
 
   test('should close the session when the component is unmounted', async () => {
     const camera = within(() => useCamera(manager))
-    const session = await camera.open({ facing: 'back' })
+    const session = await camera.open({ require: { facing: 'back' } })
 
     scope.stop()
     await flush()
@@ -157,7 +157,7 @@ describe('use-camera', () => {
 
   test('should close a session that opens after the component was unmounted', async () => {
     const camera = within(() => useCamera(manager))
-    const opening = camera.open({ facing: 'back' })
+    const opening = camera.open({ require: { facing: 'back' } })
     await waitFor(() => browser.devices.requests.length > 0)
 
     scope.stop()
@@ -171,7 +171,7 @@ describe('use-camera', () => {
     const camera = within(() => useCamera(manager))
     scope.stop()
 
-    expect(await camera.open({ facing: 'back' })).toBeUndefined()
+    expect(await camera.open({ require: { facing: 'back' } })).toBeUndefined()
     expect(browser.devices.calls).toEqual([])
   })
 })

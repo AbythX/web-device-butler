@@ -19,7 +19,7 @@ describe('camera-video', () => {
   beforeEach(async () => {
     browser = new FakeMediaBrowser({ inputs: CameraTestBench.phone(), oneCameraAtATime: true })
     manager = CameraTestBench.load(browser)
-    session = await manager.open({ facing: 'back', require: { torch: true } })
+    session = await manager.open({ require: { facing: 'back', torch: true } })
     element = new FakeVideoElement()
   })
 
@@ -65,7 +65,7 @@ describe('camera-video', () => {
     await createSut().play()
     const previous = session.stream
 
-    await session.switchTo({ facing: 'front', require: {} })
+    await session.switchTo({ require: { facing: 'front' } })
 
     expect(element.srcObject).toBe(session.stream)
     expect(element.srcObject).not.toBe(previous)
@@ -76,7 +76,7 @@ describe('camera-video', () => {
     await sut.play()
 
     sut.dispose()
-    await session.switchTo({ facing: 'front', require: {} })
+    await session.switchTo({ require: { facing: 'front' } })
 
     expect(element).toMatchObject({ srcObject: null, isPlaying: false, isRemoved: true })
     expect(element.listenerCount()).toBe(0)

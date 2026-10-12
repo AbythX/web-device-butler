@@ -44,10 +44,9 @@ export type { CameraFeatureValues } from './model/camera-features.ts'
 
 export type {
   CameraConfiguration,
-  CameraFeatureRequirements,
   CameraRequirements,
   CameraSelectionStrategy,
-  ResolutionRequirement,
+  CameraTraits,
 } from './model/camera-requirements.ts'
 
 export { CameraSettings } from './model/camera-settings.ts'
@@ -61,6 +60,8 @@ export { Resolution } from './model/resolution.ts'
 export type { ResolutionLike } from './model/resolution.ts'
 
 export { CameraConstraints } from './session/camera-constraints.ts'
+
+export type { CameraDelivery } from './session/camera-constraints.ts'
 
 export type {
   CameraSession,

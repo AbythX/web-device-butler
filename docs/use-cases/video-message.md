@@ -10,8 +10,8 @@ the same application in another tab.
 
 ```ts
 const butler = DefaultDeviceButler.create({
-  camera: { facing: 'front', resolution: { width: 1280, height: 720 } },
-  microphone: { processing: { echoCancellation: true, noiseSuppression: true } },
+  camera: { require: { facing: 'front' }, prefer: { width: 1280, height: 720 } },
+  microphone: { prefer: { echoCancellation: true, noiseSuppression: true } },
 })
 
 const session = await butler.media.open()
@@ -37,7 +37,7 @@ Each part stays a full session: `session.camera.torch`, `session.camera.switchTo
 Requirements for one call go to the part they belong to:
 
 ```ts
-await butler.media.open({ camera: { facing: 'back' }, microphone: { exclusive: true } })
+await butler.media.open({ camera: { require: { facing: 'back' } }, microphone: { exclusive: true } })
 ```
 
 ## Recording
@@ -74,7 +74,7 @@ and keeps what it has, so the `stop` listener above still delivers the message.
 ## Switching the camera before recording
 
 ```ts
-await session.camera.switchTo({ facing: 'back' })
+await session.camera.switchTo({ require: { facing: 'back' } })
 ```
 
 The combined session keeps delivering through the same `stream`, so the preview needs no new `srcObject`. Do it

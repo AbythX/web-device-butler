@@ -5,7 +5,7 @@ import type { Logger } from '../core/logging/logger.ts'
 import { PermissionDeniedError } from '../permission/errors/permission-denied-error.ts'
 import { DevicePosition } from './device-position.ts'
 import { LocationErrorFactory } from './errors/location-error-factory.ts'
-import type { LocationOptions } from './location-options.ts'
+import type { LocationOptions, LocationTraits } from './location-options.ts'
 import type { LocationWatch, LocationWatchEvents } from './location-watch.ts'
 
 /**
@@ -14,6 +14,7 @@ import type { LocationWatch, LocationWatchEvents } from './location-watch.ts'
 export class DefaultLocationWatch extends EventEmitter<LocationWatchEvents> implements LocationWatch {
   private identifier: number | undefined
   private lastPosition: DevicePosition | undefined
+  private readonly require: LocationTraits
 
   /**
    * @param stopped called once, when the watch has stopped
@@ -25,6 +26,8 @@ export class DefaultLocationWatch extends EventEmitter<LocationWatchEvents> impl
     private readonly stopped: (watch: LocationWatch) => void = () => undefined
   ) {
     super()
+
+    this.require = options.require ?? {}
 
     this.identifier = geolocation.watchPosition(
       (position) => this.moved(position),
@@ -59,8 +62,15 @@ export class DefaultLocationWatch extends EventEmitter<LocationWatchEvents> impl
       return
     }
 
-    this.lastPosition = DevicePosition.from(position)
-    this.emitSafely('position', this.lastPosition, this.logger)
+    const next = DevicePosition.from(position)
+
+    // a position without what is required is not one the application asked for
+    if (!next.satisfies(this.require)) {
+      return
+    }
+
+    this.lastPosition = next
+    this.emitSafely('position', next, this.logger)
   }
 
   private failed(error: GeolocationPositionError): void {

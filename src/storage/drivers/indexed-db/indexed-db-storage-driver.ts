@@ -36,12 +36,7 @@ export class IndexedDbStorageDriver extends StorageDriver {
   /** the name a store is opened with: `{ driver: 'indexeddb' }` */
   public readonly name: string = 'indexeddb'
   /** kept with the origin, holds bytes as they are, cannot stream */
-  public readonly capabilities = new StorageCapabilities({
-    driver: this.name,
-    persistence: 'origin',
-    binary: true,
-    streaming: false,
-  })
+  public readonly capabilities = StorageCapabilities.indexedDb
 
   private connection: Promise<IDBDatabase> | undefined
 

@@ -10,29 +10,59 @@ Try it: `pnpm demo`, page `camera/`.
 
 ```ts
 const session = await butler.camera.open({
-  facing: 'back',
-  require: { torch: true },
-  prefer: { zoom: true },
-  resolution: { width: 1920, height: 1080 },
+  require: { facing: 'back', torch: true },
+  prefer: { zoom: true, width: 1920, height: 1080 },
 })
 ```
 
+`require` is what the camera must have: a camera without it is never returned. `prefer` is what it should have:
+among the cameras that have what is required, those with it rank higher. Both take the same traits.
+
+| Trait             | In `require`                                                        | In `prefer`                                   |
+| ----------------- | ------------------------------------------------------------------- | --------------------------------------------- |
+| `facing`          | `'front'` or `'back'`, and no other side. On a device where no camera says which side it is on, such as a laptop, the cameras that do not say are used. | that side first, then the cameras that do not say, then the other side |
+| `torch`, `zoom`, `focus` | the camera has it. `false` asks for nothing.                 | cameras that have it rank higher              |
+| `width`, `height` | the camera can deliver at least this, in pixels                     | cameras that can deliver it rank higher       |
+| `frameRate`       | the camera can deliver at least this many frames per second         | cameras that can deliver it rank higher       |
+
+The preferred width, height and frame rate are also what the running camera is asked to deliver, the closest it
+can do. Where none is preferred, the required one is asked for:
+
+```ts
+await butler.camera.open({
+  require: { width: 1280, height: 720 }, // never a camera that cannot do 720p
+  prefer: { width: 1920, height: 1080 }, // 1080p from a camera that can
+})
+```
+
+A width and a height written together are one size. A phone that is held upright swaps them, so the longer and the
+shorter sides are compared with each other: `{ width: 1920, height: 1080 }` fits a camera whichever way the device
+is held. One of them alone is compared with the same side of the largest picture the browser reports for the
+camera, which is the picture of a device held sideways, so `width` alone means the long side of a phone.
+
+Having a torch is not switching it on: `torch: true` never lights it. That is [`session.torch`](#torch-zoom-focus).
+
+The other fields say how to ask:
+
 | Field        | Meaning                                                                                              |
 | ------------ | ---------------------------------------------------------------------------------------------------- |
-| `facing`     | `'front'` or `'back'`. On a device where no camera says which side it is on, such as a laptop, the cameras that do not say are used. |
-| `require`    | a camera without these is never returned: `torch`, `zoom`, `focus`, `minResolution`, `minFrameRate`  |
-| `prefer`     | the same fields; among the cameras that have what is required, those with these rank higher          |
-| `resolution` | what the camera should deliver. `mode: 'ideal'` (default) takes the closest, `mode: 'exact'` fails otherwise. |
-| `frameRate`  | frames per second, the closest the camera can do                                                     |
 | `strategy`   | `'best'` (default) looks at every camera that can match; `'first'` takes the first that has what is required, which starts fewer cameras on the first visit |
 | `id`         | this camera and no other, by the `id` of its descriptor                                              |
 | `whenBusy`   | what happens when the camera is held: `'fail'` (default), `'wait'`, `'takeover'`. See [Several tabs](multiple-tabs.md). |
 | `autoRecover`| start the camera again when the system ends it, for example when the page returns from the background on iOS |
-| `constraints`| `MediaTrackConstraints`, passed to the browser as they are, for what the library has no field for    |
+| `constraints`| `MediaTrackConstraints`, passed to the browser as they are, for what the library has no field for, such as a size the camera has to deliver exactly: `{ width: { exact: 1920 } }` |
 | `signal`     | an `AbortSignal` that stops waiting for a camera that is held                                        |
 
 Use `require` for what the feature cannot work without, and `prefer` for the rest. A scanner works without a torch,
 so it prefers one; a flashlight application requires it.
+
+The cameras that have what is required are ordered by the preferred side, then by how many of the preferred torch,
+zoom and focus they have, then by whether they can deliver the preferred width and height, then the preferred frame
+rate. What is still equal is decided by the largest zoom range and the highest resolution, which lands on the main
+camera of a phone and not on an auxiliary lens.
+
+A side that is only preferred costs less than no side at all: access is requested for that side first, and the
+other side is only requested and looked at if no camera of the preferred side has what is required.
 
 If nothing fits, `open()` rejects with a `MediaRequirementsError` whose message says which requirement removed which
 camera.
@@ -54,7 +84,7 @@ const result = await butler.camera.prepare()
 result.permission // 'granted' | 'denied' | 'prompt' | 'unknown' | 'unsupported'
 result.cameras // every camera that is known
 result.selected // the one open() will start; undefined if none fits
-result.isResolutionAvailable // whether it can deliver the configured resolution
+result.isResolutionAvailable // whether it can deliver the preferred width and height, or the required ones
 result.error // why there is no selected camera
 ```
 
@@ -63,7 +93,7 @@ result.error // why there is no selected camera
 ```ts
 await butler.camera.list() // never prompts, never starts a camera
 await butler.camera.list({ detail: 'probed' }) // requests access and looks at every camera
-await butler.camera.select({ facing: 'front' }) // the camera open() would start, without starting a session
+await butler.camera.select({ require: { facing: 'front' } }) // the camera open() would start, without starting a session
 ```
 
 A `CameraDescriptor` has `id`, `label`, `facing` (`'front' | 'back' | 'external' | 'unknown'`) and `features`:
@@ -130,14 +160,18 @@ session switches it on again.
 ### Changing a running camera
 
 ```ts
-await session.configure({ resolution: { width: 1280, height: 720 }, frameRate: 30 })
+await session.configure({ width: 1280, height: 720, frameRate: 30 })
 
-await session.switchTo({ facing: 'front', require: {} })
+await session.switchTo({ require: { facing: 'front' } })
 ```
 
+`configure()` changes what the session prefers: the camera delivers the closest it can do, and `session.settings`
+says what it made of it.
+
 `switchTo()` continues with another camera: the same session object, a new track and **a new `stream`**. The
-requirements are merged over the ones the session runs with, which is why the example clears `require`: the front
-camera of a phone has no torch. If no camera fits, the session returns to the camera it had.
+requirements are merged over the ones the session runs with, and `require` and `prefer` are each replaced as a
+whole: the example no longer requires the torch the session was opened with, which the front camera of a phone does
+not have, and keeps what the session prefers. If no camera fits, the session returns to the camera it had.
 
 The running camera is stopped before the next one starts, because a phone cannot run two. In between the state of
 the session is `muted`. A session that lands on the camera it had, after a switch or after `autoRecover`, continues

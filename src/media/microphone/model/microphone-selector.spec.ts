@@ -37,7 +37,7 @@ describe('microphone-selector', () => {
 
   test('should never return a microphone that lacks what is required', async () => {
     expect(ids(sut.select(microphones, { require: { echoCancellation: true } }).ranked)).toEqual(['headset', 'builtin'])
-    expect(sut.select(microphones, { require: { minChannelCount: 2 } }).best?.id).toBe('stereo')
+    expect(sut.select(microphones, { require: { channelCount: 2 } }).best?.id).toBe('stereo')
   })
 
   test('should rank the microphones with the preferred features higher than the default', async () => {
@@ -52,7 +52,7 @@ describe('microphone-selector', () => {
   })
 
   test('should say which requirement removed which microphone', async () => {
-    const selection = sut.select(microphones, { require: { autoGainControl: true, minChannelCount: 2 } })
+    const selection = sut.select(microphones, { require: { autoGainControl: true, channelCount: 2 } })
 
     expect(selection.best).toBeUndefined()
     expect(selection.explain()).toBe(

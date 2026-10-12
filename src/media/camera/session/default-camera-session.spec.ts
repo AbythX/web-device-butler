@@ -46,9 +46,8 @@ class FakeDocument {
 }
 
 const torchCamera: CameraRequirements = {
-  facing: 'back',
-  require: { torch: true },
-  resolution: { width: 1920, height: 1080 },
+  require: { facing: 'back', torch: true },
+  prefer: { width: 1920, height: 1080 },
 }
 
 describe('default-camera-session', () => {
@@ -292,7 +291,7 @@ describe('default-camera-session', () => {
 
   describe('#configure', () => {
     test('should change the resolution of the running camera', async () => {
-      await sut.configure({ resolution: { width: 1280, height: 720 } })
+      await sut.configure({ width: 1280, height: 720 })
 
       expect(sut.settings.resolution?.toString()).toBe('1280x720')
       expect(sut.track.readyState).toBe('live')
@@ -309,32 +308,24 @@ describe('default-camera-session', () => {
       const announced: CameraSettings[] = []
       sut.on('settingschange', (settings) => announced.push(settings))
 
-      await sut.configure({ resolution: { width: 1280, height: 720 } })
-      await sut.configure({ resolution: { width: 1280, height: 720 } })
+      await sut.configure({ width: 1280, height: 720 })
+      await sut.configure({ width: 1280, height: 720 })
 
       expect(announced).toHaveLength(1)
       expect(announced[0]?.resolution?.toString()).toBe('1280x720')
     })
 
     test('should deliver the closest the camera can do', async () => {
-      await sut.configure({ resolution: { width: 7680, height: 4320 } })
+      await sut.configure({ width: 7680, height: 4320 })
 
       expect(sut.settings.resolution?.toString()).toBe('3840x2160')
-    })
-
-    test('should fail for a resolution that is asked for exactly and cannot be delivered', async () => {
-      const configuring = sut.configure({ resolution: { width: 7680, height: 4320, mode: 'exact' } })
-
-      await expect(configuring).rejects.toThrow(MediaRequirementsError)
-      expect(sut.settings.resolution?.toString()).toBe('1920x1080')
-      expect(sut.state).toBe('live')
     })
 
     test('should keep the torch and the zoom', async () => {
       await sut.torch?.set(true)
       await sut.zoom?.set(3)
 
-      await sut.configure({ resolution: { width: 1280, height: 720 } })
+      await sut.configure({ width: 1280, height: 720 })
 
       expect(sut.torch?.enabled).toBe(true)
       expect(sut.zoom?.level).toBe(3)
@@ -351,7 +342,7 @@ describe('default-camera-session', () => {
     test('should continue with the other camera as the same session', async () => {
       const previous = sut.track
 
-      await sut.switchTo({ facing: 'front', require: {} })
+      await sut.switchTo({ require: { facing: 'front' } })
 
       expect(sut.descriptor.facing).toBe('front')
       expect(sut.track).not.toBe(previous)
@@ -362,7 +353,7 @@ describe('default-camera-session', () => {
     })
 
     test('should keep the fields of the requirements that the switch does not change', async () => {
-      await sut.switchTo({ facing: 'front', require: {} })
+      await sut.switchTo({ require: { facing: 'front' } })
 
       // the resolution the session was opened with, as far as the front camera can deliver it
       expect(sut.descriptor.id).toBe('front-0')
@@ -370,12 +361,12 @@ describe('default-camera-session', () => {
     })
 
     test('should replace the controls by those of the new camera', async () => {
-      await sut.switchTo({ facing: 'front', require: {} })
+      await sut.switchTo({ require: { facing: 'front' } })
 
       expect(sut.torch).toBeUndefined()
       expect(sut.zoom).toBeUndefined()
 
-      await sut.switchTo({ facing: 'back', require: { torch: true } })
+      await sut.switchTo({ require: { facing: 'back', torch: true } })
 
       expect(sut.torch).toBeDefined()
       await sut.torch?.set(true)
@@ -400,7 +391,7 @@ describe('default-camera-session', () => {
       sut.on('statechange', (state) => states.push(state))
       sut.on('ended', (end) => ends.push(end))
 
-      await sut.switchTo({ facing: 'front', require: {} })
+      await sut.switchTo({ require: { facing: 'front' } })
 
       expect(states).toEqual(['muted', 'live'])
       expect(ends).toEqual([])
@@ -430,14 +421,14 @@ describe('default-camera-session', () => {
     })
 
     test('should apply a change that is made during the switch to the new camera', async () => {
-      await Promise.all([sut.switchTo({ facing: 'front', require: {} }), sut.configure({ frameRate: 15 })])
+      await Promise.all([sut.switchTo({ require: { facing: 'front' } }), sut.configure({ frameRate: 15 })])
 
       expect(sut.descriptor.facing).toBe('front')
       expect(sut.settings.frameRate).toBe(15)
     })
 
     test('should hold the lock throughout', async () => {
-      await sut.switchTo({ facing: 'front', require: {} })
+      await sut.switchTo({ require: { facing: 'front' } })
 
       expect(await isLocked()).toBe(true)
       await expect(CameraTestBench.load(browser).open({ id: 'front-1' })).rejects.toMatchObject({ holder: 'other-tab' })
@@ -452,7 +443,7 @@ describe('default-camera-session', () => {
     test('should not keep the id of an earlier switch', async () => {
       await sut.switchTo({ id: 'back-wide' })
 
-      await sut.switchTo({ facing: 'front', require: {} })
+      await sut.switchTo({ require: { facing: 'front' } })
 
       expect(sut.descriptor.facing).toBe('front')
     })
@@ -460,7 +451,7 @@ describe('default-camera-session', () => {
     test('should stay on its camera if no camera fits', async () => {
       const previous = sut.track
 
-      await expect(sut.switchTo({ facing: 'front' })).rejects.toThrow(MediaRequirementsError)
+      await expect(sut.switchTo({ require: { facing: 'front', torch: true } })).rejects.toThrow(MediaRequirementsError)
 
       // the front cameras had to be looked at, which stopped the camera of the session
       expect(sut.descriptor.id).toBe('back-main')
@@ -505,7 +496,7 @@ describe('default-camera-session', () => {
     test('should fail after the session was closed', async () => {
       await sut.close()
 
-      await expect(sut.switchTo({ facing: 'front' })).rejects.toThrow(SessionClosedError)
+      await expect(sut.switchTo({ require: { facing: 'front' } })).rejects.toThrow(SessionClosedError)
     })
   })
 
@@ -547,7 +538,7 @@ describe('default-camera-session', () => {
 
     test('should continue with what was changed while the camera ran', async () => {
       await reopen({ ...torchCamera, autoRecover: true })
-      await sut.configure({ resolution: { width: 1280, height: 720 } })
+      await sut.configure({ width: 1280, height: 720 })
       const previous = sut.track
 
       fakeTrackOf(sut).end()

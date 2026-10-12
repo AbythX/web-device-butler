@@ -49,6 +49,10 @@ export type { Logger } from './core/logging/logger.ts'
 
 export { NullLogger } from './core/logging/null-logger.ts'
 
+export { Selection } from './core/selection/selection.ts'
+
+export type { SelectionRejection } from './core/selection/selection.ts'
+
 export { ScopedLogger } from './core/logging/scoped-logger.ts'
 
 export type { TabCoordination } from './core/coordination/tab-coordination.ts'

@@ -46,6 +46,12 @@ export type {
 
 export { DefaultStorageSpaceWatch } from './space/default-storage-space-watch.ts'
 
+export { StorageDriverSelection, StorageDriverSelector } from './selection/storage-driver-selector.ts'
+
+export type { StorageDriverCandidate, StorageDriverRejection } from './selection/storage-driver-selector.ts'
+
+export type { StorageRequirements, StorageTraits } from './selection/storage-requirements.ts'
+
 export { StorageCapabilities } from './storage-capabilities.ts'
 
 export type { StoragePersistence } from './storage-capabilities.ts'
@@ -53,6 +59,8 @@ export type { StoragePersistence } from './storage-capabilities.ts'
 export type { StorageConfiguration } from './storage-configuration.ts'
 
 export type { StorageManager, StoreOptions } from './storage-manager.ts'
+
+export type { StoragePreparation } from './storage-preparation.ts'
 
 export { DefaultStorageManager } from './default-storage-manager.ts'
 

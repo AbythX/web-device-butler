@@ -7,6 +7,7 @@ import { DefaultProcessingControl } from '../controls/default-processing-control
 import type { ProcessingControl } from '../controls/processing-control.ts'
 import { DefaultLevelMeter } from '../level/default-level-meter.ts'
 import type { MicrophoneDescriptor } from '../model/microphone-descriptor.ts'
+import { MicrophoneFeatures } from '../model/microphone-features.ts'
 import type { MicrophoneProcessing, MicrophoneRequirements } from '../model/microphone-requirements.ts'
 import { MicrophoneSettings } from '../model/microphone-settings.ts'
 import type {
@@ -100,7 +101,7 @@ export class DefaultMicrophoneSession extends BaseMediaSession<MicrophoneSession
 
       const previous = this.requirements
       // a microphone that is started again continues with the changed processing
-      this.requirements = { ...previous, processing: { ...previous.processing, ...changes } }
+      this.requirements = DefaultMicrophoneSession.withProcessing(previous, changes)
 
       if (this.state !== 'ended' && !this.processing.matches(changes) && this.processing.supports(changes)) {
         this.logger.debug('The browser did not change the processing of the running microphone, starting it again')
@@ -137,6 +138,25 @@ export class DefaultMicrophoneSession extends BaseMediaSession<MicrophoneSession
       this.logger.error('Could not return to the microphone the session had', error)
       await this.abandon()
     }
+  }
+
+  /**
+   * The requirements with the processing the application switched to. What it switched is no longer required, or a
+   * processing that was required and is switched off now would be switched on again by the next start.
+   */
+  private static withProcessing(
+    requirements: MicrophoneRequirements,
+    changes: MicrophoneProcessing
+  ): MicrophoneRequirements {
+    const require = { ...requirements.require }
+
+    for (const name of MicrophoneFeatures.processingNames) {
+      if (changes[name] !== undefined) {
+        delete require[name]
+      }
+    }
+
+    return { ...requirements, require, prefer: { ...requirements.prefer, ...changes } }
   }
 
   private async restart(requirements: MicrophoneRequirements): Promise<void> {

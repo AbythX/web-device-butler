@@ -169,7 +169,7 @@ describe('default-combined-media-session', () => {
       const stream = sut.stream
       const previous = sut.camera.track
 
-      await sut.camera.switchTo({ facing: 'front', require: {} })
+      await sut.camera.switchTo({ require: { facing: 'front' } })
 
       expect(sut.stream).toBe(stream)
       expect(sut.stream.getVideoTracks()).toEqual([sut.camera.track])

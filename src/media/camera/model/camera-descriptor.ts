@@ -2,7 +2,7 @@ import { MediaInputDescriptor, type MediaInputDetail } from '../../input/media-i
 import type { TrackCapabilities } from '../../session/track-constraints.ts'
 import { CameraFacingDetector, type CameraFacing } from './camera-facing.ts'
 import { CameraFeatures, type CameraFeatureValues } from './camera-features.ts'
-import type { CameraFeatureRequirements, CameraRequirements } from './camera-requirements.ts'
+import type { CameraRequirements, CameraTraits } from './camera-requirements.ts'
 import { Resolution } from './resolution.ts'
 
 /**
@@ -105,56 +105,67 @@ export class CameraDescriptor extends MediaInputDescriptor {
    * What is required and the camera does not have, in words, for the message of an error.
    */
   public unmet(requirements: CameraRequirements): string[] {
-    const unmet = this.missing(requirements.require ?? {})
-
-    const { facing, resolution } = requirements
-
-    if (facing !== undefined && (this.facing === 'front' || this.facing === 'back') && this.facing !== facing) {
-      unmet.unshift(`facing '${facing}'`)
-    }
-
-    const max = this.features.maxResolution
-
-    if (resolution?.mode === 'exact' && max !== undefined && !max.covers(resolution)) {
-      unmet.push(`resolution ${new Resolution(resolution.width, resolution.height).toString()}`)
-    }
-
-    return unmet
+    return this.missing(requirements.require ?? {})
   }
 
   /**
-   * The features of the list that the camera does not have, in words.
+   * The traits of the list that the camera does not have, in words. What the browser does not say about a camera,
+   * such as how large its picture can be, is not held against it.
    */
-  public missing(features: CameraFeatureRequirements): string[] {
+  public missing(traits: CameraTraits): string[] {
     const missing: string[] = []
     const unknown = this.detail === 'probed' ? '' : ' (not known before the camera was started)'
 
-    if (features.torch && !this.features.torch) {
+    const { facing, width, height, frameRate } = traits
+
+    if (facing !== undefined && (this.facing === 'front' || this.facing === 'back') && this.facing !== facing) {
+      missing.push(`facing '${facing}'`)
+    }
+
+    if (traits.torch && !this.features.torch) {
       missing.push(`torch${unknown}`)
     }
 
-    if (features.zoom && this.features.zoom === undefined) {
+    if (traits.zoom && this.features.zoom === undefined) {
       missing.push(`zoom${unknown}`)
     }
 
-    if (features.focus && !this.features.hasFocusControl) {
+    if (traits.focus && !this.features.hasFocusControl) {
       missing.push(`focus${unknown}`)
     }
 
-    const { minResolution, minFrameRate } = features
-    const max = this.features.maxResolution
-
-    if (minResolution !== undefined && max !== undefined && !max.covers(minResolution)) {
-      missing.push(`resolution of at least ${new Resolution(minResolution.width, minResolution.height).toString()}`)
+    if (this.canDeliver({ width, height }) === false) {
+      missing.push(CameraDescriptor.sizeInWords(width, height))
     }
 
     const maxFrameRate = this.features.maxFrameRate
 
-    if (minFrameRate !== undefined && maxFrameRate !== undefined && maxFrameRate < minFrameRate) {
-      missing.push(`frame rate of at least ${minFrameRate}`)
+    if (frameRate !== undefined && maxFrameRate !== undefined && maxFrameRate < frameRate) {
+      missing.push(`frame rate of at least ${frameRate}`)
     }
 
     return missing
+  }
+
+  /**
+   * Whether the picture of the camera can be at least this large. A width and a height together are one size: a
+   * phone that is held upright swaps them, so the longer and the shorter sides are compared with each other. One of
+   * them alone is compared with the same side of the largest picture the browser reports.
+   *
+   * @returns `undefined` if neither is asked for, or the browser does not say how large the picture can be
+   */
+  public canDeliver({ width, height }: Pick<CameraTraits, 'width' | 'height'>): boolean | undefined {
+    const max = this.features.maxResolution
+
+    if (max === undefined || (width === undefined && height === undefined)) {
+      return undefined
+    }
+
+    if (width !== undefined && height !== undefined) {
+      return max.covers({ width, height })
+    }
+
+    return max.width >= (width ?? 0) && max.height >= (height ?? 0)
   }
 
   /**
@@ -168,6 +179,14 @@ export class CameraDescriptor extends MediaInputDescriptor {
       facing: this.facing,
       features: this.features.toJSON(),
     }
+  }
+
+  private static sizeInWords(width: number | undefined, height: number | undefined): string {
+    if (width !== undefined && height !== undefined) {
+      return `resolution of at least ${new Resolution(width, height).toString()}`
+    }
+
+    return width === undefined ? `height of at least ${height}` : `width of at least ${width}`
   }
 
   private static staticCapabilitiesOf(device: MediaDeviceInfo): TrackCapabilities | undefined {

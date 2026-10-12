@@ -2,6 +2,7 @@ import {
   type CameraDescriptor,
   type CameraRequirements,
   type CameraSession,
+  type CameraTraits,
   DefaultDeviceButler,
   type DeviceButler,
 } from '../../src/index.ts'
@@ -38,7 +39,7 @@ class CameraDemo extends DemoPage {
     this.onClick('list', async () => this.showCameras(await this.butler.camera.list()))
     this.onClick('forget', () => this.butler.camera.forget())
     this.onClick('switch', () => this.switchFacing())
-    this.onClick('half', () => this.session?.configure({ resolution: { width: 1280, height: 720 } }))
+    this.onClick('half', () => this.session?.configure({ width: 1280, height: 720 }))
     this.onClick('close', () => this.session?.close())
     this.onClick('report', async () => this.showReport())
     this.onClick('copy', () => navigator.clipboard.writeText(this.element('report-output').textContent ?? ''))
@@ -61,14 +62,36 @@ class CameraDemo extends DemoPage {
     const form = new FormData(this.element<HTMLFormElement>('requirements'))
     const [width, height] = String(form.get('resolution')).split('x').map(Number)
 
-    return {
+    const require: CameraTraits = {}
+    const prefer: CameraTraits = {}
+    /** where the form puts a trait: among what a camera must have, or among what it should have */
+    const placeOf = (name: string) => ({ require, prefer })[String(form.get(name))]
+
+    for (const name of ['torch', 'zoom', 'focus'] as const) {
+      const traits = placeOf(name)
+
+      if (traits !== undefined) {
+        traits[name] = true
+      }
+    }
+
+    const facing = placeOf('facingPlace')
+
+    if (facing !== undefined) {
       // SAFETY: the select of the form only offers the facings of the type, and an empty choice
-      facing: (form.get('facing') || undefined) as CameraRequirements['facing'],
-      require: { torch: form.has('torch'), zoom: form.has('zoom'), focus: form.has('focus') },
-      resolution:
-        width === undefined || height === undefined || Number.isNaN(height)
-          ? undefined
-          : { width, height, mode: form.has('exact') ? 'exact' : 'ideal' },
+      facing.facing = (form.get('facing') || undefined) as CameraTraits['facing']
+    }
+
+    const resolution = placeOf('resolutionPlace')
+
+    if (resolution !== undefined && width !== undefined && height !== undefined && !Number.isNaN(height)) {
+      resolution.width = width
+      resolution.height = height
+    }
+
+    return {
+      require,
+      prefer,
       // SAFETY: the select of the form only offers the strategies of the type
       strategy: form.get('strategy') as CameraRequirements['strategy'],
       // SAFETY: the select of the form only offers the busy policies of the type
@@ -129,7 +152,7 @@ class CameraDemo extends DemoPage {
   private async switchFacing(): Promise<void> {
     const facing = this.session?.descriptor.facing === 'front' ? 'back' : 'front'
     // the other side of a phone has neither torch nor zoom on most devices
-    await this.session?.switchTo({ facing, require: {} })
+    await this.session?.switchTo({ require: { facing } })
     this.showCameras(await this.butler.camera.list())
   }
 

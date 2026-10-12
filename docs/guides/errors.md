@@ -47,17 +47,18 @@ that is asked for after its butler was disposed.
 | `MediaDeviceNotFoundError` | there is no device of the kind, or none with the id      |                                                | say that there is no camera; forget a stored id                   |
 | `SessionClosedError`       | something was asked of a session that has ended          |                                                | open a new session. Listen to `ended` to know earlier.            |
 
-`prepare()` of the butler, the camera and the microphone does not throw these: it reports them as `error` of its
+`prepare()` of the butler, the camera, the microphone and the storage does not throw these: it reports them as `error` of its
 result, so a set-up screen can go on without a camera.
 
 ## Location
 
-Both extend `LocationError`.
+All extend `LocationError`.
 
 | Error                      | Thrown when                                   | What to do                                           |
 | -------------------------- | --------------------------------------------- | ---------------------------------------------------- |
 | `LocationUnavailableError` | the device cannot tell where it is            | try again later, or without `highAccuracy`           |
 | `LocationTimeoutError`     | it took longer than `timeout` allows          | try again with a longer `timeout` or a `maximumAge`  |
+| `LocationRequirementsError` | no position had what was required when the `timeout` had passed | use its `position`, the best one that arrived, or ask for less |
 
 A watch reports them as `error` events and goes on.
 
@@ -70,7 +71,7 @@ long for the file system of `opfs`.
 | --------------------------- | ----------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------- |
 | `StorageQuotaExceededError` | a write did not fit                                                           | `space`, if it could be read | free something, tell the user                           |
 | `StorageLockedError`        | the entry is in use and the call was made with `{ wait: false }`              | `key`                        | try later, or wait                                      |
-| `StorageUnsupportedError`   | none of the drivers works here, or the driver cannot do it (streams)          |                              | add a driver to the chain; check `capabilities` first   |
+| `StorageUnsupportedError`   | no driver has what is required and works here, the browser refuses a required protection against eviction, or the driver cannot do it (streams) |                              | the message says what each driver lacks. Require less or add a driver; check `capabilities` first |
 | `StorageAccessDeniedError`  | the browser refused the backend, for example in private mode                  |                              | fall back to another driver, finally `memory`           |
 | `StorageCodecError`         | a value could not be encoded, or what is stored could not be decoded or validated |                          | treat the entry as missing; delete or migrate it        |
 | `StorageVersionError`       | the entry was written by a newer version of the library, typically in another tab after a deployment | `key`, `found`, `supported` | ask the user to reload. The entry is untouched. |

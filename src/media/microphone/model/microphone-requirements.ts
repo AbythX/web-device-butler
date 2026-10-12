@@ -1,22 +1,6 @@
 import type { MediaInputRequirements } from '../../input/media-input-requirements.ts'
 
 /**
- * Features a microphone is asked for. A field that is not set, or set to `false`, asks for nothing.
- */
-export interface MicrophoneFeatureRequirements {
-  echoCancellation?: boolean
-  noiseSuppression?: boolean
-  autoGainControl?: boolean
-  /** `2` for a stereo microphone */
-  minChannelCount?: number
-}
-
-export interface MicrophonePreferences extends MicrophoneFeatureRequirements {
-  /** the microphone the user chose as the default of the system */
-  default?: boolean
-}
-
-/**
  * The processing of the sound, switched on or off. A field that is not set leaves the decision to the browser,
  * which switches on what the microphone has.
  */
@@ -27,20 +11,35 @@ export interface MicrophoneProcessing {
 }
 
 /**
+ * What can be asked of a microphone. The same shape says what a microphone must have (`require`) and what it should
+ * have (`prefer`).
+ *
+ * A processing that is `true` asks for a microphone that has it, and the session starts with it switched on.
+ * `false` switches it off and says nothing about which microphone is chosen. A field that is not set leaves the
+ * decision to the browser.
+ */
+export interface MicrophoneTraits extends MicrophoneProcessing {
+  /** the microphone the user chose as the default of the system */
+  default?: boolean
+  /** `2` for a stereo microphone */
+  channelCount?: number
+  /** in hertz */
+  sampleRate?: number
+}
+
+/**
  * What an application asks of a microphone. The same shape is the `microphone` section of the configuration (the
  * defaults) and the argument of `open()` and `select()` (the overrides for one call).
+ *
+ * The preferred channel count and sample rate are also what the running microphone is asked to deliver, the
+ * closest it can do; where none is preferred, the required one is. A processing that both name is taken from
+ * `require`.
  */
 export interface MicrophoneRequirements extends MediaInputRequirements {
   /** a microphone without these is never returned */
-  require?: MicrophoneFeatureRequirements
+  require?: MicrophoneTraits
   /** among the microphones that have what is required, those with these are ranked higher */
-  prefer?: MicrophonePreferences
-  /** what the session starts with; `session.processing` changes it later */
-  processing?: MicrophoneProcessing
-  /** the closest the microphone can do */
-  channelCount?: number
-  /** in hertz, the closest the microphone can do */
-  sampleRate?: number
+  prefer?: MicrophoneTraits
   /**
    * Keep the other tabs of the application away from the microphones while the session runs. Default: `false`,
    * several tabs can record at once.
