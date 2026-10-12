@@ -32,6 +32,26 @@ export interface DeviceOrientation extends Listenable<DeviceOrientationEvents>, 
   readonly isLandscape: boolean
 
   /**
+   * Whether the browser can keep the page from turning. Where it can, most browsers only do it for a page that
+   * fills the screen (`butler.fullscreen`).
+   */
+  readonly canLock: boolean
+
+  /**
+   * Keeps the page the way it is asked for, however the device is held, until {@link unlock} or until the page
+   * stops filling the screen.
+   *
+   * @throws UnsupportedError where the browser or the device cannot keep the page from turning
+   * @throws ScreenError if the browser refuses, for example because the page does not fill the screen
+   */
+  lock(orientation: OrientationKind): Promise<void>
+
+  /**
+   * Lets the page turn with the device again. Does nothing where the browser cannot keep it from turning.
+   */
+  unlock(): void
+
+  /**
    * Stops watching and forgets every listener.
    */
   dispose(): void

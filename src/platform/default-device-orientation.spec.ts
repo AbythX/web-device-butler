@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
+import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
+import { ScreenError } from '../screen/errors/screen-error.ts'
 import type { DeviceOrientation, OrientationKind } from './device-orientation.ts'
 import { DefaultDeviceOrientation } from './default-device-orientation.ts'
 
@@ -101,6 +103,74 @@ describe('default-device-orientation', () => {
       const orientation = orientationOf({})
 
       expect(() => orientation.on('change', () => undefined).unsubscribe()).not.toThrow()
+    })
+  })
+
+  describe('#lock', () => {
+    const screenOf = (orientation: object) => ({ window: { screen: { orientation } }, document: {} })
+
+    test('should keep the page the way it is asked for', async () => {
+      const lock = vi.fn(async () => undefined)
+      const orientation = orientationOf(screenOf({ lock }))
+
+      await orientation.lock('landscape')
+
+      expect(orientation.canLock).toBe(true)
+      expect(lock).toHaveBeenCalledExactlyOnceWith('landscape')
+    })
+
+    test.each([
+      ['there is no page', {}],
+      ['the browser cannot keep the page from turning', screenOf({})],
+    ])('should not be able to where %s', async (_name, globals) => {
+      const orientation = orientationOf(globals)
+
+      expect(orientation.canLock).toBe(false)
+      await expect(orientation.lock('portrait')).rejects.toThrow(UnsupportedError)
+    })
+
+    test('should say that a device that cannot be turned does not support it', async () => {
+      const refusal = Object.assign(new Error('no'), { name: 'NotSupportedError' })
+      const orientation = orientationOf(screenOf({ lock: () => Promise.reject(refusal) }))
+
+      const failure = await orientation.lock('portrait').catch((error: unknown) => error)
+
+      expect(failure).toBeInstanceOf(UnsupportedError)
+      expect(failure).toHaveProperty('cause', refusal)
+    })
+
+    test('should report a refusal of the browser', async () => {
+      const refusal = Object.assign(new Error('not fullscreen'), { name: 'SecurityError' })
+      const orientation = orientationOf(screenOf({ lock: () => Promise.reject(refusal) }))
+
+      const failure = await orientation.lock('portrait').catch((error: unknown) => error)
+
+      expect(failure).toBeInstanceOf(ScreenError)
+      expect(failure).toHaveProperty('cause', refusal)
+    })
+  })
+
+  describe('#unlock', () => {
+    test('should let the page turn again', async () => {
+      const unlock = vi.fn()
+
+      orientationOf({ window: { screen: { orientation: { unlock } } }, document: {} }).unlock()
+
+      expect(unlock).toHaveBeenCalledOnce()
+    })
+
+    test('should do nothing where the browser cannot keep the page from turning', async () => {
+      expect(() => orientationOf({}).unlock()).not.toThrow()
+    })
+
+    test('should not fail where the browser refuses', async () => {
+      const unlock = vi.fn(() => {
+        throw new Error('no')
+      })
+
+      expect(() =>
+        orientationOf({ window: { screen: { orientation: { unlock } } }, document: {} }).unlock()
+      ).not.toThrow()
     })
   })
 
