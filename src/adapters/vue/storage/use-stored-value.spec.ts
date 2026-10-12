@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import type { StorageManager } from '../../storage/storage-manager.ts'
-import type { Store } from '../../storage/store/store.ts'
-import { FakeBrowser } from '../../storage/testing/fake-browser.ts'
+import type { StorageManager } from '../../../storage/storage-manager.ts'
+import type { Store } from '../../../storage/store/store.ts'
+import { FakeBrowser } from '../../../storage/testing/fake-browser.ts'
 import { useStoredValue } from './use-stored-value.ts'
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve))

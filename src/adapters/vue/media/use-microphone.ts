@@ -1,9 +1,9 @@
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 
-import type { MicrophoneManager } from '../../media/microphone/microphone-manager.ts'
-import type { MicrophoneRequirements } from '../../media/microphone/model/microphone-requirements.ts'
-import type { MicrophoneSettings } from '../../media/microphone/model/microphone-settings.ts'
-import type { MicrophoneSession } from '../../media/microphone/session/microphone-session.ts'
+import type { MicrophoneManager } from '../../../media/microphone/microphone-manager.ts'
+import type { MicrophoneRequirements } from '../../../media/microphone/model/microphone-requirements.ts'
+import type { MicrophoneSettings } from '../../../media/microphone/model/microphone-settings.ts'
+import type { MicrophoneSession } from '../../../media/microphone/session/microphone-session.ts'
 import { useMediaSession, type UseMediaSession } from './use-media-session.ts'
 
 export interface UseMicrophoneOptions {

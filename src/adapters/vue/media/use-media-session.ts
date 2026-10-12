@@ -1,9 +1,9 @@
 import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
-import type { MediaInputDescriptor } from '../../media/input/media-input-descriptor.ts'
-import type { MediaInputManager } from '../../media/input/media-input-manager.ts'
-import type { MediaInputRequirements } from '../../media/input/media-input-requirements.ts'
-import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../media/session/media-session.ts'
+import type { MediaInputDescriptor } from '../../../media/input/media-input-descriptor.ts'
+import type { MediaInputManager } from '../../../media/input/media-input-manager.ts'
+import type { MediaInputRequirements } from '../../../media/input/media-input-requirements.ts'
+import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../../media/session/media-session.ts'
 
 export interface UseMediaSession<TSession, TRequirements> {
   /** the open session; `undefined` before `open()` and after the session ended */

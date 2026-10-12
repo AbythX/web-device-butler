@@ -1,6 +1,6 @@
 import { getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
 
-import type { DeviceOrientation, OrientationKind } from '../../platform/device-orientation.ts'
+import type { DeviceOrientation, OrientationKind } from '../../../platform/device-orientation.ts'
 
 /**
  * How the device is held, as reactive state. `undefined` where there is no page, as during server-side rendering.

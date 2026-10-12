@@ -1,10 +1,10 @@
 import { shallowRef, watch, type ShallowRef } from 'vue'
 
-import type { CameraManager } from '../../media/camera/camera-manager.ts'
-import type { CameraDescriptor } from '../../media/camera/model/camera-descriptor.ts'
-import type { CameraRequirements } from '../../media/camera/model/camera-requirements.ts'
-import type { CameraSettings } from '../../media/camera/model/camera-settings.ts'
-import type { CameraSession } from '../../media/camera/session/camera-session.ts'
+import type { CameraManager } from '../../../media/camera/camera-manager.ts'
+import type { CameraDescriptor } from '../../../media/camera/model/camera-descriptor.ts'
+import type { CameraRequirements } from '../../../media/camera/model/camera-requirements.ts'
+import type { CameraSettings } from '../../../media/camera/model/camera-settings.ts'
+import type { CameraSession } from '../../../media/camera/session/camera-session.ts'
 import { useMediaSession, type UseMediaSession } from './use-media-session.ts'
 
 export interface UseCamera extends UseMediaSession<CameraSession, CameraRequirements> {

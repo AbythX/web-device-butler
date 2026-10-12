@@ -1,9 +1,9 @@
 import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
-import type { DeviceLocation } from '../../location/device-location.ts'
-import type { DevicePosition } from '../../location/device-position.ts'
-import type { LocationOptions } from '../../location/location-options.ts'
-import type { LocationWatch } from '../../location/location-watch.ts'
+import type { DeviceLocation } from '../../../location/device-location.ts'
+import type { DevicePosition } from '../../../location/device-position.ts'
+import type { LocationOptions } from '../../../location/location-options.ts'
+import type { LocationWatch } from '../../../location/location-watch.ts'
 
 export interface UseLocation {
   /** the latest position; `undefined` until the first one arrived */

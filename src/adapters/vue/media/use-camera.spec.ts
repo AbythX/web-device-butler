@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import type { CameraManager } from '../../media/camera/camera-manager.ts'
-import { CameraTestBench } from '../../media/camera/testing/camera-test-bench.ts'
-import { FakeMediaBrowser } from '../../media/testing/fake-media-browser.ts'
-import type { FakeMediaStreamTrack } from '../../media/testing/fake-media-stream-track.ts'
+import type { CameraManager } from '../../../media/camera/camera-manager.ts'
+import { CameraTestBench } from '../../../media/camera/testing/camera-test-bench.ts'
+import { FakeMediaBrowser } from '../../../media/testing/fake-media-browser.ts'
+import type { FakeMediaStreamTrack } from '../../../media/testing/fake-media-stream-track.ts'
 import { useCamera } from './use-camera.ts'
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve))

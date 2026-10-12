@@ -1,6 +1,6 @@
 import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
-import type { Store } from '../../storage/store/store.ts'
+import type { Store } from '../../../storage/store/store.ts'
 
 export interface UseStoredValue<T> {
   /** the stored value; `undefined` while it is loading and where there is no entry */

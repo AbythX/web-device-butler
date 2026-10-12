@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import type { MicrophoneManager } from '../../media/microphone/microphone-manager.ts'
-import { MicrophoneTestBench } from '../../media/microphone/testing/microphone-test-bench.ts'
-import { FakeAudioContext } from '../../media/testing/fake-audio-context.ts'
-import { FakeMediaBrowser } from '../../media/testing/fake-media-browser.ts'
+import type { MicrophoneManager } from '../../../media/microphone/microphone-manager.ts'
+import { MicrophoneTestBench } from '../../../media/microphone/testing/microphone-test-bench.ts'
+import { FakeAudioContext } from '../../../media/testing/fake-audio-context.ts'
+import { FakeMediaBrowser } from '../../../media/testing/fake-media-browser.ts'
 import { useMicrophone } from './use-microphone.ts'
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve))

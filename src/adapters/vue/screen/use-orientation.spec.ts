@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
-import { NullLogger } from '../../core/logging/null-logger.ts'
-import { DefaultDeviceOrientation } from '../../platform/default-device-orientation.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
+import { NullLogger } from '../../../core/logging/null-logger.ts'
+import { DefaultDeviceOrientation } from '../../../platform/default-device-orientation.ts'
 import { useOrientation } from './use-orientation.ts'
 
 describe('use-orientation', () => {

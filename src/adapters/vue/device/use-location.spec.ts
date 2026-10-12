@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
 
-import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
-import { NullLogger } from '../../core/logging/null-logger.ts'
-import { DefaultDeviceLocation } from '../../location/default-device-location.ts'
-import type { DeviceLocation } from '../../location/device-location.ts'
-import { FakeGeolocation } from '../../location/testing/fake-geolocation.ts'
+import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
+import { NullLogger } from '../../../core/logging/null-logger.ts'
+import { DefaultDeviceLocation } from '../../../location/default-device-location.ts'
+import type { DeviceLocation } from '../../../location/device-location.ts'
+import { FakeGeolocation } from '../../../location/testing/fake-geolocation.ts'
 import { useLocation } from './use-location.ts'
 
 describe('use-location', () => {
