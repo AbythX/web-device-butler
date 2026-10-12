@@ -21,9 +21,6 @@ This page is a tour. The rest is in [`docs`](docs/README.md):
   a [camera with an overlay](docs/use-cases/camera-with-overlay.md), [recording a route](docs/use-cases/track-a-route.md).
 - **Demos** that run them: `pnpm demo`, see [`demo`](demo/README.md).
 
-The design, the decisions behind it and what is verified on which browser are in
-[`docs/plan/device-library.md`](docs/plan/device-library.md).
-
 > **Status.** Early releases, on GitHub Packages only. Everything is tested against fakes and in Chromium and Firefox with the fake
 > devices of the browsers. It has not been run on real phones and not in Safari; see
 > [`docs/device-matrix`](docs/device-matrix/README.md).

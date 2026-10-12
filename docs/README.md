@@ -40,5 +40,4 @@ phone in the same network. The path in the table above is the path below the add
 
 | Document                                         | Contains                                                             |
 | ------------------------------------------------ | -------------------------------------------------------------------- |
-| [Plan](plan/device-library.md)                   | the design, the decisions behind it and the notes of every phase     |
 | [Device matrix](device-matrix/README.md)         | what real devices do, and how to collect a report with the demo pages |

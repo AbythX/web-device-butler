@@ -1,8 +1,7 @@
 # Device matrix
 
 What the cameras and microphones of real devices do, collected with the [demo pages](../../demo/README.md). The
-results decide the open questions of [the plan](../plan/device-library.md) and which quirk classes the library
-needs.
+results decide which quirk classes the library needs.
 
 No device has been recorded yet.
 
