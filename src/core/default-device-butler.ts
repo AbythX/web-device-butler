@@ -1,5 +1,10 @@
 import './disposable-polyfill.ts'
 
+import { DefaultDeviceNotifications } from '../attention/notifications/default-device-notifications.ts'
+import type { DeviceNotifications } from '../attention/notifications/device-notifications.ts'
+import type { NotificationMessages } from '../attention/notifications/notification-messages.ts'
+import { DefaultDeviceVibration } from '../attention/vibration/default-device-vibration.ts'
+import type { DeviceVibration } from '../attention/vibration/device-vibration.ts'
 import { DefaultDeviceFiles } from '../files/default-device-files.ts'
 import type { DeviceFiles } from '../files/device-files.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
@@ -42,6 +47,7 @@ import { PersistentStoragePermissionRequester } from '../permission/requesters/p
 import { DefaultDeviceMotion } from '../motion/default-device-motion.ts'
 import type { DeviceMotion } from '../motion/device-motion.ts'
 import { MotionPermissionRequester } from '../permission/requesters/motion-permission-requester.ts'
+import { NotificationPermissionRequester } from '../permission/requesters/notification-permission-requester.ts'
 import { DefaultDeviceOrientation } from '../platform/default-device-orientation.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
@@ -64,7 +70,7 @@ import type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions 
 /**
  * Everything the parts of the library send to the other tabs.
  */
-type DeviceButlerMessages = StorageMessages & MediaMessages
+type DeviceButlerMessages = StorageMessages & MediaMessages & NotificationMessages
 
 /**
  * What `prepare()` has found so far.
@@ -119,6 +125,7 @@ export class DefaultDeviceButler implements DeviceButler {
         'clipboard-read': new ClipboardReadPermissionRequester(environment),
         'screen-wake-lock': new WakeLockPermissionRequester(wakeLock),
         motion: new MotionPermissionRequester(environment),
+        notifications: new NotificationPermissionRequester(environment),
       },
       new ScopedLogger('PermissionManager', logger)
     )
@@ -168,6 +175,9 @@ export class DefaultDeviceButler implements DeviceButler {
       new DefaultScreenFullscreen(environment, new ScopedLogger('ScreenFullscreen', logger)),
       new DefaultDeviceShare(environment),
       new DefaultDeviceClipboard(environment),
+      // the tabs ask each other over the channel of the butler whether one of them can be seen
+      new DefaultDeviceNotifications(environment, channel, page, new ScopedLogger('DeviceNotifications', logger)),
+      new DefaultDeviceVibration(environment, new ScopedLogger('DeviceVibration', logger)),
       new DefaultDeviceFiles(environment, new ScopedLogger('DeviceFiles', logger)),
       // the outboxes keep their items in the storage of the butler and send under its lock
       new DefaultOutboxManager(storage, lock, network, logger),
@@ -201,6 +211,8 @@ export class DefaultDeviceButler implements DeviceButler {
     public readonly fullscreen: ScreenFullscreen,
     public readonly share: DeviceShare,
     public readonly clipboard: DeviceClipboard,
+    public readonly notifications: DeviceNotifications,
+    public readonly vibration: DeviceVibration,
     public readonly files: DeviceFiles,
     public readonly outbox: OutboxManager,
     private readonly channel: CrossTabChannel<DeviceButlerMessages>,
@@ -266,6 +278,7 @@ export class DefaultDeviceButler implements DeviceButler {
     ])
 
     this.scanner.dispose()
+    this.notifications.dispose()
     // before the storage and the network it works with
     this.outbox.dispose()
     this.location.dispose()

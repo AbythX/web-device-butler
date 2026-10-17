@@ -2,6 +2,8 @@ import type { ServiceIdentifier } from 'inversify'
 
 import type { TabCoordination } from '../../core/coordination/tab-coordination.ts'
 import type { DeviceButler } from '../../core/device-butler.ts'
+import type { DeviceNotifications } from '../../attention/notifications/device-notifications.ts'
+import type { DeviceVibration } from '../../attention/vibration/device-vibration.ts'
 import type { DeviceFiles } from '../../files/device-files.ts'
 import type { DeviceLocation } from '../../location/device-location.ts'
 import type { CameraManager } from '../../media/camera/camera-manager.ts'
@@ -113,6 +115,14 @@ export class DeviceButlerBindings {
    * Identifies the clipboard, `butler.clipboard`.
    */
   public static readonly Clipboard = DeviceButlerBindings.identifier<DeviceClipboard>('Clipboard')
+  /**
+   * Identifies the notifications of the system, `butler.notifications`.
+   */
+  public static readonly Notifications = DeviceButlerBindings.identifier<DeviceNotifications>('Notifications')
+  /**
+   * Identifies the vibration of the device, `butler.vibration`.
+   */
+  public static readonly Vibration = DeviceButlerBindings.identifier<DeviceVibration>('Vibration')
   /**
    * Identifies the files of the device, `butler.files`.
    */

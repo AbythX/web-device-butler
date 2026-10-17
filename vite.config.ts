@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config'
 import * as cameraCommands from './src/media/testing/second-tab-camera-commands.ts'
 import * as microphoneCommands from './src/media/testing/second-tab-microphone-commands.ts'
 import * as recordingCommands from './src/media/testing/second-tab-recording-commands.ts'
+import * as notificationCommands from './src/attention/testing/second-tab-notification-commands.ts'
 import * as secondTabCommands from './src/storage/testing/second-tab-commands.ts'
 
 export default defineConfig({
@@ -25,6 +26,8 @@ export default defineConfig({
         permission: 'src/permission/index.ts',
         platform: 'src/platform/index.ts',
         motion: 'src/motion/index.ts',
+        attention: 'src/attention/index.ts',
+        worker: 'src/worker/index.ts',
         network: 'src/network/index.ts',
         files: 'src/files/index.ts',
         outbox: 'src/outbox/index.ts',
@@ -89,7 +92,13 @@ export default defineConfig({
               // the WebKit build of Playwright has no camera, the media specs skip themselves there
               { browser: 'webkit' },
             ],
-            commands: { ...secondTabCommands, ...cameraCommands, ...microphoneCommands, ...recordingCommands },
+            commands: {
+              ...secondTabCommands,
+              ...cameraCommands,
+              ...microphoneCommands,
+              ...recordingCommands,
+              ...notificationCommands,
+            },
             screenshotFailures: false,
           },
         },

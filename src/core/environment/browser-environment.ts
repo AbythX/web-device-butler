@@ -4,6 +4,7 @@ import { UnsupportedError } from '../errors/unsupported-error.ts'
 import type { BarcodeDetectorFactory } from './barcode-detector-like.ts'
 import type { CaptureControllerLike, DisplayMediaCapture, DisplayMediaOptionsLike } from './display-media-like.ts'
 import type { NetworkInformationLike } from './network-information-like.ts'
+import type { NotificationFactory, ServiceWorkerContainerLike } from './notification-like.ts'
 import type { ScreenOrientationLike } from './screen-orientation-like.ts'
 import type { SensorEventFactory } from './sensor-events-like.ts'
 
@@ -31,6 +32,7 @@ export interface BrowserGlobals {
   readonly BarcodeDetector?: BarcodeDetectorFactory
   readonly DeviceOrientationEvent?: SensorEventFactory
   readonly DeviceMotionEvent?: SensorEventFactory
+  readonly Notification?: NotificationFactory
   readonly createImageBitmap?: (image: ImageBitmapSource) => Promise<ImageBitmap>
   readonly MediaRecorder?: MediaRecorderFactory
   readonly Blob?: new (parts: BlobPart[], options: { type: string }) => Blob
@@ -207,6 +209,35 @@ export class BrowserEnvironment {
       return typeof mediaDevices?.getDisplayMedia === 'function'
         ? // SAFETY: the options only add what the DOM types do not know yet; the browser takes them
           (options: DisplayMediaOptionsLike) => mediaDevices.getDisplayMedia(options as DisplayMediaStreamOptions)
+        : undefined
+    })
+  }
+
+  /**
+   * The notifications of the browser (`Notification`), or `undefined` where the page cannot show any, as Safari on
+   * iOS outside a web app on the home screen.
+   */
+  public get Notification(): NotificationFactory | undefined {
+    return this.optional((globals) => globals.Notification)
+  }
+
+  /**
+   * The service workers of the page (`navigator.serviceWorker`), or `undefined` where the browser has none for it.
+   */
+  public get serviceWorker(): ServiceWorkerContainerLike | undefined {
+    // SAFETY: only the calls of the narrower type are used, which the container of the browser has
+    return this.optional((globals) => globals.navigator?.serviceWorker as ServiceWorkerContainerLike | undefined)
+  }
+
+  /**
+   * Makes the device vibrate (`navigator.vibrate`), or `undefined` where it cannot, as in Safari.
+   */
+  public get vibrate(): ((pattern: number | number[]) => boolean) | undefined {
+    return this.optional((globals) => {
+      const navigator = globals.navigator
+
+      return typeof navigator?.vibrate === 'function'
+        ? (pattern: number | number[]) => navigator.vibrate(pattern)
         : undefined
     })
   }

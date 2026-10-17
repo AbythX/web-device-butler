@@ -32,6 +32,10 @@ export { useNetwork } from './device/use-network.ts'
 
 export type { UseNetwork } from './device/use-network.ts'
 
+export { useNotifications } from './device/use-notifications.ts'
+
+export type { UseNotifications } from './device/use-notifications.ts'
+
 export { useOrientation } from './screen/use-orientation.ts'
 
 export { useRecording } from './media/use-recording.ts'

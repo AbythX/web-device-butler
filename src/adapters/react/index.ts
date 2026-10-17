@@ -12,6 +12,10 @@ export { useNetwork } from './device/use-network.ts'
 
 export type { UseNetwork } from './device/use-network.ts'
 
+export { useNotifications } from './device/use-notifications.ts'
+
+export type { UseNotifications } from './device/use-notifications.ts'
+
 export { useCamera } from './media/use-camera.ts'
 
 export type { UseCamera } from './media/use-camera.ts'

@@ -17,6 +17,8 @@ export { GeolocationPermissionRequester } from './requesters/geolocation-permiss
 
 export { MotionPermissionRequester } from './requesters/motion-permission-requester.ts'
 
+export { NotificationPermissionRequester } from './requesters/notification-permission-requester.ts'
+
 export type { PermissionRequester } from './requesters/permission-requester.ts'
 
 export { PersistentStoragePermissionRequester } from './requesters/persistent-storage-permission-requester.ts'

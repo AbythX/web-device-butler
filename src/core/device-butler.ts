@@ -1,3 +1,5 @@
+import type { DeviceNotifications } from '../attention/notifications/device-notifications.ts'
+import type { DeviceVibration } from '../attention/vibration/device-vibration.ts'
 import type { DeviceFiles } from '../files/device-files.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
 import type { LocationPreparation } from '../location/location-preparation.ts'
@@ -120,6 +122,12 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
 
   /** the clipboard of the system */
   readonly clipboard: DeviceClipboard
+
+  /** shows notifications of the system, with the service worker of the application where it has one */
+  readonly notifications: DeviceNotifications
+
+  /** makes the device vibrate */
+  readonly vibration: DeviceVibration
 
   /** saves files to the device and takes files the user chooses */
   readonly files: DeviceFiles

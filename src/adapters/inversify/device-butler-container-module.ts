@@ -39,6 +39,8 @@ export class DeviceButlerContainerModule extends ContainerModule {
       bind(DeviceButlerBindings.Share).toConstantValue(butler.share)
       bind(DeviceButlerBindings.Clipboard).toConstantValue(butler.clipboard)
       bind(DeviceButlerBindings.Files).toConstantValue(butler.files)
+      bind(DeviceButlerBindings.Notifications).toConstantValue(butler.notifications)
+      bind(DeviceButlerBindings.Vibration).toConstantValue(butler.vibration)
       bind(DeviceButlerBindings.Outbox).toConstantValue(butler.outbox)
     })
   }

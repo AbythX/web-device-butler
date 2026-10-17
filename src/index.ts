@@ -42,6 +42,14 @@ export type {
 } from './core/environment/barcode-detector-like.ts'
 
 export type {
+  NotificationFactory,
+  NotificationLike,
+  NotificationRegistrationLike,
+  ServiceWorkerContainerLike,
+  WorkerNotificationLike,
+} from './core/environment/notification-like.ts'
+
+export type {
   MotionReadingLike,
   OrientationReadingLike,
   RotationReadingLike,
@@ -105,6 +113,8 @@ export * from './location/index.ts'
 export * from './platform/index.ts'
 
 export * from './motion/index.ts'
+
+export * from './attention/index.ts'
 
 export * from './screen/index.ts'
 

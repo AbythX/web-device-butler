@@ -11,6 +11,9 @@ import { CameraTestBench } from '../media/camera/testing/camera-test-bench.ts'
 import { DefaultMediaManager } from '../media/combined/default-media-manager.ts'
 import { MediaError } from '../media/errors/media-error.ts'
 import { DefaultMicrophoneManager } from '../media/microphone/default-microphone-manager.ts'
+import { DefaultDeviceNotifications } from '../attention/notifications/default-device-notifications.ts'
+import { FakeNotification } from '../attention/testing/fake-notifications.ts'
+import { DefaultDeviceVibration } from '../attention/vibration/default-device-vibration.ts'
 import { DefaultCodeScanner } from '../media/scanning/default-code-scanner.ts'
 import { DefaultDeviceMotion } from '../motion/default-device-motion.ts'
 import { FakeEventTarget } from './testing/fake-event-target.ts'
@@ -396,6 +399,30 @@ describe('default-device-butler', () => {
 
       expect(sut.orientation).toBeInstanceOf(DefaultDeviceOrientation)
       expect(sut.orientation.current).toBe('landscape')
+    })
+  })
+
+  describe('#notifications and #vibration', () => {
+    test('should show notifications and vibrate where the browser can', async () => {
+      FakeNotification.reset()
+      const vibrate = vi.fn(() => true)
+      const navigator = { vibrate } as unknown as Navigator
+
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ Notification: FakeNotification, navigator }))
+
+      expect(sut.notifications).toBeInstanceOf(DefaultDeviceNotifications)
+      expect(sut.vibration).toBeInstanceOf(DefaultDeviceVibration)
+      expect(await sut.permission.query('notifications')).toBe('granted')
+      expect(await sut.notifications.show({ title: 'Report sent', tag: 'outbox' })).toBeDefined()
+      expect(sut.vibration.vibrate('success')).toBe(true)
+    })
+
+    test('should support neither where the browser has neither', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.notifications.isSupported).toBe(false)
+      expect(sut.vibration.isSupported).toBe(false)
+      expect(await sut.permission.request('notifications')).toBe('unsupported')
     })
   })
 

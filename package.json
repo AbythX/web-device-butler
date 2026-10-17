@@ -57,6 +57,14 @@
       "types": "./dist/motion/index.d.ts",
       "default": "./dist/motion.js"
     },
+    "./attention": {
+      "types": "./dist/attention/index.d.ts",
+      "default": "./dist/attention.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "default": "./dist/worker.js"
+    },
     "./network": {
       "types": "./dist/network/index.d.ts",
       "default": "./dist/network.js"
