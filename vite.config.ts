@@ -17,6 +17,7 @@ export default defineConfig({
         storage: 'src/storage/index.ts',
         camera: 'src/media/camera/index.ts',
         microphone: 'src/media/microphone/index.ts',
+        'screen-capture': 'src/media/screen-capture/index.ts',
         media: 'src/media/index.ts',
         location: 'src/location/index.ts',
         permission: 'src/permission/index.ts',

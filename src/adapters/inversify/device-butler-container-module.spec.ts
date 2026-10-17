@@ -42,6 +42,7 @@ describe('device-butler-container-module', () => {
     expect(container.get(DeviceButlerBindings.Network)).toBe(butler.network)
     expect(container.get(DeviceButlerBindings.WakeLock)).toBe(butler.wakeLock)
     expect(container.get(DeviceButlerBindings.Fullscreen)).toBe(butler.fullscreen)
+    expect(container.get(DeviceButlerBindings.ScreenCapture)).toBe(butler.screenCapture)
     expect(container.get(DeviceButlerBindings.Share)).toBe(butler.share)
     expect(container.get(DeviceButlerBindings.Clipboard)).toBe(butler.clipboard)
     expect(container.get(DeviceButlerBindings.Files)).toBe(butler.files)
@@ -58,8 +59,8 @@ describe('device-butler-container-module', () => {
   test('should use identifiers that do not collide with each other', async () => {
     const identifiers = Object.values(DeviceButlerBindings)
 
-    expect(identifiers).toHaveLength(20)
-    expect(new Set(identifiers).size).toBe(20)
+    expect(identifiers).toHaveLength(21)
+    expect(new Set(identifiers).size).toBe(21)
   })
 
   test('should be unloadable', async () => {

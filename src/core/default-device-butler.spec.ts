@@ -11,6 +11,7 @@ import { CameraTestBench } from '../media/camera/testing/camera-test-bench.ts'
 import { DefaultMediaManager } from '../media/combined/default-media-manager.ts'
 import { MediaError } from '../media/errors/media-error.ts'
 import { DefaultMicrophoneManager } from '../media/microphone/default-microphone-manager.ts'
+import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
 import { FakeMediaBrowser } from '../media/testing/fake-media-browser.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
 import { FakeGeolocation } from '../location/testing/fake-geolocation.ts'
@@ -388,6 +389,39 @@ describe('default-device-butler', () => {
 
       expect(sut.orientation).toBeInstanceOf(DefaultDeviceOrientation)
       expect(sut.orientation.current).toBe('landscape')
+    })
+  })
+
+  describe('#screenCapture', () => {
+    test('should capture the screen with the configured defaults', async () => {
+      const browser = new FakeMediaBrowser()
+
+      using sut = DefaultDeviceButler.create(
+        { screenCapture: { prefer: { surface: 'window' } } },
+        browser.openEnvironment()
+      )
+
+      await using _session = await sut.screenCapture.open()
+
+      expect(sut.screenCapture).toBeInstanceOf(DefaultScreenCaptureManager)
+      expect(browser.devices.displayRequests).toEqual([{ video: { displaySurface: 'window' } }])
+    })
+
+    test('should not be supported where the browser has nothing for it', () => {
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.screenCapture.isSupported).toBe(false)
+    })
+
+    test('should stop its captures when the butler is disposed', async () => {
+      const browser = new FakeMediaBrowser()
+      const sut = DefaultDeviceButler.create({}, browser.openEnvironment())
+      const session = await sut.screenCapture.open()
+
+      await sut.dispose()
+
+      expect(session.state).toBe('ended')
+      expect(browser.devices.liveTracks).toEqual([])
     })
   })
 

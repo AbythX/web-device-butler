@@ -7,6 +7,7 @@ import type { DeviceLocation } from '../../location/device-location.ts'
 import type { CameraManager } from '../../media/camera/camera-manager.ts'
 import type { MediaManager } from '../../media/combined/media-manager.ts'
 import type { MicrophoneManager } from '../../media/microphone/microphone-manager.ts'
+import type { ScreenCaptureManager } from '../../media/screen-capture/screen-capture-manager.ts'
 import type { AudioOutputManager } from '../../media/output/audio-output-manager.ts'
 import type { MediaRecordingManager } from '../../media/recording/media-recording-manager.ts'
 import type { DeviceNetwork } from '../../network/device-network.ts'
@@ -43,9 +44,13 @@ export class DeviceButlerBindings {
    */
   public static readonly Microphone = DeviceButlerBindings.identifier<MicrophoneManager>('Microphone')
   /**
-   * Identifies the manager of camera and microphone together, `butler.media`.
+   * Identifies the manager of camera and microphone together and of joined sessions, `butler.media`.
    */
   public static readonly Media = DeviceButlerBindings.identifier<MediaManager>('Media')
+  /**
+   * Identifies the capture of the screen, `butler.screenCapture`.
+   */
+  public static readonly ScreenCapture = DeviceButlerBindings.identifier<ScreenCaptureManager>('ScreenCapture')
   /**
    * Identifies the permission manager, `butler.permission`.
    */

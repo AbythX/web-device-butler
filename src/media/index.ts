@@ -28,6 +28,14 @@ export { DefaultCombinedMediaSession } from './combined/default-combined-media-s
 
 export type { CombinedMediaRequirements, MediaManager } from './combined/media-manager.ts'
 
+export type {
+  JoinedMediaSource,
+  JoinedMediaSourceEnd,
+  JoinedMediaSourceEvents,
+} from './combined/joined-media-source.ts'
+
+export { DefaultJoinedMediaSource } from './combined/default-joined-media-source.ts'
+
 export { DefaultMediaManager } from './combined/default-media-manager.ts'
 
 export { MediaDeviceBusyError } from './errors/media-device-busy-error.ts'
@@ -108,6 +116,10 @@ export type {
 } from './session/media-session.ts'
 
 export { BaseMediaSession } from './session/base-media-session.ts'
+
+export type { MediaSessionHold } from './session/media-session-hold.ts'
+
+export type { MediaSourceKind } from './session/media-source-kind.ts'
 
 export type {
   TrackCapabilities,

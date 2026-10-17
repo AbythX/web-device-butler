@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { MediaInputDescriptor } from '../../../media/input/media-input-descriptor.ts'
-import type { MediaInputManager } from '../../../media/input/media-input-manager.ts'
-import type { MediaInputRequirements } from '../../../media/input/media-input-requirements.ts'
 import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../../media/session/media-session.ts'
+
+/**
+ * What opens the sessions: the manager of the cameras, of the microphones or of the capture of the screen.
+ */
+export interface MediaSessionOpener<TSession, TRequirements> {
+  open(requirements?: Partial<TRequirements>): Promise<TSession>
+}
 
 export interface UseMediaSession<TSession, TRequirements> {
   /** the open session; `undefined` before `open()` and after the session ended */
@@ -31,14 +35,10 @@ export interface UseMediaSession<TSession, TRequirements> {
 /**
  * The session of a manager as state of a component. The session is closed when the component is unmounted.
  *
- * Shared by `useCamera` and `useMicrophone`.
+ * Shared by `useCamera`, `useMicrophone` and `useScreenCapture`.
  */
-export const useMediaSession = <
-  TDescriptor extends MediaInputDescriptor,
-  TSession extends MediaSession,
-  TRequirements extends MediaInputRequirements,
->(
-  manager: MediaInputManager<TDescriptor, TSession, TRequirements>
+export const useMediaSession = <TSession extends MediaSession, TRequirements>(
+  manager: MediaSessionOpener<TSession, TRequirements>
 ): UseMediaSession<TSession, TRequirements> => {
   const [session, setSession] = useState<TSession>()
   const [state, setState] = useState<MediaSessionState>()

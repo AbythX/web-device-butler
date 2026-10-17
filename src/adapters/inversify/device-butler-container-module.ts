@@ -22,6 +22,7 @@ export class DeviceButlerContainerModule extends ContainerModule {
       bind(DeviceButlerBindings.Camera).toConstantValue(butler.camera)
       bind(DeviceButlerBindings.Microphone).toConstantValue(butler.microphone)
       bind(DeviceButlerBindings.Media).toConstantValue(butler.media)
+      bind(DeviceButlerBindings.ScreenCapture).toConstantValue(butler.screenCapture)
       bind(DeviceButlerBindings.Permission).toConstantValue(butler.permission)
       bind(DeviceButlerBindings.Coordination).toConstantValue(butler.coordination)
       bind(DeviceButlerBindings.Location).toConstantValue(butler.location)

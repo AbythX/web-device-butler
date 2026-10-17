@@ -2,18 +2,25 @@ import '../../core/disposable-polyfill.ts'
 
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
-import type { MediaKind } from '../access/media-access-state.ts'
 import type { MediaLease } from '../access/media-lease.ts'
 import { MediaError } from '../errors/media-error.ts'
 import { SessionClosedError } from '../errors/session-closed-error.ts'
 import type { PlatformQuirk } from '../quirks/platform-quirk.ts'
 import { ConstraintQueue } from './constraint-queue.ts'
+import type { MediaSessionHold } from './media-session-hold.ts'
+import type { MediaSourceKind } from './media-source-kind.ts'
 import type { MediaSession, MediaSessionEndReason, MediaSessionEvents, MediaSessionState } from './media-session.ts'
 
 /**
  * The base of the implementations of {@link MediaSession}.
+ *
+ * @typeParam Hold what the session holds its device with: the lease of a camera or a microphone, or the tracks of a
+ *   stream that needs no lock
  */
-export abstract class BaseMediaSession<Events extends MediaSessionEvents = MediaSessionEvents>
+export abstract class BaseMediaSession<
+  Events extends MediaSessionEvents = MediaSessionEvents,
+  Hold extends MediaSessionHold = MediaLease,
+>
   extends EventEmitter<Events>
   implements MediaSession<Events>
 {
@@ -32,8 +39,8 @@ export abstract class BaseMediaSession<Events extends MediaSessionEvents = Media
   private transition: Promise<unknown> = Promise.resolve()
 
   protected constructor(
-    private readonly kind: MediaKind,
-    protected readonly lease: MediaLease,
+    private readonly kind: MediaSourceKind,
+    protected readonly lease: Hold,
     stream: MediaStream,
     quirks: readonly PlatformQuirk[],
     protected readonly logger: Logger
@@ -81,8 +88,11 @@ export abstract class BaseMediaSession<Events extends MediaSessionEvents = Media
     }
   }
 
+  /**
+   * The picture where the stream has one: a capture of the screen can come with its sound.
+   */
   private static trackOf(stream: MediaStream): MediaStreamTrack {
-    const [track] = stream.getTracks()
+    const [track] = [...stream.getVideoTracks(), ...stream.getAudioTracks()]
 
     if (track === undefined) {
       throw new MediaError('The browser started a stream without a track')

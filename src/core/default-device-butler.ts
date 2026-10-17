@@ -16,6 +16,8 @@ import type { AudioOutputManager } from '../media/output/audio-output-manager.ts
 import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
 import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
 import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
+import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
+import type { ScreenCaptureManager } from '../media/screen-capture/screen-capture-manager.ts'
 import { DefaultDeviceNetwork } from '../network/default-device-network.ts'
 import type { DeviceNetwork } from '../network/device-network.ts'
 import { DefaultOutboxManager } from '../outbox/default-outbox-manager.ts'
@@ -131,6 +133,11 @@ export class DefaultDeviceButler implements DeviceButler {
       camera,
       microphone,
       new DefaultMediaManager(camera, microphone, environment, new ScopedLogger('MediaManager', logger)),
+      new DefaultScreenCaptureManager(
+        configuration.screenCapture ?? {},
+        environment,
+        new ScopedLogger('ScreenCaptureManager', logger)
+      ),
       permission,
       new DefaultTabCoordination(lock),
       new DefaultDeviceLocation(environment, new ScopedLogger('DeviceLocation', logger), configuration.location),
@@ -162,6 +169,7 @@ export class DefaultDeviceButler implements DeviceButler {
     public readonly microphone: MicrophoneManager,
     /** opens a camera and a microphone together */
     public readonly media: MediaManager,
+    public readonly screenCapture: ScreenCaptureManager,
     public readonly permission: PermissionManager,
     public readonly coordination: TabCoordination,
     public readonly location: DeviceLocation,
@@ -231,6 +239,7 @@ export class DefaultDeviceButler implements DeviceButler {
     const released = Promise.allSettled([
       this.camera.dispose(),
       this.microphone.dispose(),
+      this.screenCapture.dispose(),
       ...this.gates.map((gate) => gate.dispose()),
     ])
 

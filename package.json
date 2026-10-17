@@ -29,6 +29,10 @@
       "types": "./dist/media/microphone/index.d.ts",
       "default": "./dist/microphone.js"
     },
+    "./screen-capture": {
+      "types": "./dist/media/screen-capture/index.d.ts",
+      "default": "./dist/screen-capture.js"
+    },
     "./media": {
       "types": "./dist/media/index.d.ts",
       "default": "./dist/media.js"

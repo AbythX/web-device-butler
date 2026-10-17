@@ -1,6 +1,7 @@
 import type { BroadcastChannelLike } from '../coordination/channel/broadcast-channel-like.ts'
 import type { LockManagerLike } from '../coordination/lock/lock-manager-like.ts'
 import { UnsupportedError } from '../errors/unsupported-error.ts'
+import type { CaptureControllerLike, DisplayMediaCapture, DisplayMediaOptionsLike } from './display-media-like.ts'
 import type { NetworkInformationLike } from './network-information-like.ts'
 import type { ScreenOrientationLike } from './screen-orientation-like.ts'
 
@@ -24,6 +25,7 @@ export interface BrowserGlobals {
   readonly MediaStream?: new (tracks: MediaStreamTrack[]) => MediaStream
   readonly ClipboardItem?: ClipboardItemFactory
   readonly ImageCapture?: ImageCaptureFactory
+  readonly CaptureController?: new () => CaptureControllerLike
   readonly MediaRecorder?: MediaRecorderFactory
   readonly Blob?: new (parts: BlobPart[], options: { type: string }) => Blob
   readonly URL?: Pick<typeof URL, 'createObjectURL' | 'revokeObjectURL'>
@@ -186,6 +188,37 @@ export class BrowserEnvironment {
    */
   public get mediaDevices(): MediaDevices | undefined {
     return this.optional((globals) => globals.navigator?.mediaDevices)
+  }
+
+  /**
+   * The capture of the screen (`navigator.mediaDevices.getDisplayMedia`), or `undefined` where the browser does not
+   * have it, as on phones and on pages that were not loaded over HTTPS.
+   */
+  public get displayMedia(): DisplayMediaCapture | undefined {
+    return this.optional((globals) => {
+      const mediaDevices = globals.navigator?.mediaDevices
+
+      return typeof mediaDevices?.getDisplayMedia === 'function'
+        ? // SAFETY: the options only add what the DOM types do not know yet; the browser takes them
+          (options: DisplayMediaOptionsLike) => mediaDevices.getDisplayMedia(options as DisplayMediaStreamOptions)
+        : undefined
+    })
+  }
+
+  /**
+   * The constructor of what decides the focus after a capture of the screen started, or `undefined` where the
+   * browser leaves that to itself.
+   */
+  public get CaptureController(): (new () => CaptureControllerLike) | undefined {
+    return this.optional((globals) => globals.CaptureController)
+  }
+
+  /**
+   * Whether the user just clicked or pressed a key, which some calls need (`navigator.userActivation.isActive`);
+   * `undefined` where the browser cannot tell.
+   */
+  public get hasUserActivation(): boolean | undefined {
+    return this.optional((globals) => globals.navigator?.userActivation?.isActive)
   }
 
   /**

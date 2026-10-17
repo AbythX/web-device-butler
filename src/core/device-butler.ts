@@ -16,6 +16,7 @@ import type { MediaManager } from '../media/combined/media-manager.ts'
 import type { MicrophonePreparation } from '../media/microphone/microphone-preparation.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../media/microphone/model/microphone-requirements.ts'
+import type { ScreenCaptureManager } from '../media/screen-capture/screen-capture-manager.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import type { DevicePlatform } from '../platform/device-platform.ts'
@@ -63,8 +64,11 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
   /** finds the microphones, chooses one and opens sessions */
   readonly microphone: MicrophoneManager
 
-  /** opens a camera and a microphone together */
+  /** opens a camera and a microphone together, and joins sessions for one recording */
   readonly media: MediaManager
+
+  /** captures a screen, a window or a tab that the user chooses */
+  readonly screenCapture: ScreenCaptureManager
 
   /** what the user has allowed, and asking for it */
   readonly permission: PermissionManager
@@ -125,7 +129,7 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
   prepare(options?: DeviceButlerPrepareOptions): Promise<DeviceButlerPreparation>
 
   /**
-   * Releases everything the butler holds. Cameras and microphones stop at once and cannot be opened through this
+   * Releases everything the butler holds. Cameras, microphones and captures of the screen stop at once and cannot be opened through this
    * butler any more; the other tabs get them a moment later.
    *
    * @returns a promise that resolves once the cameras and microphones are free for others

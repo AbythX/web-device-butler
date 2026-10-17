@@ -35,6 +35,13 @@ export { BrowserEnvironment } from './core/environment/browser-environment.ts'
 
 export type { BrowserGlobals } from './core/environment/browser-environment.ts'
 
+export type {
+  CaptureControllerLike,
+  DisplayMediaCapture,
+  DisplayMediaOptionsLike,
+  DisplayVideoConstraints,
+} from './core/environment/display-media-like.ts'
+
 export { PageVisibility } from './core/environment/page-visibility.ts'
 
 export { DeviceButlerError } from './core/errors/device-butler-error.ts'
@@ -66,6 +73,8 @@ export * from './media/camera/index.ts'
 export * from './media/index.ts'
 
 export * from './media/microphone/index.ts'
+
+export * from './media/screen-capture/index.ts'
 
 export * from './files/index.ts'
 

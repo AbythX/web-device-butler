@@ -14,7 +14,7 @@ export type { UseLocation } from './device/use-location.ts'
 
 export { useMediaSession } from './media/use-media-session.ts'
 
-export type { UseMediaSession } from './media/use-media-session.ts'
+export type { MediaSessionOpener, UseMediaSession } from './media/use-media-session.ts'
 
 export { useMicrophone } from './media/use-microphone.ts'
 
@@ -29,6 +29,10 @@ export { useOrientation } from './screen/use-orientation.ts'
 export { useRecording } from './media/use-recording.ts'
 
 export type { UseRecording } from './media/use-recording.ts'
+
+export { useScreenCapture } from './media/use-screen-capture.ts'
+
+export type { UseScreenCapture } from './media/use-screen-capture.ts'
 
 export { useStoredValue } from './storage/use-stored-value.ts'
 
