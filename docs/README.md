@@ -45,3 +45,5 @@ phone in the same network. The path in the table above is the path below the add
 | Document                                         | Contains                                                             |
 | ------------------------------------------------ | -------------------------------------------------------------------- |
 | [Device matrix](device-matrix/README.md)         | what real devices do, and how to collect a report with the demo pages |
+| [Plan: new parts](plan/device-features.md)       | screen capture, recordings that survive the page, scanning, motion, notifications |
+| [Later](plan/later.md)                           | parts that would fit but are not planned yet, and what was left out  |
