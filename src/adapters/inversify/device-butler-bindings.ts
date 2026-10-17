@@ -7,6 +7,7 @@ import type { DeviceLocation } from '../../location/device-location.ts'
 import type { CameraManager } from '../../media/camera/camera-manager.ts'
 import type { MediaManager } from '../../media/combined/media-manager.ts'
 import type { MicrophoneManager } from '../../media/microphone/microphone-manager.ts'
+import type { CodeScanner } from '../../media/scanning/code-scanner.ts'
 import type { ScreenCaptureManager } from '../../media/screen-capture/screen-capture-manager.ts'
 import type { AudioOutputManager } from '../../media/output/audio-output-manager.ts'
 import type { MediaRecordingManager } from '../../media/recording/media-recording-manager.ts'
@@ -79,6 +80,10 @@ export class DeviceButlerBindings {
    * Identifies the recorder, `butler.recorder`.
    */
   public static readonly Recorder = DeviceButlerBindings.identifier<MediaRecordingManager>('Recorder')
+  /**
+   * Identifies the reader of codes, `butler.scanner`.
+   */
+  public static readonly Scanner = DeviceButlerBindings.identifier<CodeScanner>('Scanner')
   /**
    * Identifies the audio outputs, `butler.audioOutput`.
    */

@@ -1,6 +1,7 @@
 import type { LocationConfiguration } from '../location/location-options.ts'
 import type { CameraConfiguration } from '../media/camera/model/camera-requirements.ts'
 import type { MicrophoneConfiguration } from '../media/microphone/model/microphone-requirements.ts'
+import type { CodeScannerConfiguration } from '../media/scanning/code-scanner.ts'
 import type { ScreenCaptureConfiguration } from '../media/screen-capture/model/screen-capture-requirements.ts'
 import type { StorageConfiguration } from '../storage/storage-configuration.ts'
 import type { Logger } from './logging/logger.ts'
@@ -21,4 +22,6 @@ export interface DeviceButlerConfiguration {
   microphone?: MicrophoneConfiguration
   /** the defaults of every call of `butler.screenCapture`; `butler.screenCapture.configure()` changes them later */
   screenCapture?: ScreenCaptureConfiguration
+  /** the decoder and the defaults of every scan and every `butler.scanner.detect()` */
+  scanner?: CodeScannerConfiguration
 }

@@ -11,6 +11,8 @@ import { CameraTestBench } from '../media/camera/testing/camera-test-bench.ts'
 import { DefaultMediaManager } from '../media/combined/default-media-manager.ts'
 import { MediaError } from '../media/errors/media-error.ts'
 import { DefaultMicrophoneManager } from '../media/microphone/default-microphone-manager.ts'
+import { DefaultCodeScanner } from '../media/scanning/default-code-scanner.ts'
+import { FakeBarcodeDetector } from '../media/scanning/testing/fake-barcode-detector.ts'
 import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
 import { FakeMediaBrowser } from '../media/testing/fake-media-browser.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
@@ -392,6 +394,30 @@ describe('default-device-butler', () => {
 
       expect(sut.orientation).toBeInstanceOf(DefaultDeviceOrientation)
       expect(sut.orientation.current).toBe('landscape')
+    })
+  })
+
+  describe('#scanner', () => {
+    test('should read codes with the decoder of the configuration, or not at all', async () => {
+      const decoder = { name: 'test', formats: async () => ['qr_code'] as const, decode: async () => [] }
+
+      const sut = DefaultDeviceButler.create({ scanner: { decoder } }, BrowserEnvironment.of({}))
+      const without = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.scanner).toBeInstanceOf(DefaultCodeScanner)
+      expect(sut.scanner.isSupported).toBe(true)
+      expect(await sut.scanner.formats()).toEqual(['qr_code'])
+      expect(without.scanner.isSupported).toBe(false)
+    })
+
+    test('should stop its scans when the butler is disposed', async () => {
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ BarcodeDetector: FakeBarcodeDetector }))
+      const scan = sut.scanner.scan(new FakeRecordingSource())
+
+      await sut.dispose()
+      await new Promise((resolve) => setTimeout(resolve))
+
+      expect(scan.state).toBe('ended')
     })
   })
 

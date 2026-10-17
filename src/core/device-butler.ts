@@ -16,6 +16,7 @@ import type { MediaManager } from '../media/combined/media-manager.ts'
 import type { MicrophonePreparation } from '../media/microphone/microphone-preparation.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../media/microphone/model/microphone-requirements.ts'
+import type { CodeScanner } from '../media/scanning/code-scanner.ts'
 import type { ScreenCaptureManager } from '../media/screen-capture/screen-capture-manager.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
@@ -90,6 +91,9 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
 
   /** records what a camera or a microphone delivers */
   readonly recorder: MediaRecordingManager
+
+  /** reads QR codes and bar codes in the pictures of a camera, or in a single picture */
+  readonly scanner: CodeScanner
 
   /** the speakers and headsets, and sending sound to one of them */
   readonly audioOutput: AudioOutputManager

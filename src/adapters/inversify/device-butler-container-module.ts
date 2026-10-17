@@ -30,6 +30,7 @@ export class DeviceButlerContainerModule extends ContainerModule {
       bind(DeviceButlerBindings.Orientation).toConstantValue(butler.orientation)
       bind(DeviceButlerBindings.Page).toConstantValue(butler.page)
       bind(DeviceButlerBindings.Recorder).toConstantValue(butler.recorder)
+      bind(DeviceButlerBindings.Scanner).toConstantValue(butler.scanner)
       bind(DeviceButlerBindings.AudioOutput).toConstantValue(butler.audioOutput)
       bind(DeviceButlerBindings.Network).toConstantValue(butler.network)
       bind(DeviceButlerBindings.WakeLock).toConstantValue(butler.wakeLock)

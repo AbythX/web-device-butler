@@ -36,6 +36,12 @@ export { BrowserEnvironment } from './core/environment/browser-environment.ts'
 export type { BrowserGlobals } from './core/environment/browser-environment.ts'
 
 export type {
+  BarcodeDetectorFactory,
+  BarcodeDetectorLike,
+  DetectedBarcodeLike,
+} from './core/environment/barcode-detector-like.ts'
+
+export type {
   CaptureControllerLike,
   DisplayMediaCapture,
   DisplayMediaOptionsLike,
@@ -75,6 +81,8 @@ export * from './media/index.ts'
 export * from './media/microphone/index.ts'
 
 export * from './media/screen-capture/index.ts'
+
+export * from './media/scanning/index.ts'
 
 export * from './files/index.ts'
 

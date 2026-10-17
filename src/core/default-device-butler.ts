@@ -16,6 +16,8 @@ import type { AudioOutputManager } from '../media/output/audio-output-manager.ts
 import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
 import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
 import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
+import type { CodeScanner } from '../media/scanning/code-scanner.ts'
+import { DefaultCodeScanner } from '../media/scanning/default-code-scanner.ts'
 import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
 import type { ScreenCaptureManager } from '../media/screen-capture/screen-capture-manager.ts'
 import { DefaultDeviceNetwork } from '../network/default-device-network.ts'
@@ -153,6 +155,8 @@ export class DefaultDeviceButler implements DeviceButler {
         storage,
         lock
       ),
+      // the scans pause while the page of the butler is in the background
+      new DefaultCodeScanner(configuration.scanner ?? {}, environment, page, new ScopedLogger('CodeScanner', logger)),
       new DefaultAudioOutputManager(environment, new ScopedLogger('AudioOutputManager', logger)),
       network,
       wakeLock,
@@ -184,6 +188,7 @@ export class DefaultDeviceButler implements DeviceButler {
     public readonly orientation: DeviceOrientation,
     public readonly page: PageLifecycle,
     public readonly recorder: MediaRecordingManager,
+    public readonly scanner: CodeScanner,
     public readonly audioOutput: AudioOutputManager,
     public readonly network: DeviceNetwork,
     public readonly wakeLock: ScreenWakeLock,
@@ -250,6 +255,7 @@ export class DefaultDeviceButler implements DeviceButler {
       ...this.gates.map((gate) => gate.dispose()),
     ])
 
+    this.scanner.dispose()
     // before the storage and the network it works with
     this.outbox.dispose()
     this.location.dispose()

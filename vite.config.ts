@@ -19,6 +19,7 @@ export default defineConfig({
         camera: 'src/media/camera/index.ts',
         microphone: 'src/media/microphone/index.ts',
         'screen-capture': 'src/media/screen-capture/index.ts',
+        scanning: 'src/media/scanning/index.ts',
         media: 'src/media/index.ts',
         location: 'src/location/index.ts',
         permission: 'src/permission/index.ts',
@@ -29,6 +30,7 @@ export default defineConfig({
         screen: 'src/screen/index.ts',
         sharing: 'src/sharing/index.ts',
         fabric: 'src/adapters/fabric/index.ts',
+        zxing: 'src/adapters/zxing/index.ts',
         inversify: 'src/adapters/inversify/index.ts',
         vue: 'src/adapters/vue/index.ts',
         react: 'src/adapters/react/index.ts',
@@ -36,7 +38,7 @@ export default defineConfig({
     },
     rolldownOptions: {
       // only the adapters have dependencies, and the application that uses them provides them
-      external: [/^fabric/, /^vue/, /^inversify/, /^react/],
+      external: [/^fabric/, /^vue/, /^inversify/, /^react/, /^zxing-wasm/],
     },
   },
   test: {
@@ -52,7 +54,7 @@ export default defineConfig({
       },
       {
         // prepared up front: a dependency that is discovered during a run makes the test server reload a spec
-        optimizeDeps: { include: ['fabric', 'react', 'react-dom/client'] },
+        optimizeDeps: { include: ['fabric', 'react', 'react-dom/client', 'zxing-wasm/reader', 'zxing-wasm/writer'] },
         // the real browser APIs, including a second tab
         test: {
           name: 'browser',

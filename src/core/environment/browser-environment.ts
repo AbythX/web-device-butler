@@ -1,6 +1,7 @@
 import type { BroadcastChannelLike } from '../coordination/channel/broadcast-channel-like.ts'
 import type { LockManagerLike } from '../coordination/lock/lock-manager-like.ts'
 import { UnsupportedError } from '../errors/unsupported-error.ts'
+import type { BarcodeDetectorFactory } from './barcode-detector-like.ts'
 import type { CaptureControllerLike, DisplayMediaCapture, DisplayMediaOptionsLike } from './display-media-like.ts'
 import type { NetworkInformationLike } from './network-information-like.ts'
 import type { ScreenOrientationLike } from './screen-orientation-like.ts'
@@ -26,6 +27,8 @@ export interface BrowserGlobals {
   readonly ClipboardItem?: ClipboardItemFactory
   readonly ImageCapture?: ImageCaptureFactory
   readonly CaptureController?: new () => CaptureControllerLike
+  readonly BarcodeDetector?: BarcodeDetectorFactory
+  readonly createImageBitmap?: (image: ImageBitmapSource) => Promise<ImageBitmap>
   readonly MediaRecorder?: MediaRecorderFactory
   readonly Blob?: new (parts: BlobPart[], options: { type: string }) => Blob
   readonly URL?: Pick<typeof URL, 'createObjectURL' | 'revokeObjectURL'>
@@ -203,6 +206,28 @@ export class BrowserEnvironment {
           (options: DisplayMediaOptionsLike) => mediaDevices.getDisplayMedia(options as DisplayMediaStreamOptions)
         : undefined
     })
+  }
+
+  /**
+   * The code detector of the browser, or `undefined` where the browser has none, as Firefox and Safari.
+   */
+  public get BarcodeDetector(): BarcodeDetectorFactory | undefined {
+    return this.optional((globals) => globals.BarcodeDetector)
+  }
+
+  /**
+   * Decodes an image, such as a file the user chose, into something that can be drawn.
+   *
+   * @throws UnsupportedError where the browser cannot
+   */
+  public createImageBitmap(image: ImageBitmapSource): Promise<ImageBitmap> {
+    const createImageBitmap = this.optional((globals) => globals.createImageBitmap)
+
+    if (createImageBitmap === undefined) {
+      throw new UnsupportedError('createImageBitmap')
+    }
+
+    return createImageBitmap(image)
   }
 
   /**

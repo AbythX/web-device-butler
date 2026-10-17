@@ -12,6 +12,10 @@ export { useLocation } from './device/use-location.ts'
 
 export type { UseLocation } from './device/use-location.ts'
 
+export { useCodeScan } from './media/use-code-scan.ts'
+
+export type { UseCodeScan } from './media/use-code-scan.ts'
+
 export { useMediaSession } from './media/use-media-session.ts'
 
 export type { MediaSessionOpener, UseMediaSession } from './media/use-media-session.ts'
