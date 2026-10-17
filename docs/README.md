@@ -17,6 +17,7 @@ One per area: what the area does for you, the calls in the order you need them, 
 | [Storage](guides/storage.md)                                                    | drivers, stores, codecs, expiry, streams, space                    |
 | [Location, orientation, motion, platform, permissions](guides/location-orientation-permissions.md) | positions, watches, how the device is held and turned, a compass, permission screens |
 | [Screen, network, sharing](guides/screen-network-sharing.md)                    | wake lock, fullscreen, orientation lock, online state, share sheet, clipboard |
+| [Notifications and vibration](guides/notifications-vibration.md)                | the permission, `when`, a service worker or none, forwarding clicks, vibrating |
 | [Files, the outbox, the page](guides/files-outbox-page.md)                      | saving and choosing files, sending once there is a network, a page that goes away |
 | [Several tabs](guides/multiple-tabs.md)                                         | what the tabs of an application share and how the library coordinates it |
 | [Errors](guides/errors.md)                                                      | every error class, when it is thrown and what to tell the user     |
@@ -32,7 +33,7 @@ Complete, small solutions for things applications actually build. Most of them r
 | [Voice memos](use-cases/voice-memo.md)                           | microphone, level, recording into the storage as a stream    | `use-cases/voice-memo/`          |
 | [Video message](use-cases/video-message.md)                      | camera and microphone as one session, no interruption while recording | `use-cases/video-message/` |
 | [Settings in several tabs](use-cases/settings-across-tabs.md)    | change events, updates that survive concurrent tabs, Vue     | `use-cases/shared-settings/`     |
-| [Field report](use-cases/field-report.md)                        | a photo of the camera application, the outbox, a note that survives the page | `use-cases/field-report/` |
+| [Field report](use-cases/field-report.md)                        | a photo of the camera application, the outbox, a note that survives the page, a notification once it was sent | `use-cases/field-report/` |
 | [Set-up screen](use-cases/set-up-screen.md)                      | permissions and device discovery before the user needs them  | `camera/`, `microphone/`, `location/` |
 | [Camera with an overlay](use-cases/camera-with-overlay.md)       | the fabric adapter, recording the picture with the overlay   |                                  |
 | [Recording a route](use-cases/track-a-route.md)                  | following the position, distance, storing the points         | `location/`                      |

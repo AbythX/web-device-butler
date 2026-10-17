@@ -51,6 +51,14 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
+For notifications, the page `use-cases/field-report/` asks for the permission with "Tell me when it was sent" and
+notifies once the outbox has sent a report, while no tab of it can be seen. Send a report without a network, switch
+to another application, turn the network on. Open for it:
+
+- Does `when: 'unseen'` get its answer from a tab that is frozen in time, or does it treat silence as "not seen"?
+- Which phones vibrate for a page at all, and only after a tap?
+- Does Chromium on Android throw on `new Notification()` as expected, and show it through a service worker?
+
 For the sensors, the page `location/` has a section "Motion and compass". Press `request('motion')` and the watches,
 hold the phone flat, upright and sideways, and turn it once around. Open for it:
 

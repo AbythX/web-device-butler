@@ -67,8 +67,10 @@ result, so a set-up screen can go on without a camera.
 | `SharingError` | the share sheet or the clipboard failed for a reason that is not a refusal | offer another way, such as a download; `cause` has the details |
 | `FileError`    | a file could not be written where the user chose                         | say so, and offer to save it again                            |
 
-A refusal is a `PermissionDeniedError` whose `permission` is `screen-wake-lock`, `share`, `clipboard` or
-`speaker-selection`. A picker of a capture of the screen that the user cancelled is a `PermissionDeniedError` whose
+A refusal is a `PermissionDeniedError` whose `permission` is `screen-wake-lock`, `share`, `clipboard`,
+`speaker-selection` or `notifications`. A notification is refused with it as long as the permission was not
+granted, and an `UnsupportedError` says that the page cannot show notifications at all, also on Chromium for
+Android without a service worker; see [notifications](notifications-vibration.md#errors). A picker of a capture of the screen that the user cancelled is a `PermissionDeniedError` whose
 `permission` is `display-capture`. A share sheet the user closes is not an error: `share()` resolves with `false`.
 
 ## Location

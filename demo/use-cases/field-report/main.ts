@@ -86,13 +86,21 @@ class FieldReport extends DemoPage {
     this.onClick('take', () => this.pick('environment'))
     this.onClick('choose', () => this.pick(undefined))
     this.onClick('queue', () => this.queue())
+    // the browser asks only in answer to a click
+    this.onClick('notify', async () =>
+      this.status(`notifications: ${await this.butler.permission.request('notifications')}`)
+    )
+    this.butler.notifications.on('click', () => this.status('Back from the notification'))
     this.onClick('flush', async () => (await this.reports).flush())
     this.onClick('clear', async () => (await this.server).clear())
 
     void this.run('Loading the reports', async () => {
       const reports = await this.reports
 
-      reports.on('sent', (entry) => void this.run('A report was sent', () => this.forget(entry)))
+      reports.on('sent', (entry) => {
+        void this.run('A report was sent', () => this.forget(entry))
+        void this.tellSent(entry.item)
+      })
       reports.on('failed', ({ error }) => {
         this.logger.warn('A report was not sent', error)
         void this.showWaiting()
@@ -102,6 +110,27 @@ class FieldReport extends DemoPage {
       this.note.value = (await (await this.drafts).get(FieldReport.draft)) ?? ''
       this.showNetwork()
       await this.showReceived()
+    })
+  }
+
+  /**
+   * A report that was kept without a network arrives while the user is elsewhere: tell them, unless they look at the
+   * application anyway. One tag for all reports, so a second one replaces the first notification.
+   */
+  private async tellSent(report: Report): Promise<void> {
+    const { notifications, vibration } = this.butler
+
+    if (!notifications.isSupported || (await this.butler.permission.query('notifications')) !== 'granted') {
+      vibration.vibrate('success')
+
+      return
+    }
+
+    await notifications.show({
+      title: 'Report sent',
+      body: report.note === '' ? report.name : report.note,
+      tag: 'field-report',
+      when: 'unseen',
     })
   }
 

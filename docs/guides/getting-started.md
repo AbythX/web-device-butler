@@ -34,6 +34,8 @@ components with [`web-device-butler/vue`](../../README.md#vue), or an import of 
 | `butler.orientation` | how the device is held                                                | [Location, ...](location-orientation-permissions.md#orientation) |
 | `butler.motion`      | how the device is turned and moves, and where it points               | [Location, ...](location-orientation-permissions.md#motion-and-heading) |
 | `butler.platform`    | iOS or Android                                                        | [Location, ...](location-orientation-permissions.md#platform) |
+| `butler.notifications` | shows notifications of the system, only while nobody looks if asked | [Notifications, ...](notifications-vibration.md)   |
+| `butler.vibration`   | makes the device vibrate                                              | [Notifications, ...](notifications-vibration.md#vibration) |
 | `butler.permission`  | the state of every permission, and requesting them                    | [Location, ...](location-orientation-permissions.md#permissions) |
 | `butler.coordination`| whether the browser can coordinate tabs                               | [Several tabs](multiple-tabs.md)                   |
 
@@ -47,7 +49,8 @@ const storage = DefaultStorageManager.create({ namespace: 'my-app' })
 
 The same exists for `/camera` (`DefaultCameraManager.create()`), `/microphone` (`DefaultMicrophoneManager.create()`),
 `/location` (`DefaultDeviceLocation.create()`), `/screen-capture` (`DefaultScreenCaptureManager.create()`),
-`/scanning` (`DefaultCodeScanner.create()`) and `/motion` (`DefaultDeviceMotion.create()`).
+`/scanning` (`DefaultCodeScanner.create()`), `/motion` (`DefaultDeviceMotion.create()`) and `/attention`
+(`DefaultDeviceVibration.create()`).
 
 ## Interfaces and their implementations
 

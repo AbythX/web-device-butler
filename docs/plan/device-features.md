@@ -400,6 +400,9 @@ shake.on('change', ({ acceleration, rotationRate }) => {})
 
 ## 5. Notifications and vibration
 
+Implemented on the branch `notifications`. [What was built differently](#what-was-built-differently-4) lists where
+the code left the plan.
+
 ### What is there today
 
 - Nothing shows a notification and nothing vibrates.
@@ -461,3 +464,19 @@ butler.vibration.vibrate('short')
 
 - Does `when: 'unseen'` get its answer from a frozen tab in time, or does it have to treat silence as "not seen"?
 - Which phones vibrate for a page at all, and only after a click?
+
+### What was built differently
+
+- Silence counts as "not seen": a tab asks, only the tabs the user can see answer, and the asker waits 250 ms.
+- A tab answers once its application used `butler.notifications` (`isSupported`, `show()`, a listener), so
+  `DefaultDeviceButler.create()` still touches nothing of the browser. `isSeenElsewhere()` asks on its own.
+- `show()` resolves with a `ShownNotification` that can be closed, or with `undefined` where `when` kept it back. It
+  refuses with a `PermissionDeniedError` as long as the permission was not granted, also while it is `prompt`.
+- The service worker is used where `getRegistration()` answers within a second with one that is active; one that is
+  still being installed is not waited for.
+- The worker entry is `forwardNotificationEvents(self, { openUrl })`, which forwards closes as well as clicks.
+- A click on a notification of the page brings the page to the front and closes the notification.
+- The names of the vibration are `tap`, `success`, `error` and `long`; `vibrate()` takes them, a length or lengths.
+- The real-browser spec found that a headless browser can leave every tab visible, whichever is in front: the tabs
+  answer by `document.visibilityState`, so the spec compares against what the second tab says.
+- The hook is `useNotifications`, with the last click and a `show()` that does not throw.

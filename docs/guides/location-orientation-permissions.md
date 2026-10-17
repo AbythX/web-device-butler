@@ -189,7 +189,7 @@ butler.permission.on('change', ({ name, state }) => {})
 ```
 
 The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`, `'clipboard-read'`,
-`'screen-wake-lock'`, `'motion'`.
+`'screen-wake-lock'`, `'motion'`, `'notifications'`.
 
 | State         | Meaning                                                                          | A permission screen shows          |
 | ------------- | -------------------------------------------------------------------------------- | ---------------------------------- |
@@ -210,6 +210,8 @@ The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`, 
 - `request('motion')` asks the user in Safari on iOS, for both sensors in one click; outside a click Safari does not
   ask, and the state stays `prompt`. Chromium knows the sensors as permissions it grants without asking, and
   Firefox does not ask at all; both report `granted`.
+- `request('notifications')` asks the user where the browser does, in Safari and Firefox only in answer to a click;
+  see [notifications](notifications-vibration.md#the-permission).
 - `request('persistent-storage')` is `butler.storage.persist()` as a permission. Whether the user is asked is up to
   the browser: some decide by themselves, by how much the site is used.
 

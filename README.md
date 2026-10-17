@@ -1,7 +1,7 @@
 # web-device-butler
 
 One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, screen capture,
-code scanning, location, screen, network, sharing.
+code scanning, location, motion, screen, network, sharing, notifications.
 An application says what it needs, not how the browser provides it.
 
 - **Storage**: one interface over `localStorage`, `sessionStorage`, OPFS, IndexedDB and memory.
@@ -13,6 +13,8 @@ An application says what it needs, not how the browser provides it.
   together with their voice.
 - **Code scanning**: QR codes and bar codes from a camera or a picture, with the code detector of the browser where
   there is one and zxing-wasm everywhere else.
+- **Notifications**: from the service worker where there is one and from the page elsewhere, and only while the user
+  sees no tab of the application, if that is what it should be.
 - **Several tabs**: the same application in two tabs does not lose stored updates and does not fight over the camera.
 - **Not losing what was captured**: files saved where the user finds them, an outbox that sends once there is a
   network, recordings that are kept in the storage while they run and found again after the page went away.
@@ -25,6 +27,7 @@ This page is a tour. The rest is in [`docs`](docs/README.md):
   [screen capture](docs/guides/screen-capture.md), [code scanning](docs/guides/code-scanning.md),
   [storage](docs/guides/storage.md), [screen, network, sharing](docs/guides/screen-network-sharing.md),
   [files, the outbox, the page](docs/guides/files-outbox-page.md),
+  [notifications and vibration](docs/guides/notifications-vibration.md),
   [location, orientation, permissions](docs/guides/location-orientation-permissions.md),
   [several tabs](docs/guides/multiple-tabs.md), [errors](docs/guides/errors.md).
 - **Use cases** with complete code: a [document scanner](docs/use-cases/document-scanner.md),
@@ -290,6 +293,21 @@ await butler.audioOutput.route(player, (await butler.audioOutput.list())[1])
 
 Each part says whether the browser has it (`isSupported`, `canEnter()`, `canShare()`, `canRoute()`).
 
+## Notifications and vibration
+
+```ts
+await butler.permission.request('notifications') // in answer to a click
+
+await butler.notifications.show({ title: 'Report sent', tag: 'outbox', when: 'unseen' })
+butler.notifications.on('click', ({ tag, data }) => {})
+
+butler.vibration.vibrate('success') // false where the device cannot
+```
+
+- `when: 'unseen'` shows it only while no tab of the application can be seen; the tabs ask each other.
+- The service worker of the application shows it where there is one, which Chromium on Android requires.
+  `forwardNotificationEvents(self)` of `web-device-butler/worker` hands its clicks to the page.
+
 ## Files, the outbox, the page
 
 ```ts
@@ -334,6 +352,8 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 | `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                                              |
 | `web-device-butler/screen-capture`                                 | the capture of the screen, with its own `create()` factory                             |
 | `web-device-butler/media`, `/permission`, `/platform`              | the combined session, joined sessions, recording, audio outputs, permissions, platform |
+| `web-device-butler/attention`                                      | notifications and vibration                                                            |
+| `web-device-butler/worker`                                         | for the service worker: hands clicks on notifications to the page                      |
 | `web-device-butler/motion`                                         | pitch, roll, heading and acceleration from the sensors                                 |
 | `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard                      |
 | `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network                             |
@@ -355,7 +375,7 @@ const theme = useStoredValue(settingsStore, 'theme') // follows other components
 ```
 
 Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useScreenCapture`,
-`useCodeScan`, `useAttitude`, `useMovement`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
+`useCodeScan`, `useAttitude`, `useMovement`, `useNotifications`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
 
 ### React
 
@@ -377,7 +397,7 @@ const Capture = () => {
 ```
 
 The same hooks as the Vue composables, with plain values instead of refs: `useMicrophone` (with `setMuted()`),
-`useScreenCapture`, `useCodeScan`, `useAttitude`, `useMovement`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
+`useScreenCapture`, `useCodeScan`, `useAttitude`, `useMovement`, `useNotifications`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
 recordings and watches are closed when the component is unmounted. Before React 19 the provider is
 `<DeviceButlerContext.Provider value={butler}>`.
 
