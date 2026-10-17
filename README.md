@@ -1,7 +1,7 @@
 # web-device-butler
 
-One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, location,
-screen, network, sharing.
+One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, screen capture,
+location, screen, network, sharing.
 An application says what it needs, not how the browser provides it.
 
 - **Storage**: one interface over `localStorage`, `sessionStorage`, OPFS, IndexedDB and memory.
@@ -9,6 +9,8 @@ An application says what it needs, not how the browser provides it.
   `deviceId`.
 - **Recording and photos**: a format the browser can write, a recording that survives a camera that is started
   again, a photo from every browser.
+- **Screen capture**: say what the user should share, and get told when what they chose does not have it; record it
+  together with their voice.
 - **Several tabs**: the same application in two tabs does not lose stored updates and does not fight over the camera.
 - **Not losing what was captured**: files saved where the user finds them, an outbox that sends once there is a
   network, recordings that are handed over before the page goes away.
@@ -18,6 +20,7 @@ This page is a tour. The rest is in [`docs`](docs/README.md):
 
 - **Guides** per area: [getting started](docs/guides/getting-started.md), [camera](docs/guides/camera.md),
   [microphone](docs/guides/microphone.md), [recording](docs/guides/recording.md),
+  [screen capture](docs/guides/screen-capture.md),
   [storage](docs/guides/storage.md), [screen, network, sharing](docs/guides/screen-network-sharing.md),
   [files, the outbox, the page](docs/guides/files-outbox-page.md),
   [location, orientation, permissions](docs/guides/location-orientation-permissions.md),
@@ -26,7 +29,8 @@ This page is a tour. The rest is in [`docs`](docs/README.md):
   [voice memos](docs/use-cases/voice-memo.md), a [video message](docs/use-cases/video-message.md),
   [settings in several tabs](docs/use-cases/settings-across-tabs.md), a [set-up screen](docs/use-cases/set-up-screen.md),
   a [camera with an overlay](docs/use-cases/camera-with-overlay.md), [recording a route](docs/use-cases/track-a-route.md),
-  a [field report](docs/use-cases/field-report.md) that is sent once there is a network.
+  a [field report](docs/use-cases/field-report.md) that is sent once there is a network, a
+  [screen tutorial](docs/use-cases/screen-tutorial.md) with the voice of the user.
 - **Demos** that run them: `pnpm demo`, see [`demo`](demo/README.md).
 
 > **Status.** Early releases, on GitHub Packages only. Everything is tested against fakes and in Chromium and Firefox with the fake
@@ -154,6 +158,31 @@ const { blob, mimeType, duration } = await recording.stop()
   a browser cannot continue a file with another track.
 - `into: (segment) => store.writeStream(key)` writes the recording into a stream instead of memory.
 
+## Screen capture
+
+```ts
+// in answer to a click: the browser shows its picker only then
+await using screen = await butler.screenCapture.open({
+  require: { audio: true },
+  prefer: { surface: 'window' },
+  content: 'text',
+})
+
+screen.surface // what the user chose: 'monitor' | 'window' | 'browser'
+screen.on('ended', ({ reason }) => {
+  /* 'device': the user pressed "stop sharing" */
+})
+
+// the screen with the voice of the user, in one recording
+await using microphone = await butler.microphone.open()
+const recording = await butler.recorder.record(butler.media.join(screen, microphone))
+```
+
+- `prefer` is a hint for the picker and for what the browser delivers. `require` is checked once the user has
+  chosen: a capture without it is stopped, and `open()` fails with a `MediaRequirementsError` that names it.
+- `isSupported` is `false` on phones, whose browsers cannot capture the screen.
+- No other tab can take a capture over; several can run at once.
+
 ## Storage
 
 ```ts
@@ -271,7 +300,8 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | `web-device-butler`                                                | the whole core                                                        |
 | `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                             |
-| `web-device-butler/media`, `/permission`, `/platform`              | the combined session, recording, audio outputs, permissions, platform |
+| `web-device-butler/screen-capture`                                 | the capture of the screen, with its own `create()` factory            |
+| `web-device-butler/media`, `/permission`, `/platform`              | the combined session, joined sessions, recording, audio outputs, permissions, platform |
 | `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard     |
 | `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network            |
 | `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                      |

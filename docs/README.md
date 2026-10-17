@@ -12,6 +12,7 @@ One per area: what the area does for you, the calls in the order you need them, 
 | [Camera](guides/camera.md)                                                      | requirements, selection, sessions, torch, zoom, focus, photos, switching |
 | [Microphone](guides/microphone.md)                                              | selection, processing, level, muting, both at once, audio outputs  |
 | [Recording](guides/recording.md)                                                | formats, pausing, segments, writing into the storage as a stream   |
+| [Screen capture](guides/screen-capture.md)                                      | the picker, what is preferred and required, the session, recording with a voice |
 | [Storage](guides/storage.md)                                                    | drivers, stores, codecs, expiry, streams, space                    |
 | [Location, orientation, platform, permissions](guides/location-orientation-permissions.md) | positions, watches, how the device is held, permission screens |
 | [Screen, network, sharing](guides/screen-network-sharing.md)                    | wake lock, fullscreen, orientation lock, online state, share sheet, clipboard |
@@ -34,6 +35,7 @@ Complete, small solutions for things applications actually build. Most of them r
 | [Set-up screen](use-cases/set-up-screen.md)                      | permissions and device discovery before the user needs them  | `camera/`, `microphone/`, `location/` |
 | [Camera with an overlay](use-cases/camera-with-overlay.md)       | the fabric adapter, recording the picture with the overlay   |                                  |
 | [Recording a route](use-cases/track-a-route.md)                  | following the position, distance, storing the points         | `location/`                      |
+| [Screen tutorial](use-cases/screen-tutorial.md)                  | a capture of the screen and the microphone in one recording  | `screen/`                        |
 
 ## Demos
 

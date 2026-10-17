@@ -1,7 +1,8 @@
 # Recording
 
-`butler.recorder` records what a session delivers: a camera, a microphone or both together. It chooses a format the
-browser can write, keeps the recording going when its device is started again, and writes it into memory or wherever
+`butler.recorder` records what a session delivers: a camera, a microphone, both together, or sessions that
+`butler.media.join()` put into one stream, such as a [capture of the screen](screen-capture.md#recording-the-screen-with-a-voice)
+with a microphone. It chooses a format the browser can write, keeps the recording going when its device is started again, and writes it into memory or wherever
 you say.
 
 ```ts

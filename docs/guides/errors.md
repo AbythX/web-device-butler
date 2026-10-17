@@ -35,15 +35,16 @@ A call that was aborted through its `signal` rejects with the reason of the sign
 | `PermissionDeniedError` | the user or the browser refused                                | `permission` | how to unblock it in the settings of the browser. Asking again shows no prompt in most browsers. |
 | `UnsupportedError`      | the browser or the page (no HTTPS) does not have what was asked for | `feature` | that the feature is not available here; hide it next time  |
 
-## Camera and microphone
+## Camera, microphone, screen capture
 
-All extend `MediaError`. A `MediaError` itself is thrown for what fits none of them, and for a camera or microphone
-that is asked for after its butler was disposed.
+All extend `MediaError`. A `MediaError` itself is thrown for what fits none of them, for a camera, microphone or
+capture of the screen that is asked for after its butler was disposed, and for a capture of the screen that was not
+asked for in answer to a click.
 
 | Error                      | Thrown when                                              | Fields                                         | What to do                                                        |
 | -------------------------- | -------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
-| `MediaDeviceBusyError`     | the device is held and `whenBusy` does not get it        | `kind`, `holder`: `'this-tab'`, `'other-tab'`, `'unknown'` | `other-tab`: offer `whenBusy: 'takeover'`. `unknown`: another application has it; ask the user to close it. |
-| `MediaRequirementsError`   | no device can deliver what was required                  | `constraint`, where the browser names one      | the message says which requirement removed which device. Loosen `require`, or say that the device lacks the feature. |
+| `MediaDeviceBusyError`     | the device is held and `whenBusy` does not get it; never for the screen | `kind`, `holder`: `'this-tab'`, `'other-tab'`, `'unknown'` | `other-tab`: offer `whenBusy: 'takeover'`. `unknown`: another application has it; ask the user to close it. |
+| `MediaRequirementsError`   | no device can deliver what was required, or what the user chose to share does not have it | `constraint`, where the browser names one; the first missing trait of a capture of the screen | the message says which requirement removed which device. Loosen `require`, or say that the device lacks the feature. For the screen, tell the user what to choose. |
 | `MediaDeviceNotFoundError` | there is no device of the kind, or none with the id      |                                                | say that there is no camera; forget a stored id                   |
 | `SessionClosedError`       | something was asked of a session that has ended          |                                                | open a new session. Listen to `ended` to know earlier.            |
 
@@ -62,7 +63,8 @@ result, so a set-up screen can go on without a camera.
 | `FileError`    | a file could not be written where the user chose                         | say so, and offer to save it again                            |
 
 A refusal is a `PermissionDeniedError` whose `permission` is `screen-wake-lock`, `share`, `clipboard` or
-`speaker-selection`. A share sheet the user closes is not an error: `share()` resolves with `false`.
+`speaker-selection`. A picker of a capture of the screen that the user cancelled is a `PermissionDeniedError` whose
+`permission` is `display-capture`. A share sheet the user closes is not an error: `share()` resolves with `false`.
 
 ## Location
 

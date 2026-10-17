@@ -31,6 +31,9 @@ Every part brings the same set of pieces, which the steps below do not repeat ea
 
 ## 1. Screen capture
 
+Implemented on the branch `screen-capture`. [What was built differently](#what-was-built-differently) lists where the
+code left the plan.
+
 ### What is there today
 
 - Sessions (`MediaSession`, `BaseMediaSession`) hold one stream, report `live`, `muted`, `ended` and end with a
@@ -113,6 +116,29 @@ const recording = await butler.recorder.record(butler.media.join(screen, microph
 - Which browsers share the sound of a tab, of a window, of the whole screen?
 - Does the "stop sharing" button end the track in every browser, or only mute it?
 - Does `contentHint` change what is recorded, visibly?
+
+### What was built differently
+
+- `ScreenCaptureManager` also has `configuration` and `configure()`, with a `screenCapture` section in the
+  configuration, like the camera; and `dispose()`, which `butler.dispose()` calls to stop every capture.
+- `BaseMediaSession` holds its device through a `MediaSessionHold` instead of a `MediaLease`. A `MediaLease` is one;
+  the screen session holds its stream with a `StreamHold`, which stops the tracks and has no lock. The kind of a
+  session is a `MediaSourceKind`: the camera, the microphone or the screen. The track of a session is the picture
+  where the stream has one, because Chromium can list the sound of a capture first.
+- `media.join()` returns a `JoinedMediaSource` that does not own its sessions: it ends with the first of them, and
+  leaves the others running. `dispose()` ends it with `closed`.
+- `open()` tells a missing click from a refusal: `InvalidStateError` and `InvalidAccessError`, and a
+  `NotAllowedError` while `navigator.userActivation` says the user did not just click, become a `MediaError` that
+  says so. A cancelled picker is a `PermissionDeniedError` for `display-capture`, without an entry in
+  `DevicePermissionName`.
+- Firefox needs no further preferences: with `media.navigator.permission.disabled` it shares the whole screen in
+  answer to a click, without a picker. It does not report `displaySurface` and `cursor`, so a `require` of them
+  cannot fail there. The WebKit build of Playwright has no `getDisplayMedia`.
+- The hooks of Vue and React share `useMediaSession`, which now takes anything that opens sessions
+  (`MediaSessionOpener`). The React spec of `useScreenCapture` runs against the fake devices, because a real picker
+  cannot be answered from a spec.
+- The demo is a section of the `screen/` page, the use case is
+  [`screen-tutorial.md`](../use-cases/screen-tutorial.md).
 
 ## 2. Recordings that survive the page
 

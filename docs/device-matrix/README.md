@@ -51,6 +51,17 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
+For the capture of the screen, the page `screen/` has a section of its own. Press each `open()` there, choose
+a screen, a window and a tab in turn, press the stop button of the browser, and record with the microphone. Write
+what you saw into the notes. Open for it:
+
+- Which browsers share the sound of a tab, of a window, of the whole screen?
+- Does the stop button of the browser end the track in every browser, or only mute it?
+- Does `content: 'text'` change what is recorded, visibly?
+- Which browsers report `displaySurface` and `cursor`? Firefox reported neither in the specs, so `require` cannot
+  check them there.
+- Which error does each browser throw on macOS while the system does not allow it to record the screen?
+
 For the microphones, the page `microphone/` builds the same kind of report: press `prepare()` and `open()`,
 switch each processing, watch the level, then repeat `open()` in a second tab, with and without `exclusive`. Save it
 as `docs/device-matrix/<device>-<browser>-microphone.json`. Open for them:
