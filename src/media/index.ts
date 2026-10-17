@@ -97,6 +97,21 @@ export { DefaultMediaRecordingManager } from './recording/default-media-recordin
 
 export { WebmDuration } from './recording/webm/webm-duration.ts'
 
+export { RecordingFile } from './recording/recording-file.ts'
+
+export type {
+  KeptRecording,
+  KeptRecordingState,
+  KeptRecordings,
+  RecordingKeepOptions,
+} from './recording/kept/kept-recording.ts'
+
+export { KeptRecordingArchive } from './recording/kept/kept-recording-archive.ts'
+
+export type { KeptRecordingDescription, KeptSegmentDescription } from './recording/kept/kept-recording-archive.ts'
+
+export { RecordingKeeper } from './recording/kept/recording-keeper.ts'
+
 export { IosTorchResetsOnZoomQuirk } from './quirks/ios-torch-resets-on-zoom-quirk.ts'
 
 export { PlatformQuirk } from './quirks/platform-quirk.ts'

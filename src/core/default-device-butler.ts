@@ -144,8 +144,15 @@ export class DefaultDeviceButler implements DeviceButler {
       new DefaultDevicePlatform(environment),
       new DefaultDeviceOrientation(environment, new ScopedLogger('DeviceOrientation', logger)),
       page,
-      // the recordings share the wake lock and the page of the butler
-      new DefaultMediaRecordingManager(environment, wakeLock, page, new ScopedLogger('MediaRecordingManager', logger)),
+      // the recordings share the wake lock, the page, the storage and the locks of the butler
+      new DefaultMediaRecordingManager(
+        environment,
+        wakeLock,
+        page,
+        new ScopedLogger('MediaRecordingManager', logger),
+        storage,
+        lock
+      ),
       new DefaultAudioOutputManager(environment, new ScopedLogger('AudioOutputManager', logger)),
       network,
       wakeLock,

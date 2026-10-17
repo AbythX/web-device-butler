@@ -162,4 +162,62 @@ describe.skipIf(!hasCamera)('recording in a real browser', () => {
     expect(photo.type).toMatch(/^image\//)
     expect(photo.size).toBeGreaterThan(0)
   })
+
+  describe('kept in the storage', () => {
+    /**
+     * Whether a player of the browser can read the file: it knows how long it is once it has its metadata.
+     */
+    const durationOf = async (blob: Blob): Promise<number> => {
+      const player = document.createElement('audio')
+      const url = URL.createObjectURL(blob)
+
+      try {
+        const loaded = new Promise<void>((resolve, reject) => {
+          player.addEventListener('loadedmetadata', () => resolve(), { once: true })
+          player.addEventListener('error', () => reject(player.error ?? new Error('The player cannot read it')))
+        })
+
+        player.src = url
+        await loaded
+
+        return player.duration
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+    }
+
+    afterEach(async () => {
+      await commands.closeSecondTab()
+    })
+
+    test('should find a recording whose page was thrown away, and play what was kept', async () => {
+      const namespace = `memos-${Date.now()}`
+      const mimeType = await commands.recordKeptInSecondTab({ namespace, id: 'monday', milliseconds: 1500 })
+      await commands.showFirstTab()
+
+      expect((await butler.recorder.kept(namespace).get('monday'))?.state).toBe('recording')
+
+      await commands.closeSecondTab()
+
+      // the browser frees the locks of a closed tab a moment later
+      let kept = await butler.recorder.kept(namespace).get('monday')
+
+      for (let attempt = 0; attempt < 100 && kept?.state === 'recording'; attempt++) {
+        await recorded(20)
+        kept = await butler.recorder.kept(namespace).get('monday')
+      }
+
+      expect(kept?.state).toBe('interrupted')
+      expect(kept?.mimeType).toBe(mimeType)
+      expect(kept?.bytes).toBeGreaterThan(0)
+
+      const result = await kept?.read()
+      const blob = result?.blob ?? new Blob()
+      expect(blob.size).toBe(kept?.bytes)
+      expect(await durationOf(blob)).toBeGreaterThan(0)
+
+      await kept?.delete()
+      expect(await butler.recorder.kept(namespace).list()).toEqual([])
+    })
+  })
 })

@@ -29,6 +29,9 @@ import { DefaultScreenFullscreen } from '../screen/fullscreen/default-screen-ful
 import { DefaultScreenWakeLock } from '../screen/wake-lock/default-screen-wake-lock.ts'
 import { DefaultDeviceClipboard } from '../sharing/clipboard/default-device-clipboard.ts'
 import { DefaultDeviceShare } from '../sharing/share/default-device-share.ts'
+import { FakeMediaRecorder } from '../media/recording/testing/fake-media-recorder.ts'
+import { FakeRecordingSource } from '../media/recording/testing/fake-recording-source.ts'
+import type { BrowserGlobals } from './environment/browser-environment.ts'
 
 describe('default-device-butler', () => {
   describe('#create', () => {
@@ -472,6 +475,21 @@ describe('default-device-butler', () => {
       const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ navigator }))
 
       expect(sut.network.isOnline).toBe(false)
+    })
+
+    test('should keep a recording in its own storage', async () => {
+      FakeMediaRecorder.reset()
+      const MediaRecorder = FakeMediaRecorder as unknown as BrowserGlobals['MediaRecorder']
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ MediaRecorder, Blob }))
+
+      const recording = await sut.recorder.record(new FakeRecordingSource('audio'), { keep: { namespace: 'memos' } })
+      FakeMediaRecorder.last.deliver('kept ')
+      await new Promise((resolve) => setTimeout(resolve))
+
+      const [kept] = await sut.recorder.kept('memos').list()
+      expect(kept?.id).toBe(recording.id)
+      expect(kept?.state).toBe('recording')
+      expect(await (await recording.stop()).blob?.text()).toBe('kept end')
     })
 
     test('should let the screen sleep again when the butler is disposed', async () => {

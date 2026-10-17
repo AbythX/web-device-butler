@@ -17,7 +17,8 @@ import type {
   RecordingResult,
   RecordingSource,
 } from './media-recording.ts'
-import { WebmDuration } from './webm/webm-duration.ts'
+import type { RecordingKeeper } from './kept/recording-keeper.ts'
+import { RecordingFile } from './recording-file.ts'
 
 /**
  * The file that is being written.
@@ -25,7 +26,7 @@ import { WebmDuration } from './webm/webm-duration.ts'
 interface OpenSegment {
   readonly index: number
   readonly recorder: MediaRecorder
-  /** what was recorded, unless it is written somewhere else */
+  /** what was recorded, unless it is written somewhere else or kept in the storage */
   readonly chunks: Blob[]
   readonly writer: WritableStreamDefaultWriter<Uint8Array> | undefined
   /** the pieces are written one after another, in the order the recorder delivered them; never rejects */
@@ -66,6 +67,7 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
    * @param format the format to write; `undefined` leaves the choice to the browser
    * @param hold keeps the screen on; released when the recording is over
    * @param page tells when the page goes to the background or is left
+   * @param keeper writes the recording into the storage piece by piece, instead of into memory
    */
   public constructor(
     private readonly source: RecordingSource,
@@ -75,7 +77,8 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
     private readonly environment: BrowserEnvironment,
     private readonly hold: WakeLockHold | undefined,
     page: PageLifecycle,
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly keeper?: RecordingKeeper
   ) {
     super()
 
@@ -131,6 +134,10 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
 
   public get state(): MediaRecordingState {
     return this.currentState
+  }
+
+  public get id(): string | undefined {
+    return this.keeper?.id
   }
 
   public get mimeType(): string {
@@ -301,10 +308,24 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
     }
 
     const { writer } = segment
+    const { keeper } = this
     segment.bytes += data.size
     this.noteFormat(segment.recorder)
 
-    if (writer === undefined) {
+    if (keeper !== undefined) {
+      // the format and the length as they are when the piece arrives, which is what an interrupted recording has
+      const mimeType = this.writtenFormat
+      const duration = this.duration - segment.startedAt
+
+      segment.writing = segment.writing
+        .then(async () => {
+          // a piece after one that could not be written would leave a hole in the file
+          if (this.failure === undefined) {
+            await keeper.write(segment.index, mimeType, new Uint8Array(await data.arrayBuffer()), duration)
+          }
+        })
+        .catch((error: unknown) => this.fail(error))
+    } else if (writer === undefined) {
       segment.chunks.push(data)
     } else {
       segment.writing = segment.writing
@@ -363,8 +384,11 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
     this.noteFormat(recorder)
     const mimeType = this.writtenFormat
 
+    const duration = this.duration - startedAt
+
     try {
       await writer?.close()
+      await this.keeper?.close(index, mimeType, duration)
     } catch (error) {
       this.failure = error
 
@@ -373,35 +397,17 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
 
     // a segment without data is one the browser ended before it began
     if (bytes > 0) {
-      const duration = this.duration - startedAt
+      const isInMemory = writer === undefined && this.keeper === undefined
 
       this.closed.push({
         index,
         mimeType,
         bytes,
         duration,
-        blob: writer === undefined ? await this.fileOf(chunks, mimeType, duration) : undefined,
+        blob: isInMemory
+          ? await RecordingFile.of(chunks, mimeType, duration, this.environment, this.logger)
+          : undefined,
       })
-    }
-  }
-
-  /**
-   * The pieces of a segment as one file. A recorder cannot write the length into a WebM file, which leaves players
-   * unable to show it or to jump to a position, so it is written into it here.
-   */
-  private async fileOf(chunks: Blob[], mimeType: string, duration: number): Promise<Blob> {
-    const file = this.environment.createBlob(chunks, mimeType)
-
-    if (!/^(audio|video)\/webm/i.test(mimeType)) {
-      return file
-    }
-
-    try {
-      return await WebmDuration.apply(file, duration, (parts, type) => this.environment.createBlob(parts, type))
-    } catch (error) {
-      this.logger.debug('Could not write the length into the recording', error)
-
-      return file
     }
   }
 
@@ -422,8 +428,43 @@ export class DefaultMediaRecording extends EventEmitter<MediaRecordingEvents> im
     this.changeState('stopped')
     this.removeAllListeners()
 
+    void this.settleWith(this.keeper === undefined ? undefined : this.concludeKeeping(this.keeper))
+  }
+
+  /**
+   * Stopped, the recording is read back from the storage; failed, what was written stays there as interrupted;
+   * discarded, it is removed.
+   *
+   * @returns the result read back, or `undefined` where there is none
+   */
+  private async concludeKeeping(keeper: RecordingKeeper): Promise<RecordingResult | undefined> {
+    if (this.failure !== undefined && keeper.hasPieces) {
+      await keeper.abandon()
+
+      return undefined
+    }
+
+    // a recording that failed before anything was written leaves nothing to find
+    if (this.isDiscarded || this.failure !== undefined) {
+      await keeper.discard()
+
+      return undefined
+    }
+
+    return keeper.finish()
+  }
+
+  private async settleWith(kept: Promise<RecordingResult | undefined> | undefined): Promise<void> {
+    let result = this.result
+
+    try {
+      result = (await kept) ?? result
+    } catch (error) {
+      this.failure ??= error
+    }
+
     if (this.failure === undefined) {
-      this.settle?.resolve(this.result)
+      this.settle?.resolve(result)
     } else {
       this.settle?.reject(
         this.failure instanceof DeviceButlerError
