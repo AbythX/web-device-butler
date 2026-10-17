@@ -51,6 +51,14 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
+For the recordings that are kept in the storage, the page `use-cases/voice-memo/` records memos that way. Record a
+memo for a minute, switch to another application until the browser throws the page away (or kill the browser), and
+open the page again: the memo should be listed as `interrupted`. Open for it:
+
+- Does the MP4 that Safari writes play when it is cut off after a piece, or does it need the end that `stop()`
+  writes? Chromium writes fragmented MP4, which does.
+- How much of the last second is lost when Safari on iOS throws a page away in the background?
+
 For the capture of the screen, the page `screen/` has a section of its own. Press each `open()` there, choose
 a screen, a window and a tab in turn, press the stop button of the browser, and record with the microphone. Write
 what you saw into the notes. Open for it:

@@ -49,7 +49,8 @@ asked for in answer to a click.
 | `SessionClosedError`       | something was asked of a session that has ended          |                                                | open a new session. Listen to `ended` to know earlier.            |
 
 A recording that could not be written rejects with a `MediaError` whose `cause` says why; see
-[recording](recording.md#how-it-ends).
+[recording](recording.md#how-it-ends). A recording that is kept in the storage rejects with the `StorageError` of
+the write instead, such as `StorageQuotaExceededError`, and stays in the storage as `interrupted`.
 
 `prepare()` of the butler, the camera, the microphone and the storage does not throw these: it reports them as `error` of its
 result, so a set-up screen can go on without a camera.

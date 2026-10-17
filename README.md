@@ -13,7 +13,7 @@ An application says what it needs, not how the browser provides it.
   together with their voice.
 - **Several tabs**: the same application in two tabs does not lose stored updates and does not fight over the camera.
 - **Not losing what was captured**: files saved where the user finds them, an outbox that sends once there is a
-  network, recordings that are handed over before the page goes away.
+  network, recordings that are kept in the storage while they run and found again after the page went away.
 - **No runtime dependencies** in the core. Vue, React, inversify and fabric are optional entry points.
 
 This page is a tour. The rest is in [`docs`](docs/README.md):
@@ -157,6 +157,9 @@ const { blob, mimeType, duration } = await recording.stop()
 - A device that is started again or switched continues the recording in a new segment (`result.segments`), because
   a browser cannot continue a file with another track.
 - `into: (segment) => store.writeStream(key)` writes the recording into a stream instead of memory.
+- `keep: { namespace: 'memos' }` keeps it in the storage piece by piece while it runs. A page that is thrown away
+  loses at most the last second, and the next visit finds the recording in `butler.recorder.kept('memos')` as
+  `interrupted`.
 
 ## Screen capture
 
@@ -296,18 +299,18 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 
 ## Entry points
 
-| Import                                                             | Contains                                                              |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `web-device-butler`                                                | the whole core                                                        |
-| `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                             |
-| `web-device-butler/screen-capture`                                 | the capture of the screen, with its own `create()` factory            |
+| Import                                                             | Contains                                                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `web-device-butler`                                                | the whole core                                                                         |
+| `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                                              |
+| `web-device-butler/screen-capture`                                 | the capture of the screen, with its own `create()` factory                             |
 | `web-device-butler/media`, `/permission`, `/platform`              | the combined session, joined sessions, recording, audio outputs, permissions, platform |
-| `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard     |
-| `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network            |
-| `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                      |
-| `web-device-butler/vue`                                            | composables, needs `vue`                                              |
-| `web-device-butler/inversify`                                      | container module, needs `inversify` 8                                 |
-| `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric`                           |
+| `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard                      |
+| `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network                             |
+| `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                                       |
+| `web-device-butler/vue`                                            | composables, needs `vue`                                                               |
+| `web-device-butler/inversify`                                      | container module, needs `inversify` 8                                                  |
+| `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric`                                            |
 
 ### Vue
 

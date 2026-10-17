@@ -142,6 +142,9 @@ const recording = await butler.recorder.record(butler.media.join(screen, microph
 
 ## 2. Recordings that survive the page
 
+Implemented on the branch `kept-recordings`. [What was built differently](#what-was-built-differently-1) lists where
+the code left the plan.
+
 ### What is there today
 
 - `RecordingOptions.into` writes a recording into a stream, for example `store.writeStream(key)`, and the
@@ -207,6 +210,28 @@ for (const kept of await butler.recorder.kept('memos').list()) {
 - Is the MP4 that Safari writes playable when it is cut off after a piece, or does it need the end that `stop()`
   writes? (Chromium writes fragmented MP4, which is.)
 - How much of the last second is lost when Safari on iOS throws a page away in the background?
+
+### What was built differently
+
+- `list()` also returns the recordings a tab records right now, as `recording`, and `KeptRecordings` has `get(id)`.
+  `MediaRecording` has an `id`, the name the recording is kept under.
+- `discard()` removes a kept recording as a whole, not only the segment that is being written: the earlier segments
+  are the library's own entries, not streams of the application.
+- `finished` and `read()` put the recording together as a `Blob`. The pieces are not held in memory while it
+  records.
+- A namespace has two stores, the descriptions as JSON and the pieces as bytes, in the same backend. `read()` also
+  takes a piece that was written after the last description, for a page that went away in between.
+- After a piece that could not be written, no further piece is written, so a full storage leaves no hole in the
+  file. A recording that failed before anything was written leaves nothing behind.
+- `record()` refuses an `id` that another tab records right now with a `MediaError`, and `delete()` refuses one that
+  runs.
+- `kept(namespace, storage)` takes the backend as well; what a namespace is opened with the first time on a page is
+  what it keeps.
+- `DefaultMediaRecordingManager` takes the storage and the lock of the butler; on its own it creates a storage
+  when the first recording is kept.
+- The browser spec records in a second tab and closes it instead of reloading the page, which looks the same to the
+  other tabs. Chromium frees the locks of a closed tab a moment later, so the spec waits for it. An interrupted MP4
+  of Chromium and an interrupted WebM of Firefox both played.
 
 ## 3. Scanning codes
 

@@ -50,9 +50,35 @@ const { blob } = await recording.stop()
 send(blob)
 ```
 
-The library chooses a format the browser can write; `recording.mimeType` and `blob.type` say which. A short message
-fits in memory. For a long one, write the pieces to a store as a stream, as the
-[voice memos](voice-memo.md#recording-into-the-storage) do.
+The library chooses a format the browser can write; `recording.mimeType` and `blob.type` say which.
+
+## A page that is thrown away
+
+A phone throws a page away when the user switches to another application for too long, without telling it. A
+message that was recorded in memory is gone then. Keep it in the storage while it records:
+
+```ts
+const draft = { namespace: 'video-messages', id: 'draft' }
+
+const recording = await butler.recorder.record(session, { keepAwake: true, keep: draft })
+const { blob } = await recording.stop() // read back from the storage, and removed from it
+```
+
+Every piece the browser hands over goes into the storage as it arrives. A page that is thrown away loses at most the
+last second. On the next visit:
+
+```ts
+const interrupted = await butler.recorder.kept(draft.namespace).get(draft.id)
+
+if (interrupted?.state === 'interrupted') {
+  const { blob } = await interrupted.read() // what was recorded until the page went away
+  offerToSend(blob)
+  await interrupted.delete()
+}
+```
+
+A fixed `id` keeps one draft at a time: the next recording replaces it. The [voice memos](voice-memo.md) keep every
+recording under its own id instead.
 
 ## Not being interrupted
 
