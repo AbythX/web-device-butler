@@ -1,7 +1,7 @@
 # web-device-butler
 
 One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, screen capture,
-location, screen, network, sharing.
+code scanning, location, screen, network, sharing.
 An application says what it needs, not how the browser provides it.
 
 - **Storage**: one interface over `localStorage`, `sessionStorage`, OPFS, IndexedDB and memory.
@@ -11,6 +11,8 @@ An application says what it needs, not how the browser provides it.
   again, a photo from every browser.
 - **Screen capture**: say what the user should share, and get told when what they chose does not have it; record it
   together with their voice.
+- **Code scanning**: QR codes and bar codes from a camera or a picture, with the code detector of the browser where
+  there is one and zxing-wasm everywhere else.
 - **Several tabs**: the same application in two tabs does not lose stored updates and does not fight over the camera.
 - **Not losing what was captured**: files saved where the user finds them, an outbox that sends once there is a
   network, recordings that are kept in the storage while they run and found again after the page went away.
@@ -20,7 +22,7 @@ This page is a tour. The rest is in [`docs`](docs/README.md):
 
 - **Guides** per area: [getting started](docs/guides/getting-started.md), [camera](docs/guides/camera.md),
   [microphone](docs/guides/microphone.md), [recording](docs/guides/recording.md),
-  [screen capture](docs/guides/screen-capture.md),
+  [screen capture](docs/guides/screen-capture.md), [code scanning](docs/guides/code-scanning.md),
   [storage](docs/guides/storage.md), [screen, network, sharing](docs/guides/screen-network-sharing.md),
   [files, the outbox, the page](docs/guides/files-outbox-page.md),
   [location, orientation, permissions](docs/guides/location-orientation-permissions.md),
@@ -30,7 +32,8 @@ This page is a tour. The rest is in [`docs`](docs/README.md):
   [settings in several tabs](docs/use-cases/settings-across-tabs.md), a [set-up screen](docs/use-cases/set-up-screen.md),
   a [camera with an overlay](docs/use-cases/camera-with-overlay.md), [recording a route](docs/use-cases/track-a-route.md),
   a [field report](docs/use-cases/field-report.md) that is sent once there is a network, a
-  [screen tutorial](docs/use-cases/screen-tutorial.md) with the voice of the user.
+  [screen tutorial](docs/use-cases/screen-tutorial.md) with the voice of the user, a
+  [code scanner](docs/use-cases/code-scanner.md).
 - **Demos** that run them: `pnpm demo`, see [`demo`](demo/README.md).
 
 > **Status.** Early releases, on GitHub Packages only. Everything is tested against fakes and in Chromium and Firefox with the fake
@@ -186,6 +189,28 @@ const recording = await butler.recorder.record(butler.media.join(screen, microph
 - `isSupported` is `false` on phones, whose browsers cannot capture the screen.
 - No other tab can take a capture over; several can run at once.
 
+## Code scanning
+
+```ts
+import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url'
+import { ZxingCodeDecoder } from 'web-device-butler/zxing'
+
+// without a decoder, the code detector of the browser, which only Chromium has on some systems
+const butler = DefaultDeviceButler.create({ scanner: { decoder: new ZxingCodeDecoder({ wasmUrl }) } })
+
+await using camera = await butler.camera.open({ require: { facing: 'back' }, prefer: { focus: true } })
+await using scan = butler.scanner.scan(camera, { formats: ['qr_code', 'ean_13'] })
+
+const { format, value, corners } = await scan.next()
+
+const codes = await butler.scanner.detect(file) // a picture the user chose
+```
+
+- A code that stays in sight is reported once (`repeatAfter`). `region` looks at a part of the picture only; the
+  corners are in the pixels of the whole picture.
+- The scan looks at no more than `rate` pictures per second (default 10), one at a time, and at none while the page
+  is in the background or the camera is muted.
+
 ## Storage
 
 ```ts
@@ -310,6 +335,8 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 | `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                                       |
 | `web-device-butler/vue`                                            | composables, needs `vue`                                                               |
 | `web-device-butler/inversify`                                      | container module, needs `inversify` 8                                                  |
+| `web-device-butler/scanning`                                       | the reader of codes, with its own `create()` factory                                   |
+| `web-device-butler/zxing`                                          | a decoder of codes for every browser, needs `zxing-wasm`                               |
 | `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric`                                            |
 
 ### Vue
@@ -322,8 +349,8 @@ const camera = useCamera(butler.camera) // session, state, settings, error, isOp
 const theme = useStoredValue(settingsStore, 'theme') // follows other components and other tabs
 ```
 
-Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useOrientation`,
-`useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
+Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useScreenCapture`,
+`useCodeScan`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
 
 ### React
 
@@ -345,7 +372,7 @@ const Capture = () => {
 ```
 
 The same hooks as the Vue composables, with plain values instead of refs: `useMicrophone` (with `setMuted()`),
-`useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
+`useScreenCapture`, `useCodeScan`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
 recordings and watches are closed when the component is unmounted. Before React 19 the provider is
 `<DeviceButlerContext.Provider value={butler}>`.
 

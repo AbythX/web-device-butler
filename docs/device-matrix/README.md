@@ -51,6 +51,13 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
+For reading codes, the page `use-cases/code-scanner/` scans with the back camera. Hold a QR code and the bar code of
+a product in front of it, with and without `always zxing-wasm` and `only the middle of the picture`. Open for it:
+
+- How many pictures per second does a phone read with the code detector of the browser, and with zxing-wasm?
+- Does continuous focus keep a code sharp at a short distance, or does the scanner have to focus on the region?
+- Does Safari on iOS deliver new pictures to the `<video>` of the scanner, which is not part of the page?
+
 For the recordings that are kept in the storage, the page `use-cases/voice-memo/` records memos that way. Record a
 memo for a minute, switch to another application until the browser throws the page away (or kill the browser), and
 open the page again: the memo should be listed as `interrupted`. Open for it:

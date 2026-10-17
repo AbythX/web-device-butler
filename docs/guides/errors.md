@@ -52,6 +52,10 @@ A recording that could not be written rejects with a `MediaError` whose `cause` 
 [recording](recording.md#how-it-ends). A recording that is kept in the storage rejects with the `StorageError` of
 the write instead, such as `StorageQuotaExceededError`, and stays in the storage as `interrupted`.
 
+Reading codes throws an `UnsupportedError` where there is no decoder, and a `SessionClosedError` for a scan of a
+session that has ended, or from `next()` of a scan that ends; see [code scanning](code-scanning.md#errors). A
+picture a decoder cannot read is no error.
+
 `prepare()` of the butler, the camera, the microphone and the storage does not throw these: it reports them as `error` of its
 result, so a set-up screen can go on without a camera.
 

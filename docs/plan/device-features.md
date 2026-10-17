@@ -235,6 +235,9 @@ for (const kept of await butler.recorder.kept('memos').list()) {
 
 ## 3. Scanning codes
 
+Implemented on the branch `code-scanner`. [What was built differently](#what-was-built-differently-2) lists where
+the code left the plan.
+
 ### What is there today
 
 - `CameraPhotographer` draws the picture of a stream on a `<video>` that is never added to the page. The scanner
@@ -296,6 +299,23 @@ const codes = await butler.scanner.detect(await butler.files.open({ accept: 'ima
 
 - How many frames per second does a phone decode with `BarcodeDetector`, and with zxing?
 - Does continuous focus keep a code sharp at a short distance, or does the scanner have to focus on the region?
+
+### What was built differently
+
+- A decoder gets `ImageData`, the one shape both the code detector of the browser and zxing-wasm take. The scanner
+  draws the region of each picture onto a canvas and reads its pixels back.
+- The pictures are taken on a timer at `rate`, measured from when the last one began, not with
+  `requestVideoFrameCallback`: one way for every browser, and a slow decoder lowers the rate by itself.
+- `repeatAfter` counts from when a code was last in sight, so a code that is held in front of the camera is reported
+  once, however long it is held.
+- `ZxingCodeDecoder` takes `wasmUrl` and has no default, so it never loads its file from a server the application
+  did not choose. zxing-wasm 3.1.4 is used: 3.1.5 is younger than the `minimumReleaseAge` of the workspace.
+- `isSupported` is `true` where the browser has a code detector, also one that reads nothing; `formats()` tells.
+- The browser spec draws codes with the writer of zxing-wasm and reads them from files, from regions of a canvas
+  and from the stream of a canvas. zxing-wasm reads in Chromium, Firefox and WebKit. The code detector of the
+  browser is only tested against a fake, because the browsers of the specs have none.
+- `useCodeScan` for Vue and React holds the scan and the last code. The document scanner links to the code scanner
+  instead of reading codes itself.
 
 ## 4. Motion and heading
 
