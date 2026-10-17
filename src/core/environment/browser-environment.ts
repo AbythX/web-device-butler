@@ -5,6 +5,7 @@ import type { BarcodeDetectorFactory } from './barcode-detector-like.ts'
 import type { CaptureControllerLike, DisplayMediaCapture, DisplayMediaOptionsLike } from './display-media-like.ts'
 import type { NetworkInformationLike } from './network-information-like.ts'
 import type { ScreenOrientationLike } from './screen-orientation-like.ts'
+import type { SensorEventFactory } from './sensor-events-like.ts'
 
 /**
  * The parts of the global scope the library works with. All of them are optional, because none exists during server
@@ -28,6 +29,8 @@ export interface BrowserGlobals {
   readonly ImageCapture?: ImageCaptureFactory
   readonly CaptureController?: new () => CaptureControllerLike
   readonly BarcodeDetector?: BarcodeDetectorFactory
+  readonly DeviceOrientationEvent?: SensorEventFactory
+  readonly DeviceMotionEvent?: SensorEventFactory
   readonly createImageBitmap?: (image: ImageBitmapSource) => Promise<ImageBitmap>
   readonly MediaRecorder?: MediaRecorderFactory
   readonly Blob?: new (parts: BlobPart[], options: { type: string }) => Blob
@@ -206,6 +209,36 @@ export class BrowserEnvironment {
           (options: DisplayMediaOptionsLike) => mediaDevices.getDisplayMedia(options as DisplayMediaStreamOptions)
         : undefined
     })
+  }
+
+  /**
+   * `DeviceOrientationEvent`, or `undefined` where the browser does not report how the device is turned.
+   */
+  public get DeviceOrientationEvent(): SensorEventFactory | undefined {
+    return this.optional((globals) => globals.DeviceOrientationEvent)
+  }
+
+  /**
+   * `DeviceMotionEvent`, or `undefined` where the browser does not report how the device moves.
+   */
+  public get DeviceMotionEvent(): SensorEventFactory | undefined {
+    return this.optional((globals) => globals.DeviceMotionEvent)
+  }
+
+  /**
+   * How far the picture of the screen is turned from the natural way of holding the device, in degrees clockwise:
+   * `90` for a phone that is held sideways with its top to the left. `0` where the browser does not say.
+   */
+  public get screenAngle(): number {
+    const angle = this.optional(
+      (globals) =>
+        globals.window?.screen?.orientation?.angle ??
+        // the name older Safari has for it
+        // SAFETY: the DOM types no longer know the field; Partial keeps it optional, and it is checked below
+        (globals.window as Partial<{ orientation: number }> | undefined)?.orientation
+    )
+
+    return typeof angle === 'number' ? ((angle % 360) + 360) % 360 : 0
   }
 
   /**

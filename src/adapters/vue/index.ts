@@ -12,6 +12,10 @@ export { useLocation } from './device/use-location.ts'
 
 export type { UseLocation } from './device/use-location.ts'
 
+export { useAttitude, useMotionWatch, useMovement } from './device/use-motion.ts'
+
+export type { UseMotionWatch } from './device/use-motion.ts'
+
 export { useCodeScan } from './media/use-code-scan.ts'
 
 export type { UseCodeScan } from './media/use-code-scan.ts'

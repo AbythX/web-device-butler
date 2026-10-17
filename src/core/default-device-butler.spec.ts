@@ -12,6 +12,8 @@ import { DefaultMediaManager } from '../media/combined/default-media-manager.ts'
 import { MediaError } from '../media/errors/media-error.ts'
 import { DefaultMicrophoneManager } from '../media/microphone/default-microphone-manager.ts'
 import { DefaultCodeScanner } from '../media/scanning/default-code-scanner.ts'
+import { DefaultDeviceMotion } from '../motion/default-device-motion.ts'
+import { FakeEventTarget } from './testing/fake-event-target.ts'
 import { FakeBarcodeDetector } from '../media/scanning/testing/fake-barcode-detector.ts'
 import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
 import { FakeMediaBrowser } from '../media/testing/fake-media-browser.ts'
@@ -394,6 +396,46 @@ describe('default-device-butler', () => {
 
       expect(sut.orientation).toBeInstanceOf(DefaultDeviceOrientation)
       expect(sut.orientation.current).toBe('landscape')
+    })
+  })
+
+  describe('#motion', () => {
+    const sensors = (requestPermission?: () => Promise<'granted' | 'denied'>) => ({
+      window: new FakeEventTarget() as unknown as Window,
+      document: {} as Document,
+      DeviceOrientationEvent: { prototype: {}, requestPermission },
+      DeviceMotionEvent: { prototype: {}, requestPermission },
+    })
+
+    test('should follow the sensors, and stop when the butler is disposed', async () => {
+      const globals = sensors()
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of(globals))
+
+      const watch = sut.motion.watchAttitude()
+
+      ;(globals.window as unknown as FakeEventTarget).dispatch('deviceorientation', { alpha: 0, beta: 10, gamma: 0 })
+
+      expect(sut.motion).toBeInstanceOf(DefaultDeviceMotion)
+      expect(watch.current?.pitch).toBeCloseTo(10)
+
+      await sut.dispose()
+
+      expect(watch.isActive).toBe(false)
+    })
+
+    test('should request the permission to read the sensors in prepare(), as Safari asks for it', async () => {
+      const requestPermission = vi.fn(async () => 'granted' as const)
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of(sensors(requestPermission)))
+
+      expect(await sut.prepare({ motion: true })).toEqual({ motion: { permission: 'granted' } })
+      expect(requestPermission).toHaveBeenCalledTimes(2)
+    })
+
+    test('should report the sensors as unsupported where the browser has none', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(await sut.prepare({ motion: true })).toEqual({ motion: { permission: 'unsupported' } })
+      expect(sut.motion.isSupported).toBe(false)
     })
   })
 

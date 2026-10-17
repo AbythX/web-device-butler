@@ -28,6 +28,7 @@ export class DeviceButlerContainerModule extends ContainerModule {
       bind(DeviceButlerBindings.Location).toConstantValue(butler.location)
       bind(DeviceButlerBindings.Platform).toConstantValue(butler.platform)
       bind(DeviceButlerBindings.Orientation).toConstantValue(butler.orientation)
+      bind(DeviceButlerBindings.Motion).toConstantValue(butler.motion)
       bind(DeviceButlerBindings.Page).toConstantValue(butler.page)
       bind(DeviceButlerBindings.Recorder).toConstantValue(butler.recorder)
       bind(DeviceButlerBindings.Scanner).toConstantValue(butler.scanner)

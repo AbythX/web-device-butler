@@ -42,6 +42,14 @@ export type {
 } from './core/environment/barcode-detector-like.ts'
 
 export type {
+  MotionReadingLike,
+  OrientationReadingLike,
+  RotationReadingLike,
+  SensorEventFactory,
+  VectorReadingLike,
+} from './core/environment/sensor-events-like.ts'
+
+export type {
   CaptureControllerLike,
   DisplayMediaCapture,
   DisplayMediaOptionsLike,
@@ -95,6 +103,8 @@ export * from './permission/index.ts'
 export * from './location/index.ts'
 
 export * from './platform/index.ts'
+
+export * from './motion/index.ts'
 
 export * from './screen/index.ts'
 

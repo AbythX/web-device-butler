@@ -53,6 +53,10 @@
       "types": "./dist/platform/index.d.ts",
       "default": "./dist/platform.js"
     },
+    "./motion": {
+      "types": "./dist/motion/index.d.ts",
+      "default": "./dist/motion.js"
+    },
     "./network": {
       "types": "./dist/network/index.d.ts",
       "default": "./dist/network.js"

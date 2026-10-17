@@ -24,6 +24,7 @@ export default defineConfig({
         location: 'src/location/index.ts',
         permission: 'src/permission/index.ts',
         platform: 'src/platform/index.ts',
+        motion: 'src/motion/index.ts',
         network: 'src/network/index.ts',
         files: 'src/files/index.ts',
         outbox: 'src/outbox/index.ts',

@@ -12,6 +12,7 @@ import type { ScreenCaptureManager } from '../../media/screen-capture/screen-cap
 import type { AudioOutputManager } from '../../media/output/audio-output-manager.ts'
 import type { MediaRecordingManager } from '../../media/recording/media-recording-manager.ts'
 import type { DeviceNetwork } from '../../network/device-network.ts'
+import type { DeviceMotion } from '../../motion/device-motion.ts'
 import type { OutboxManager } from '../../outbox/outbox.ts'
 import type { PermissionManager } from '../../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../../platform/device-orientation.ts'
@@ -72,6 +73,10 @@ export class DeviceButlerBindings {
    * Identifies the orientation, `butler.orientation`.
    */
   public static readonly Orientation = DeviceButlerBindings.identifier<DeviceOrientation>('Orientation')
+  /**
+   * Identifies the sensors of how the device is turned and moves, `butler.motion`.
+   */
+  public static readonly Motion = DeviceButlerBindings.identifier<DeviceMotion>('Motion')
   /**
    * Identifies the lifecycle of the page, `butler.page`.
    */

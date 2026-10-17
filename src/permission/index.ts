@@ -15,6 +15,8 @@ export { ClipboardReadPermissionRequester } from './requesters/clipboard-read-pe
 
 export { GeolocationPermissionRequester } from './requesters/geolocation-permission-requester.ts'
 
+export { MotionPermissionRequester } from './requesters/motion-permission-requester.ts'
+
 export type { PermissionRequester } from './requesters/permission-requester.ts'
 
 export { PersistentStoragePermissionRequester } from './requesters/persistent-storage-permission-requester.ts'

@@ -39,6 +39,9 @@ import { ClipboardReadPermissionRequester } from '../permission/requesters/clipb
 import { GeolocationPermissionRequester } from '../permission/requesters/geolocation-permission-requester.ts'
 import { WakeLockPermissionRequester } from '../permission/requesters/wake-lock-permission-requester.ts'
 import { PersistentStoragePermissionRequester } from '../permission/requesters/persistent-storage-permission-requester.ts'
+import { DefaultDeviceMotion } from '../motion/default-device-motion.ts'
+import type { DeviceMotion } from '../motion/device-motion.ts'
+import { MotionPermissionRequester } from '../permission/requesters/motion-permission-requester.ts'
 import { DefaultDeviceOrientation } from '../platform/default-device-orientation.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
@@ -115,6 +118,7 @@ export class DefaultDeviceButler implements DeviceButler {
         'persistent-storage': new PersistentStoragePermissionRequester(environment),
         'clipboard-read': new ClipboardReadPermissionRequester(environment),
         'screen-wake-lock': new WakeLockPermissionRequester(wakeLock),
+        motion: new MotionPermissionRequester(environment),
       },
       new ScopedLogger('PermissionManager', logger)
     )
@@ -145,6 +149,7 @@ export class DefaultDeviceButler implements DeviceButler {
       new DefaultDeviceLocation(environment, new ScopedLogger('DeviceLocation', logger), configuration.location),
       new DefaultDevicePlatform(environment),
       new DefaultDeviceOrientation(environment, new ScopedLogger('DeviceOrientation', logger)),
+      new DefaultDeviceMotion(environment, new ScopedLogger('DeviceMotion', logger)),
       page,
       // the recordings share the wake lock, the page, the storage and the locks of the butler
       new DefaultMediaRecordingManager(
@@ -186,6 +191,7 @@ export class DefaultDeviceButler implements DeviceButler {
     public readonly location: DeviceLocation,
     public readonly platform: DevicePlatform,
     public readonly orientation: DeviceOrientation,
+    public readonly motion: DeviceMotion,
     public readonly page: PageLifecycle,
     public readonly recorder: MediaRecordingManager,
     public readonly scanner: CodeScanner,
@@ -202,7 +208,7 @@ export class DefaultDeviceButler implements DeviceButler {
   ) {}
 
   public async prepare(options: DeviceButlerPrepareOptions = this.prepared): Promise<DeviceButlerPreparation> {
-    const { storage = false, camera = false, microphone = false, location = false } = options
+    const { storage = false, camera = false, microphone = false, location = false, motion = false } = options
 
     // what was not asked for has no entry
     const found: Preparation = {}
@@ -222,6 +228,10 @@ export class DefaultDeviceButler implements DeviceButler {
 
     if (location) {
       found.location = { permission: await this.permission.request('geolocation') }
+    }
+
+    if (motion) {
+      found.motion = { permission: await this.permission.request('motion') }
     }
 
     return found
@@ -260,6 +270,7 @@ export class DefaultDeviceButler implements DeviceButler {
     this.outbox.dispose()
     this.location.dispose()
     this.orientation.dispose()
+    this.motion.dispose()
     this.page.dispose()
     this.audioOutput.dispose()
     this.network.dispose()

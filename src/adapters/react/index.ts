@@ -4,6 +4,10 @@ export { useLocation } from './device/use-location.ts'
 
 export type { UseLocation } from './device/use-location.ts'
 
+export { useAttitude, useMotionWatch, useMovement } from './device/use-motion.ts'
+
+export type { UseMotionWatch } from './device/use-motion.ts'
+
 export { useNetwork } from './device/use-network.ts'
 
 export type { UseNetwork } from './device/use-network.ts'

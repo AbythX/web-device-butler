@@ -1,6 +1,8 @@
 import type { DeviceFiles } from '../files/device-files.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
 import type { LocationPreparation } from '../location/location-preparation.ts'
+import type { DeviceMotion } from '../motion/device-motion.ts'
+import type { MotionPreparation } from '../motion/motion-preparation.ts'
 import type { CameraPreparation } from '../media/camera/camera-preparation.ts'
 import type { AudioOutputManager } from '../media/output/audio-output-manager.ts'
 import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
@@ -40,6 +42,8 @@ export interface DeviceButlerPrepareOptions {
   microphone?: boolean | Partial<MicrophoneRequirements>
   /** `true` requests the permission to ask where the device is */
   location?: boolean
+  /** `true` requests the permission to read how the device is turned and moves; in Safari only in answer to a click */
+  motion?: boolean
 }
 
 /**
@@ -50,6 +54,7 @@ export interface DeviceButlerPreparation {
   readonly camera?: CameraPreparation
   readonly microphone?: MicrophonePreparation
   readonly location?: LocationPreparation
+  readonly motion?: MotionPreparation
 }
 
 /**
@@ -85,6 +90,9 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
 
   /** how the device is held, and keeping the page that way */
   readonly orientation: DeviceOrientation
+
+  /** how the device is turned and moves, from its sensors: pitch, roll, the heading, acceleration */
+  readonly motion: DeviceMotion
 
   /** whether the user can see the page, and when it is about to go */
   readonly page: PageLifecycle
