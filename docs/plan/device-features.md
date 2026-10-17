@@ -319,6 +319,9 @@ const codes = await butler.scanner.detect(await butler.files.open({ accept: 'ima
 
 ## 4. Motion and heading
 
+Implemented on the branch `device-motion`. [What was built differently](#what-was-built-differently-3) lists where
+the code left the plan.
+
 ### What is there today
 
 - `butler.orientation` knows `portrait` and `landscape` and can lock the screen; it follows the shape of the page,
@@ -376,6 +379,24 @@ shake.on('change', ({ acceleration, rotationRate }) => {})
 - Is `webkitCompassHeading` still there in Safari on iOS, and does `deviceorientationabsolute` give the heading in
   Chromium on Android?
 - Which way do the values point when the phone is held in landscape?
+
+### What was built differently
+
+- `roll` is how far the right edge of the screen is below the horizon, and `pitch` the turn around the axis of the
+  screen from left to right, both read from the rotation of the device; neither is an angle of the browser turned
+  by the screen. A spirit level shows them as they are. While the device is pitched, `roll` is smaller than `gamma`,
+  which the real-browser spec showed.
+- The heading follows the top edge of the screen while the device lies more flat than upright, and its back while
+  it is upright; the formula of the specification only covers the back and fails for a flat device.
+- A watch reads `deviceorientationabsolute` and `deviceorientation` and keeps to the absolute one once it has
+  arrived. It has `isAvailable` next to the event `unavailable`, which comes at once for an event without values
+  and after a second without events. A rate keeps the last value: it is reported once the rate allows.
+- The events are read field by field (`SensorReadings`), because the browsers fill different fields.
+- `request('motion')` asks both sensors in one click in Safari. `query()` says `prompt` there until the user
+  answered on this visit; in Chromium it reads `accelerometer` and `gyroscope` from the Permissions API, and a
+  browser that does not know them as permissions, as Firefox, is taken as one that does not ask.
+- The hooks are `useAttitude` and `useMovement`, on a shared `useMotionWatch`. The real-browser spec dispatches the
+  events of the browser, which Chromium and Firefox can create and WebKit cannot.
 
 ## 5. Notifications and vibration
 

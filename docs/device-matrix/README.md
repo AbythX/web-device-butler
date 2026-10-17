@@ -51,6 +51,15 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
+For the sensors, the page `location/` has a section "Motion and compass". Press `request('motion')` and the watches,
+hold the phone flat, upright and sideways, and turn it once around. Open for it:
+
+- Is `webkitCompassHeading` still there in Safari on iOS, and does it point where the top edge points while the phone
+  lies flat, and where the back points while it is upright?
+- Does `deviceorientationabsolute` give the heading in Chromium on Android?
+- Do pitch and roll stay right when the phone is held sideways, in both directions?
+- Does Firefox on Android send `absolute: true` with `deviceorientation`?
+
 For reading codes, the page `use-cases/code-scanner/` scans with the back camera. Hold a QR code and the bar code of
 a product in front of it, with and without `always zxing-wasm` and `only the middle of the picture`. Open for it:
 

@@ -27,9 +27,12 @@ components with [`web-device-butler/vue`](../../README.md#vue), or an import of 
 | `butler.camera`      | lists and selects cameras, opens camera sessions                      | [Camera](camera.md)                                |
 | `butler.microphone`  | the same for microphones                                              | [Microphone](microphone.md)                        |
 | `butler.media`       | opens a camera and a microphone as one session                        | [Microphone](microphone.md#camera-and-microphone-together) |
+| `butler.screenCapture` | captures a screen, a window or a tab the user chooses               | [Screen capture](screen-capture.md)                |
+| `butler.scanner`     | reads QR codes and bar codes from a camera or a picture               | [Code scanning](code-scanning.md)                  |
 | `butler.storage`     | opens stores, reports the space of the origin                         | [Storage](storage.md)                              |
 | `butler.location`    | where the device is                                                   | [Location, ...](location-orientation-permissions.md) |
 | `butler.orientation` | how the device is held                                                | [Location, ...](location-orientation-permissions.md#orientation) |
+| `butler.motion`      | how the device is turned and moves, and where it points               | [Location, ...](location-orientation-permissions.md#motion-and-heading) |
 | `butler.platform`    | iOS or Android                                                        | [Location, ...](location-orientation-permissions.md#platform) |
 | `butler.permission`  | the state of every permission, and requesting them                    | [Location, ...](location-orientation-permissions.md#permissions) |
 | `butler.coordination`| whether the browser can coordinate tabs                               | [Several tabs](multiple-tabs.md)                   |
@@ -42,8 +45,9 @@ import { DefaultStorageManager } from 'web-device-butler/storage'
 const storage = DefaultStorageManager.create({ namespace: 'my-app' })
 ```
 
-The same exists for `/camera` (`DefaultCameraManager.create()`), `/microphone` (`DefaultMicrophoneManager.create()`)
-and `/location` (`DefaultDeviceLocation.create()`).
+The same exists for `/camera` (`DefaultCameraManager.create()`), `/microphone` (`DefaultMicrophoneManager.create()`),
+`/location` (`DefaultDeviceLocation.create()`), `/screen-capture` (`DefaultScreenCaptureManager.create()`),
+`/scanning` (`DefaultCodeScanner.create()`) and `/motion` (`DefaultDeviceMotion.create()`).
 
 ## Interfaces and their implementations
 

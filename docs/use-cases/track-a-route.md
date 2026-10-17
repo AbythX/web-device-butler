@@ -44,6 +44,17 @@ watch.on('position', (position) => {
 `distanceTo()` is the distance along the surface of the earth in metres. `position.speed` and `position.heading`
 are there where the device reports them and `undefined` otherwise.
 
+`position.heading` is the direction of travel, and only there while the device moves. Which way the user faces,
+also while standing still, comes from the compass:
+
+```ts
+using attitude = butler.motion.watchAttitude({ rate: 10 })
+attitude.on('change', ({ heading }) => arrow.point(heading)) // undefined where the device cannot tell north
+```
+
+In Safari on iOS, `butler.permission.request('motion')` has to be answered in a click first; see
+[motion and heading](../guides/location-orientation-permissions.md#motion-and-heading).
+
 ## Problems on the way
 
 ```ts

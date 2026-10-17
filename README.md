@@ -261,6 +261,10 @@ watch.on('position', (position) => {
 butler.orientation.current // 'portrait' | 'landscape'
 butler.orientation.on('change', (orientation) => {})
 
+await butler.permission.request('motion') // Safari on iOS: in answer to a click
+using attitude = butler.motion.watchAttitude({ rate: 30 })
+attitude.on('change', ({ pitch, roll, heading }) => {}) // for the screen as it is held; heading from north
+
 butler.platform.isIos
 
 await butler.permission.query('camera') // 'granted' | 'denied' | 'prompt' | 'unknown' | 'unsupported'
@@ -330,6 +334,7 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 | `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                                              |
 | `web-device-butler/screen-capture`                                 | the capture of the screen, with its own `create()` factory                             |
 | `web-device-butler/media`, `/permission`, `/platform`              | the combined session, joined sessions, recording, audio outputs, permissions, platform |
+| `web-device-butler/motion`                                         | pitch, roll, heading and acceleration from the sensors                                 |
 | `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard                      |
 | `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network                             |
 | `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                                       |
@@ -350,7 +355,7 @@ const theme = useStoredValue(settingsStore, 'theme') // follows other components
 ```
 
 Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useScreenCapture`,
-`useCodeScan`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
+`useCodeScan`, `useAttitude`, `useMovement`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
 
 ### React
 
@@ -372,7 +377,7 @@ const Capture = () => {
 ```
 
 The same hooks as the Vue composables, with plain values instead of refs: `useMicrophone` (with `setMuted()`),
-`useScreenCapture`, `useCodeScan`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
+`useScreenCapture`, `useCodeScan`, `useAttitude`, `useMovement`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
 recordings and watches are closed when the component is unmounted. Before React 19 the provider is
 `<DeviceButlerContext.Provider value={butler}>`.
 

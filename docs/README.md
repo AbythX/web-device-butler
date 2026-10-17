@@ -15,7 +15,7 @@ One per area: what the area does for you, the calls in the order you need them, 
 | [Screen capture](guides/screen-capture.md)                                      | the picker, what is preferred and required, the session, recording with a voice |
 | [Code scanning](guides/code-scanning.md)                                        | decoders, scanning a camera, regions, reading a picture, a decoder of your own |
 | [Storage](guides/storage.md)                                                    | drivers, stores, codecs, expiry, streams, space                    |
-| [Location, orientation, platform, permissions](guides/location-orientation-permissions.md) | positions, watches, how the device is held, permission screens |
+| [Location, orientation, motion, platform, permissions](guides/location-orientation-permissions.md) | positions, watches, how the device is held and turned, a compass, permission screens |
 | [Screen, network, sharing](guides/screen-network-sharing.md)                    | wake lock, fullscreen, orientation lock, online state, share sheet, clipboard |
 | [Files, the outbox, the page](guides/files-outbox-page.md)                      | saving and choosing files, sending once there is a network, a page that goes away |
 | [Several tabs](guides/multiple-tabs.md)                                         | what the tabs of an application share and how the library coordinates it |
