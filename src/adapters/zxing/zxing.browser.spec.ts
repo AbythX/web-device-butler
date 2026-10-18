@@ -27,6 +27,43 @@ const pictureOf = async (text: string, format: string): Promise<Blob> => {
   return image
 }
 
+/**
+ * Whether the stream of a canvas delivers pictures. The WebKit build of Playwright has no `captureStream` on Windows,
+ * and on Linux one whose stream never shows a picture.
+ */
+const canvasStreamsPictures = async (): Promise<boolean> => {
+  if (!('captureStream' in HTMLCanvasElement.prototype)) {
+    return false
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = 16
+  canvas.height = 16
+  const stream = canvas.captureStream(10)
+  const redraw = setInterval(() => canvas.getContext('2d')?.fillRect(0, 0, 1, 1), 50)
+  const video = document.createElement('video')
+  video.muted = true
+  video.srcObject = stream
+
+  try {
+    await Promise.race([video.play(), new Promise((resolve) => setTimeout(resolve, 2000))])
+    const showing = Date.now()
+
+    while (video.videoWidth === 0 && Date.now() - showing < 2000) {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+
+    return video.videoWidth > 0
+  } catch {
+    return false
+  } finally {
+    clearInterval(redraw)
+    stream.getTracks().forEach((track) => track.stop())
+  }
+}
+
+const hasCanvasStream = await canvasStreamsPictures()
+
 /** a session that delivers what a canvas shows */
 class CanvasSource extends EventEmitter<CodeScanSourceEvents> implements CodeScanSource {
   public readonly state: MediaSessionState = 'live'
@@ -109,8 +146,7 @@ describe('reading codes with zxing-wasm in a real browser', () => {
     expect(outside).toEqual([])
   })
 
-  // the WebKit build of Playwright cannot turn a canvas into a stream
-  test.skipIf(!('captureStream' in HTMLCanvasElement.prototype))(
+  test.skipIf(!hasCanvasStream)(
     'should find a code in the stream of a canvas, as in the stream of a camera',
     async () => {
       const canvas = await canvasWith(await pictureOf('from the stream', 'QRCode'))

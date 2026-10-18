@@ -3,6 +3,7 @@ import { commands } from 'vitest/browser'
 
 import { DefaultDeviceButler } from '../../core/default-device-butler.ts'
 import type { DeviceButler } from '../../core/device-butler.ts'
+import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { inAnswerToAClick } from '../../core/testing/in-answer-to-a-click.ts'
 import { MediaError } from '../errors/media-error.ts'
@@ -10,9 +11,29 @@ import { MediaRequirementsError } from '../errors/media-requirements-error.ts'
 import type { ScreenCaptureSession } from './session/screen-capture-session.ts'
 
 /**
- * Whether the browser of the specs can capture the screen. The WebKit build of Playwright cannot.
+ * Whether the browser of the specs has the call to capture the screen. The WebKit build of Playwright on Windows does
+ * not.
  */
-const canCapture = typeof navigator.mediaDevices?.getDisplayMedia === 'function'
+const hasCapture = typeof navigator.mediaDevices?.getDisplayMedia === 'function'
+
+/**
+ * Whether the browser of the specs captures a screen when it is asked to. On a machine without a display, as the
+ * servers of the CI, a browser has the call and still finds no screen (Firefox) or refuses (WebKit). Asked once, in
+ * answer to a click as Firefox wants it, and with the page in front.
+ */
+const canCapture =
+  hasCapture &&
+  (await commands.showFirstTab().then(async () => {
+    const outcome = await inAnswerToAClick(() => navigator.mediaDevices.getDisplayMedia({ video: true }))
+
+    if (outcome instanceof Error) {
+      return false
+    }
+
+    outcome.getTracks().forEach((track) => track.stop())
+
+    return true
+  }))
 
 /**
  * These specs run in real browsers. Chromium answers its picker itself with the whole screen (`--use-fake-ui-for-media-
@@ -35,10 +56,18 @@ describe('the capture of the screen in a real browser', () => {
     await butler.dispose()
   })
 
-  test.skipIf(canCapture)('should refuse where the browser cannot capture the screen', async () => {
+  test.skipIf(hasCapture)('should refuse where the browser cannot capture the screen', async () => {
     expect(butler.screenCapture.isSupported).toBe(false)
     expect(await capture()).toBeInstanceOf(UnsupportedError)
   })
+
+  test.skipIf(!hasCapture || canCapture)(
+    'should report a capture the browser does not make as an error of the library',
+    async () => {
+      expect(butler.screenCapture.isSupported).toBe(true)
+      expect(await capture()).toBeInstanceOf(DeviceButlerError)
+    }
+  )
 
   describe.skipIf(!canCapture)('where the browser can capture the screen', () => {
     test('should capture the screen and stop it when it is closed', async () => {
