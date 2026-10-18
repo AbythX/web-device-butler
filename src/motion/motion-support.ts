@@ -1,4 +1,4 @@
-import type { BrowserEnvironment } from '../core/environment/browser-environment.ts'
+import type { BrowserEnvironment, SecureBrowserEnvironment } from '../core/environment/browser-environment.ts'
 import type { SensorEventFactory } from '../core/environment/sensor-events-like.ts'
 
 /**
@@ -42,7 +42,7 @@ export class MotionSupport {
   /**
    * The environment where the page can listen to the sensors: in a secure context, with a window.
    */
-  private static listenableIn(environment: BrowserEnvironment): BrowserEnvironment | undefined {
+  private static listenableIn(environment: BrowserEnvironment): SecureBrowserEnvironment | undefined {
     return environment.isBrowser ? environment.secureContext : undefined
   }
 }

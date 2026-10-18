@@ -101,7 +101,10 @@ export class BrowserEnvironment {
     return new BrowserEnvironment(() => globals)
   }
 
-  public constructor(private readonly resolveGlobals: () => BrowserGlobals) {}
+  /** created on the first access to {@link secureContext} */
+  private secure: SecureBrowserEnvironment | undefined
+
+  public constructor(protected readonly resolveGlobals: () => BrowserGlobals) {}
 
   /**
    * Whether there is a window and a document, which is not the case on a server.
@@ -137,13 +140,6 @@ export class BrowserEnvironment {
    */
   public get document(): Document {
     return this.require('document')
-  }
-
-  /**
-   * The Web Locks API, or `undefined` where the browser does not have it.
-   */
-  public get locks(): LockManagerLike | undefined {
-    return this.resolveGlobals().navigator?.locks ?? undefined
   }
 
   /**
@@ -184,52 +180,6 @@ export class BrowserEnvironment {
   }
 
   /**
-   * The storage manager of the browser (`navigator.storage`): quota, persistence and the origin private file system.
-   */
-  public get originStorage(): Navigator['storage'] | undefined {
-    return this.optional((globals) => globals.navigator?.storage)
-  }
-
-  /**
-   * Cameras and microphones (`navigator.mediaDevices`), or `undefined` where the browser does not have them. Browsers
-   * hide them on pages that were not loaded over HTTPS.
-   */
-  public get mediaDevices(): MediaDevices | undefined {
-    return this.optional((globals) => globals.navigator?.mediaDevices)
-  }
-
-  /**
-   * The capture of the screen (`navigator.mediaDevices.getDisplayMedia`), or `undefined` where the browser does not
-   * have it, as on phones and on pages that were not loaded over HTTPS.
-   */
-  public get displayMedia(): DisplayMediaCapture | undefined {
-    return this.optional((globals) => {
-      const mediaDevices = globals.navigator?.mediaDevices
-
-      return typeof mediaDevices?.getDisplayMedia === 'function'
-        ? // SAFETY: the options only add what the DOM types do not know yet; the browser takes them
-          (options: DisplayMediaOptionsLike) => mediaDevices.getDisplayMedia(options as DisplayMediaStreamOptions)
-        : undefined
-    })
-  }
-
-  /**
-   * The notifications of the browser (`Notification`), or `undefined` where the page cannot show any, as Safari on
-   * iOS outside a web app on the home screen.
-   */
-  public get Notification(): NotificationFactory | undefined {
-    return this.optional((globals) => globals.Notification)
-  }
-
-  /**
-   * The service workers of the page (`navigator.serviceWorker`), or `undefined` where the browser has none for it.
-   */
-  public get serviceWorker(): ServiceWorkerContainerLike | undefined {
-    // SAFETY: only the calls of the narrower type are used, which the container of the browser has
-    return this.optional((globals) => globals.navigator?.serviceWorker as ServiceWorkerContainerLike | undefined)
-  }
-
-  /**
    * Makes the device vibrate (`navigator.vibrate`), or `undefined` where it cannot, as in Safari.
    */
   public get vibrate(): ((pattern: number | number[]) => boolean) | undefined {
@@ -240,20 +190,6 @@ export class BrowserEnvironment {
         ? (pattern: number | number[]) => navigator.vibrate(pattern)
         : undefined
     })
-  }
-
-  /**
-   * `DeviceOrientationEvent`, or `undefined` where the browser does not report how the device is turned.
-   */
-  public get DeviceOrientationEvent(): SensorEventFactory | undefined {
-    return this.optional((globals) => globals.DeviceOrientationEvent)
-  }
-
-  /**
-   * `DeviceMotionEvent`, or `undefined` where the browser does not report how the device moves.
-   */
-  public get DeviceMotionEvent(): SensorEventFactory | undefined {
-    return this.optional((globals) => globals.DeviceMotionEvent)
   }
 
   /**
@@ -273,13 +209,6 @@ export class BrowserEnvironment {
   }
 
   /**
-   * The code detector of the browser, or `undefined` where the browser has none, as Firefox and Safari.
-   */
-  public get BarcodeDetector(): BarcodeDetectorFactory | undefined {
-    return this.optional((globals) => globals.BarcodeDetector)
-  }
-
-  /**
    * Decodes an image, such as a file the user chose, into something that can be drawn.
    *
    * @throws UnsupportedError where the browser cannot
@@ -295,14 +224,6 @@ export class BrowserEnvironment {
   }
 
   /**
-   * The constructor of what decides the focus after a capture of the screen started, or `undefined` where the
-   * browser leaves that to itself.
-   */
-  public get CaptureController(): (new () => CaptureControllerLike) | undefined {
-    return this.optional((globals) => globals.CaptureController)
-  }
-
-  /**
    * Whether the user just clicked or pressed a key, which some calls need (`navigator.userActivation.isActive`);
    * `undefined` where the browser cannot tell.
    */
@@ -315,13 +236,6 @@ export class BrowserEnvironment {
    */
   public get permissions(): Permissions | undefined {
     return this.optional((globals) => globals.navigator?.permissions)
-  }
-
-  /**
-   * The Geolocation API, or `undefined` where the browser does not have it.
-   */
-  public get geolocation(): Geolocation | undefined {
-    return this.optional((globals) => globals.navigator?.geolocation)
   }
 
   /**
@@ -343,46 +257,11 @@ export class BrowserEnvironment {
   }
 
   /**
-   * The Screen Wake Lock API (`navigator.wakeLock`), or `undefined` where the browser does not have it.
-   */
-  public get wakeLock(): WakeLock | undefined {
-    return this.optional((globals) => globals.navigator?.wakeLock)
-  }
-
-  /**
    * How the screen is turned and the calls that keep it that way (`screen.orientation`), or `undefined` where the
    * browser does not have it.
    */
   public get screenOrientation(): ScreenOrientationLike | undefined {
     return this.optional((globals) => globals.window?.screen?.orientation)
-  }
-
-  /**
-   * The share sheet of the system (`navigator.share`), or `undefined` where the browser does not have it.
-   */
-  public get shareSheet(): ShareSheet | undefined {
-    return this.optional((globals) => (typeof globals.navigator?.share === 'function' ? globals.navigator : undefined))
-  }
-
-  /**
-   * The clipboard of the system (`navigator.clipboard`), or `undefined` where the browser gives pages none.
-   */
-  public get clipboard(): Clipboard | undefined {
-    return this.optional((globals) => globals.navigator?.clipboard)
-  }
-
-  /**
-   * The constructor of what copied data is wrapped in, or `undefined` where the browser only copies text.
-   */
-  public get ClipboardItem(): ClipboardItemFactory | undefined {
-    return this.optional((globals) => globals.ClipboardItem)
-  }
-
-  /**
-   * The constructor of what asks a running camera for a still picture, or `undefined` where the browser cannot.
-   */
-  public get ImageCapture(): ImageCaptureFactory | undefined {
-    return this.optional((globals) => globals.ImageCapture)
   }
 
   /**
@@ -405,21 +284,6 @@ export class BrowserEnvironment {
     }
 
     return new Blob(parts, { type })
-  }
-
-  /**
-   * The save dialog of the browser (`showSaveFilePicker`), or `undefined` where the browser has none.
-   */
-  public get saveFilePicker(): SaveFilePicker | undefined {
-    return this.optional((globals) => {
-      // SAFETY: the DOM types do not know the call; Partial keeps it optional, and it is checked before it is used
-      const window = globals.window as Partial<{ showSaveFilePicker: SaveFilePicker }> | undefined
-
-      return typeof window?.showSaveFilePicker === 'function'
-        ? (options?: SaveFilePickerOptions) =>
-            window.showSaveFilePicker?.(options) ?? Promise.reject(new UnsupportedError('showSaveFilePicker'))
-        : undefined
-    })
   }
 
   /**
@@ -489,14 +353,20 @@ export class BrowserEnvironment {
    *
    * @internal
    */
-  public get secureContext(): BrowserEnvironment | undefined {
-    return this.isSecureContext ? this : undefined
+  public get secureContext(): SecureBrowserEnvironment | undefined {
+    if (!this.isSecureContext) {
+      return undefined
+    }
+
+    this.secure ??= new SecureBrowserEnvironment(this.resolveGlobals)
+
+    return this.secure
   }
 
   /**
    * Reading some globals throws where the browser blocks them, for example `localStorage` with blocked cookies.
    */
-  private optional<Value>(read: (globals: BrowserGlobals) => Value | null | undefined): Value | undefined {
+  protected optional<Value>(read: (globals: BrowserGlobals) => Value | null | undefined): Value | undefined {
     try {
       return read(this.resolveGlobals()) ?? undefined
     } catch {
@@ -512,5 +382,157 @@ export class BrowserEnvironment {
     }
 
     return value
+  }
+}
+
+/**
+ * The APIs that the browsers only offer to a page in a secure context, reached through
+ * `environment.secureContext?.`, so library code cannot use one without the check. It lives in this file because it
+ * extends {@link BrowserEnvironment}, which creates it.
+ *
+ * @internal
+ */
+export class SecureBrowserEnvironment extends BrowserEnvironment {
+  public override get secureContext(): SecureBrowserEnvironment | undefined {
+    return this.isSecureContext ? this : undefined
+  }
+
+  /**
+   * The Web Locks API, or `undefined` where the browser does not have it.
+   */
+  public get locks(): LockManagerLike | undefined {
+    return this.resolveGlobals().navigator?.locks ?? undefined
+  }
+
+  /**
+   * The storage manager of the browser (`navigator.storage`): quota, persistence and the origin private file system.
+   */
+  public get originStorage(): Navigator['storage'] | undefined {
+    return this.optional((globals) => globals.navigator?.storage)
+  }
+
+  /**
+   * Cameras and microphones (`navigator.mediaDevices`), or `undefined` where the browser does not have them. Browsers
+   * hide them on pages that were not loaded over HTTPS.
+   */
+  public get mediaDevices(): MediaDevices | undefined {
+    return this.optional((globals) => globals.navigator?.mediaDevices)
+  }
+
+  /**
+   * The capture of the screen (`navigator.mediaDevices.getDisplayMedia`), or `undefined` where the browser does not
+   * have it, as on phones and on pages that were not loaded over HTTPS.
+   */
+  public get displayMedia(): DisplayMediaCapture | undefined {
+    return this.optional((globals) => {
+      const mediaDevices = globals.navigator?.mediaDevices
+
+      return typeof mediaDevices?.getDisplayMedia === 'function'
+        ? // SAFETY: the options only add what the DOM types do not know yet; the browser takes them
+          (options: DisplayMediaOptionsLike) => mediaDevices.getDisplayMedia(options as DisplayMediaStreamOptions)
+        : undefined
+    })
+  }
+
+  /**
+   * The constructor of what decides the focus after a capture of the screen started, or `undefined` where the
+   * browser leaves that to itself.
+   */
+  public get CaptureController(): (new () => CaptureControllerLike) | undefined {
+    return this.optional((globals) => globals.CaptureController)
+  }
+
+  /**
+   * The service workers of the page (`navigator.serviceWorker`), or `undefined` where the browser has none for it.
+   */
+  public get serviceWorker(): ServiceWorkerContainerLike | undefined {
+    // SAFETY: only the calls of the narrower type are used, which the container of the browser has
+    return this.optional((globals) => globals.navigator?.serviceWorker as ServiceWorkerContainerLike | undefined)
+  }
+
+  /**
+   * `DeviceOrientationEvent`, or `undefined` where the browser does not report how the device is turned.
+   */
+  public get DeviceOrientationEvent(): SensorEventFactory | undefined {
+    return this.optional((globals) => globals.DeviceOrientationEvent)
+  }
+
+  /**
+   * `DeviceMotionEvent`, or `undefined` where the browser does not report how the device moves.
+   */
+  public get DeviceMotionEvent(): SensorEventFactory | undefined {
+    return this.optional((globals) => globals.DeviceMotionEvent)
+  }
+
+  /**
+   * The code detector of the browser, or `undefined` where the browser has none, as Firefox and Safari.
+   */
+  public get BarcodeDetector(): BarcodeDetectorFactory | undefined {
+    return this.optional((globals) => globals.BarcodeDetector)
+  }
+
+  /**
+   * The Screen Wake Lock API (`navigator.wakeLock`), or `undefined` where the browser does not have it.
+   */
+  public get wakeLock(): WakeLock | undefined {
+    return this.optional((globals) => globals.navigator?.wakeLock)
+  }
+
+  /**
+   * The share sheet of the system (`navigator.share`), or `undefined` where the browser does not have it.
+   */
+  public get shareSheet(): ShareSheet | undefined {
+    return this.optional((globals) => (typeof globals.navigator?.share === 'function' ? globals.navigator : undefined))
+  }
+
+  /**
+   * The clipboard of the system (`navigator.clipboard`), or `undefined` where the browser gives pages none.
+   */
+  public get clipboard(): Clipboard | undefined {
+    return this.optional((globals) => globals.navigator?.clipboard)
+  }
+
+  /**
+   * The constructor of what copied data is wrapped in, or `undefined` where the browser only copies text.
+   */
+  public get ClipboardItem(): ClipboardItemFactory | undefined {
+    return this.optional((globals) => globals.ClipboardItem)
+  }
+
+  /**
+   * The constructor of what asks a running camera for a still picture, or `undefined` where the browser cannot.
+   */
+  public get ImageCapture(): ImageCaptureFactory | undefined {
+    return this.optional((globals) => globals.ImageCapture)
+  }
+
+  /**
+   * The save dialog of the browser (`showSaveFilePicker`), or `undefined` where the browser has none.
+   */
+  public get saveFilePicker(): SaveFilePicker | undefined {
+    return this.optional((globals) => {
+      // SAFETY: the DOM types do not know the call; Partial keeps it optional, and it is checked before it is used
+      const window = globals.window as Partial<{ showSaveFilePicker: SaveFilePicker }> | undefined
+
+      return typeof window?.showSaveFilePicker === 'function'
+        ? (options?: SaveFilePickerOptions) =>
+            window.showSaveFilePicker?.(options) ?? Promise.reject(new UnsupportedError('showSaveFilePicker'))
+        : undefined
+    })
+  }
+
+  /**
+   * The Geolocation API, or `undefined` where the browser does not have it.
+   */
+  public get geolocation(): Geolocation | undefined {
+    return this.optional((globals) => globals.navigator?.geolocation)
+  }
+
+  /**
+   * The notifications of the browser (`Notification`), or `undefined` where the page cannot show any, as Safari on
+   * iOS outside a web app on the home screen.
+   */
+  public get Notification(): NotificationFactory | undefined {
+    return this.optional((globals) => globals.Notification)
   }
 }

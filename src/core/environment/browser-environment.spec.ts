@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { mock } from 'vitest-mock-extended'
 
 import type { BroadcastChannelLike } from '../coordination/channel/broadcast-channel-like.ts'
-import { BrowserEnvironment, type BrowserGlobals } from './browser-environment.ts'
+import { BrowserEnvironment, type BrowserGlobals, SecureBrowserEnvironment } from './browser-environment.ts'
 import { UnsupportedError } from '../errors/unsupported-error.ts'
 
 describe('browser-environment', () => {
@@ -65,32 +65,6 @@ describe('browser-environment', () => {
     })
   })
 
-  describe('#locks', () => {
-    test('should return the lock manager of the navigator', async () => {
-      const navigator = mock<Navigator>()
-
-      expect(BrowserEnvironment.of({ navigator }).locks).toBe(navigator.locks)
-    })
-
-    test('should be undefined without a navigator or without Web Locks', async () => {
-      expect(BrowserEnvironment.of({}).locks).toBeUndefined()
-      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).locks).toBeUndefined()
-    })
-  })
-
-  describe('#mediaDevices', () => {
-    test('should return the media devices of the navigator', async () => {
-      const navigator = mock<Navigator>()
-
-      expect(BrowserEnvironment.of({ navigator }).mediaDevices).toBe(navigator.mediaDevices)
-    })
-
-    test('should be undefined without a navigator or without media devices', async () => {
-      expect(BrowserEnvironment.of({}).mediaDevices).toBeUndefined()
-      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).mediaDevices).toBeUndefined()
-    })
-  })
-
   describe('#permissions', () => {
     test('should return the Permissions API of the navigator', async () => {
       const navigator = mock<Navigator>()
@@ -104,19 +78,6 @@ describe('browser-environment', () => {
     })
   })
 
-  describe('#geolocation', () => {
-    test('should return the geolocation of the navigator', async () => {
-      const navigator = mock<Navigator>()
-
-      expect(BrowserEnvironment.of({ navigator }).geolocation).toBe(navigator.geolocation)
-    })
-
-    test('should be undefined without a navigator or without geolocation', async () => {
-      expect(BrowserEnvironment.of({}).geolocation).toBeUndefined()
-      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).geolocation).toBeUndefined()
-    })
-  })
-
   describe('#isSecureContext', () => {
     test('should only be false where the browser says so', async () => {
       expect(BrowserEnvironment.of({ isSecureContext: false }).isSecureContext).toBe(false)
@@ -126,16 +87,31 @@ describe('browser-environment', () => {
   })
 
   describe('#secureContext', () => {
-    test('should be the environment in a secure context', async () => {
-      const secure = BrowserEnvironment.of({ isSecureContext: true })
-      const unstated = BrowserEnvironment.of({})
+    test('should reach the same globals in a secure context', async () => {
+      const navigator = mock<Navigator>()
 
-      expect(secure.secureContext).toBe(secure)
-      expect(unstated.secureContext).toBe(unstated)
+      expect(BrowserEnvironment.of({ navigator, isSecureContext: true }).secureContext?.navigator).toBe(navigator)
+      expect(BrowserEnvironment.of({ navigator }).secureContext?.navigator).toBe(navigator)
+    })
+
+    test('should be created once', async () => {
+      const sut = BrowserEnvironment.of({})
+
+      expect(sut.secureContext).toBeInstanceOf(SecureBrowserEnvironment)
+      expect(sut.secureContext).toBe(sut.secureContext)
     })
 
     test('should be undefined outside a secure context', async () => {
       expect(BrowserEnvironment.of({ isSecureContext: false }).secureContext).toBeUndefined()
+    })
+
+    test('should be the only way to the APIs of a secure context', async () => {
+      const sut = BrowserEnvironment.of({ navigator: mock<Navigator>() })
+
+      // @ts-expect-error the APIs of a secure context are reached through `secureContext`
+      const wakeLock: unknown = sut.wakeLock
+
+      expect(wakeLock).toBeUndefined()
     })
   })
 
@@ -153,6 +129,53 @@ describe('browser-environment', () => {
 
     test('should return undefined without BroadcastChannel', async () => {
       expect(BrowserEnvironment.of({}).openBroadcastChannel('my-channel')).toBeUndefined()
+    })
+  })
+})
+
+describe('secure-browser-environment', () => {
+  test('should be itself in a secure context', async () => {
+    const sut = BrowserEnvironment.of({}).secureContext
+
+    expect(sut?.secureContext).toBe(sut)
+  })
+
+  describe('#locks', () => {
+    test('should return the lock manager of the navigator', async () => {
+      const navigator = mock<Navigator>()
+
+      expect(BrowserEnvironment.of({ navigator }).secureContext?.locks).toBe(navigator.locks)
+    })
+
+    test('should be undefined without a navigator or without Web Locks', async () => {
+      expect(BrowserEnvironment.of({}).secureContext?.locks).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).secureContext?.locks).toBeUndefined()
+    })
+  })
+
+  describe('#mediaDevices', () => {
+    test('should return the media devices of the navigator', async () => {
+      const navigator = mock<Navigator>()
+
+      expect(BrowserEnvironment.of({ navigator }).secureContext?.mediaDevices).toBe(navigator.mediaDevices)
+    })
+
+    test('should be undefined without a navigator or without media devices', async () => {
+      expect(BrowserEnvironment.of({}).secureContext?.mediaDevices).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).secureContext?.mediaDevices).toBeUndefined()
+    })
+  })
+
+  describe('#geolocation', () => {
+    test('should return the geolocation of the navigator', async () => {
+      const navigator = mock<Navigator>()
+
+      expect(BrowserEnvironment.of({ navigator }).secureContext?.geolocation).toBe(navigator.geolocation)
+    })
+
+    test('should be undefined without a navigator or without geolocation', async () => {
+      expect(BrowserEnvironment.of({}).secureContext?.geolocation).toBeUndefined()
+      expect(BrowserEnvironment.of({ navigator: {} as Navigator }).secureContext?.geolocation).toBeUndefined()
     })
   })
 })

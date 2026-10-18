@@ -14,7 +14,8 @@ This protects the library from itself. It cannot protect an application: whether
 only known at runtime, and the same bundle can be served over HTTPS and over HTTP. For an application,
 `isSupported`, `UnsupportedError` and `prepare()` stay the way to find out.
 
-Not implemented yet. This is the inventory to decide on first.
+Implemented on the branch `refactor-feature-support`, with every decision taken as recommended. [What was built
+differently](#what-was-built-differently) lists where the code left the plan.
 
 ## How the APIs were checked
 
@@ -138,3 +139,11 @@ export class SecureBrowserEnvironment extends BrowserEnvironment {
 2. The support classes take the narrower type; nothing else changes in them.
 3. The five places of [What moves with them](#what-moves-with-them) read through `secureContext?.`.
 4. The specs and the fakes that relied on a moving accessor of `BrowserEnvironment`.
+
+## What was built differently
+
+| Plan | Built | Why |
+| ---- | ----- | --- |
+| `SecureBrowserEnvironment` in a file of its own | in `browser-environment.ts`, next to `BrowserEnvironment` | each class needs the other at runtime: the base creates the secure one, the secure one extends the base. In two files the modules would import each other, and the subclass would load before its base exists. |
+| Step 2: the support classes take the narrower type | the support classes keep taking `BrowserEnvironment` | they already go through `secureContext?.`, which now hands out the narrower type; only the private helper of `MotionSupport` changed its return type |
+| `secureContext` of a `SecureBrowserEnvironment` | returns itself in a secure context | no second object over the same globals |

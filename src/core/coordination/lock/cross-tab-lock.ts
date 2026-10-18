@@ -47,7 +47,7 @@ export class CrossTabLock {
    * Whether the lock reaches other tabs. Without the Web Locks API it only holds inside this tab.
    */
   public get isCrossTab(): boolean {
-    return this.environment.locks !== undefined
+    return this.environment.secureContext?.locks !== undefined
   }
 
   /**
@@ -121,7 +121,7 @@ export class CrossTabLock {
   }
 
   private get manager(): LockManagerLike {
-    const locks = this.environment.locks
+    const locks = this.environment.secureContext?.locks
 
     if (locks !== undefined) {
       return locks

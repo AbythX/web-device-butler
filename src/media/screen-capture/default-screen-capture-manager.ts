@@ -116,7 +116,7 @@ export class DefaultScreenCaptureManager implements ScreenCaptureManager {
   }
 
   private controllerFor(focus: ScreenCaptureFocus | undefined): CaptureControllerLike | undefined {
-    const CaptureController = focus === undefined ? undefined : this.environment.CaptureController
+    const CaptureController = focus === undefined ? undefined : this.environment.secureContext?.CaptureController
 
     return CaptureController === undefined ? undefined : new CaptureController()
   }

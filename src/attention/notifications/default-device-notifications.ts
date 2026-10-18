@@ -136,11 +136,11 @@ export class DefaultDeviceNotifications extends EventEmitter<DeviceNotifications
 
   protected override onFirstListener(): void {
     this.answer()
-    this.environment.serviceWorker?.addEventListener('message', this.receive)
+    this.environment.secureContext?.serviceWorker?.addEventListener('message', this.receive)
   }
 
   protected override onLastListenerRemoved(): void {
-    this.environment.serviceWorker?.removeEventListener('message', this.receive)
+    this.environment.secureContext?.serviceWorker?.removeEventListener('message', this.receive)
   }
 
   /**
@@ -164,7 +164,7 @@ export class DefaultDeviceNotifications extends EventEmitter<DeviceNotifications
    * waited for: it may never become active.
    */
   private async registration(): Promise<NotificationRegistrationLike | undefined> {
-    const serviceWorker = this.environment.serviceWorker
+    const serviceWorker = this.environment.secureContext?.serviceWorker
 
     if (serviceWorker === undefined) {
       return undefined
