@@ -1,5 +1,4 @@
 import type { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
-import { BrowserError } from '../../../core/errors/browser-error.ts'
 import { StorageErrorFactory } from '../../errors/storage-error-factory.ts'
 import { StorageUnsupportedError } from '../../errors/storage-unsupported-error.ts'
 import { StorageCapabilities } from '../../storage-capabilities.ts'
@@ -201,7 +200,7 @@ export class IndexedDbStorageDriver extends StorageDriver {
         return await this.transact(mode, operation)
       } catch (error) {
         // the connection was closed for a version change between opening it and using it
-        if (BrowserError.hasName(error, 'InvalidStateError')) {
+        if (StorageErrorFactory.isClosedConnection(error)) {
           this.connection = undefined
 
           return await this.transact(mode, operation)

@@ -1,14 +1,12 @@
 import '../../core/disposable-polyfill.ts'
 
 import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
-import { BrowserError } from '../../core/errors/browser-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
-import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
-import { MediaDeviceNotFoundError } from '../errors/media-device-not-found-error.ts'
 import { MediaError } from '../errors/media-error.ts'
+import { MediaErrorFactory } from '../errors/media-error-factory.ts'
 import type { AudioOutputDescriptor, AudioOutputManager, AudioOutputManagerEvents } from './audio-output-manager.ts'
 import { AudioOutputSupport } from './audio-output-support.ts'
 
@@ -73,8 +71,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
 
       return { id: deviceId, groupId, label, isDefault: deviceId === DefaultAudioOutputManager.defaultId }
     } catch (error) {
-      // the user closed the list
-      if (BrowserError.hasName(error, 'NotAllowedError')) {
+      if (MediaErrorFactory.isOutputChoiceCancelled(error)) {
         return undefined
       }
 
@@ -92,14 +89,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
     try {
       await element.setSinkId(id)
     } catch (error) {
-      switch (BrowserError.nameOf(error)) {
-        case 'NotFoundError':
-          throw new MediaDeviceNotFoundError(`There is no audio output with the id '${id}'`, { cause: error })
-        case 'NotAllowedError':
-          throw new PermissionDeniedError('speaker-selection', { cause: error })
-        default:
-          throw new MediaError('Could not send the sound to the audio output', { cause: error })
-      }
+      throw MediaErrorFactory.fromAudioOutput(error, 'Could not send the sound to the audio output', id)
     }
   }
 

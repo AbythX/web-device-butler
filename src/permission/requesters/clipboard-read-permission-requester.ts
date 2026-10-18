@@ -1,6 +1,7 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
-import { BrowserError } from '../../core/errors/browser-error.ts'
 import { ClipboardSupport } from '../../sharing/clipboard/clipboard-support.ts'
+import { SharingErrorFactory } from '../../sharing/errors/sharing-error-factory.ts'
+import { PermissionDeniedError } from '../errors/permission-denied-error.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -33,7 +34,9 @@ export class ClipboardReadPermissionRequester implements PermissionRequester {
 
       return 'granted'
     } catch (error) {
-      return BrowserError.hasName(error, 'NotAllowedError') ? 'denied' : undefined
+      const failure = SharingErrorFactory.from(error, 'clipboard', 'The browser could not read the clipboard')
+
+      return failure instanceof PermissionDeniedError ? 'denied' : undefined
     }
   }
 }

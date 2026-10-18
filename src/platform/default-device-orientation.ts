@@ -1,11 +1,10 @@
 import '../core/disposable-polyfill.ts'
 
 import type { BrowserEnvironment } from '../core/environment/browser-environment.ts'
-import { BrowserError } from '../core/errors/browser-error.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../core/events/event-emitter.ts'
 import type { Logger } from '../core/logging/logger.ts'
-import { ScreenError } from '../screen/errors/screen-error.ts'
+import { ScreenErrorFactory } from '../screen/errors/screen-error-factory.ts'
 import type { DeviceOrientation, DeviceOrientationEvents, OrientationKind } from './device-orientation.ts'
 import { OrientationLockSupport } from './orientation-lock-support.ts'
 
@@ -57,9 +56,9 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
       await screenOrientation.lock(orientation)
     } catch (error) {
       // a device that cannot be turned, such as a desktop, has the call and rejects it
-      throw BrowserError.hasName(error, 'NotSupportedError')
-        ? new UnsupportedError('orientation lock', { cause: error })
-        : new ScreenError(`The browser did not keep the page in ${orientation}`, { cause: error })
+      throw ScreenErrorFactory.from(error, `The browser did not keep the page in ${orientation}`, {
+        feature: 'orientation lock',
+      })
     }
   }
 

@@ -11,7 +11,8 @@ meanings live in `BrowserError`. Plain wraps without a check of a name, such as
 `new MediaError('Could not take a photo', { cause })`, stay where they are: they already translate everything the
 same way.
 
-Not implemented yet. Nothing changes in the public API, and every error keeps its class, its `permission` and its
+Implemented on the branch `refactor-feature-support`, with every decision taken as recommended. [What was built
+differently](#what-was-built-differently) lists where the code left the plan. Nothing changes in the public API, and every error keeps its class, its `permission` and its
 message.
 
 ## Review: what is there today
@@ -72,7 +73,7 @@ names for a denied access, because they are rules of those areas.
 | ------- | -------------- | ------- | -------- |
 | `ScreenErrorFactory` | new, `screen/errors/` | `from(error, action, { permission?, feature? })`: a refusal becomes `PermissionDeniedError(permission)` where a permission is given, `NotSupportedError` becomes `UnsupportedError(feature)` where a feature is given, anything else `ScreenError(action)`. Each caller names only what it maps today, so nothing else changes. | wake lock, fullscreen, orientation lock |
 | `FileErrorFactory` | new, `files/errors/` | `from(error, action)`, `isCancellation(error)` | files |
-| `MediaErrorFactory` | changed | `fromAudioOutput(error, action, id?)`, `isOutputChoiceCancelled(error)`, `fromScreenCapture(error, wasActivated)`; `from` uses `isRefusal` | audio output, screen capture |
+| `MediaErrorFactory` | changed | `fromAudioOutput(error, action, id)`, `isOutputChoiceCancelled(error)`, `fromScreenCapture(error, action, wasActivated)`; `from` uses `isRefusal` | audio output, screen capture |
 | `SharingErrorFactory` | changed | `from` and `isCancellation` use the shared meanings | share, clipboard, clipboard read requester |
 | `StorageErrorFactory` | changed | `isClosedConnection(error)` | IndexedDB driver |
 | `LocationErrorFactory` | unchanged | reads a numeric `code`, not a name | |
@@ -115,3 +116,11 @@ One commit each; every step leaves the specs green.
 | A factory per area, or one factory in `core` for all? | **Per area**, as the four that exist. The meanings differ between the areas (the audio output cancels with `NotAllowedError`); `core` only names what they share. |
 | Make the cancelled dialogs answer the same way everywhere? | **No, not now.** It changes the public API, and the screen capture cannot tell a cancellation from a refusal in Chromium. A plan of its own if it is wanted. |
 | Move the plain wraps (fullscreen, files, recording, photo, listing the outputs) into the factories too? | **Only where the area gets a factory anyway**: the fullscreen into `ScreenErrorFactory`, writing a file into `FileErrorFactory`, listing the outputs into `fromAudioOutput`. The recording and the photo stay plain wraps of `MediaError`. |
+
+## What was built differently
+
+| Plan | Built | Why |
+| ---- | ----- | --- |
+| Listing the audio outputs goes through `fromAudioOutput` | listing and choosing an output stay plain wraps of `MediaError`; only `route()` asks `fromAudioOutput` | `fromAudioOutput` maps a refusal and a missing device, which listing and choosing do not map today; routing them through it would have changed the errors they throw |
+| `fromScreenCapture(error, wasActivated)` | `fromScreenCapture(error, action, wasActivated)` | the message names the action, which the capture keeps, as every other `from` of the media factory takes it |
+| `ScreenErrorFactory.from(error, action, { permission?, feature? })` | the same, with the options named `ScreenErrorMapping` | |

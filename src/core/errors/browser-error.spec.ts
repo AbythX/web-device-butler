@@ -53,4 +53,26 @@ describe('browser-error', () => {
       expect(BrowserError.hasName({ name: 42 }, 'NotAllowedError')).toBe(false)
     })
   })
+
+  describe('isRefusal', () => {
+    test('should recognize a refusal', async () => {
+      expect(BrowserError.isRefusal(new DOMException('refused', 'NotAllowedError'))).toBe(true)
+    })
+
+    test('should not take anything else for a refusal', async () => {
+      expect(BrowserError.isRefusal(new DOMException('closed', 'AbortError'))).toBe(false)
+      expect(BrowserError.isRefusal(undefined)).toBe(false)
+    })
+  })
+
+  describe('isCancellation', () => {
+    test('should recognize a dialog the user closed', async () => {
+      expect(BrowserError.isCancellation(new DOMException('closed', 'AbortError'))).toBe(true)
+    })
+
+    test('should not take anything else for a cancellation', async () => {
+      expect(BrowserError.isCancellation(new DOMException('refused', 'NotAllowedError'))).toBe(false)
+      expect(BrowserError.isCancellation(undefined)).toBe(false)
+    })
+  })
 })

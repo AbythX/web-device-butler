@@ -38,4 +38,11 @@ export class StorageErrorFactory {
   public static isNotFound(error: unknown): boolean {
     return BrowserError.hasName(error, 'NotFoundError')
   }
+
+  /**
+   * Whether a database failed because its connection was closed, for example for a version change in another tab.
+   */
+  public static isClosedConnection(error: unknown): boolean {
+    return BrowserError.hasName(error, 'InvalidStateError')
+  }
 }

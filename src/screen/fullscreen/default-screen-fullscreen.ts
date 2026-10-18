@@ -5,7 +5,7 @@ import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
-import { ScreenError } from '../errors/screen-error.ts'
+import { ScreenErrorFactory } from '../errors/screen-error-factory.ts'
 import { type FullscreenDocument, FullscreenSupport } from './fullscreen-support.ts'
 import type { ScreenFullscreen, ScreenFullscreenEvents } from './screen-fullscreen.ts'
 
@@ -92,7 +92,7 @@ export class DefaultScreenFullscreen extends EventEmitter<ScreenFullscreenEvents
         this.enterWithVideo(target)
       }
     } catch (error) {
-      throw new ScreenError('The browser did not fill the screen with the element', { cause: error })
+      throw ScreenErrorFactory.from(error, 'The browser did not fill the screen with the element')
     }
   }
 
@@ -109,7 +109,7 @@ export class DefaultScreenFullscreen extends EventEmitter<ScreenFullscreenEvents
         video.webkitExitFullscreen?.()
       }
     } catch (error) {
-      throw new ScreenError('The browser did not return to the page', { cause: error })
+      throw ScreenErrorFactory.from(error, 'The browser did not return to the page')
     }
   }
 

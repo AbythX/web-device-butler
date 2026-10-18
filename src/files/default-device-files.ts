@@ -1,10 +1,9 @@
 import { BrowserEnvironment, type SaveFilePickerOptions } from '../core/environment/browser-environment.ts'
-import { BrowserError } from '../core/errors/browser-error.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import type { DeviceFiles, FilePickOptions, FileSaveOptions, FileSaveOutcome } from './device-files.ts'
-import { FileError } from './errors/file-error.ts'
+import { FileErrorFactory } from './errors/file-error-factory.ts'
 import { FileSupport } from './file-support.ts'
 
 /**
@@ -45,7 +44,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
     try {
       handle = await showPicker(DefaultDeviceFiles.pickerOptionsFor(data, options))
     } catch (error) {
-      if (BrowserError.hasName(error, 'AbortError')) {
+      if (FileErrorFactory.isCancellation(error)) {
         return 'cancelled'
       }
 
@@ -60,7 +59,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
       await writable.write(data)
       await writable.close()
     } catch (error) {
-      throw new FileError(`Could not write the file '${options.name}'`, { cause: error })
+      throw FileErrorFactory.from(error, `Could not write the file '${options.name}'`)
     }
 
     return 'saved'

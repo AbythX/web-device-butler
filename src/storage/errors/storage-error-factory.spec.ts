@@ -58,4 +58,12 @@ describe('storage-error-factory', () => {
       expect(StorageErrorFactory.isNotFound(undefined)).toBe(false)
     })
   })
+
+  describe('#isClosedConnection', () => {
+    test('should recognise a database whose connection was closed', async () => {
+      expect(StorageErrorFactory.isClosedConnection(new DOMException('closing', 'InvalidStateError'))).toBe(true)
+      expect(StorageErrorFactory.isClosedConnection(new DOMException('other', 'NotFoundError'))).toBe(false)
+      expect(StorageErrorFactory.isClosedConnection(undefined)).toBe(false)
+    })
+  })
 })

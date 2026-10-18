@@ -12,10 +12,13 @@ import { MediaRequirementsError } from './media-requirements-error.ts'
  * the errors of the library, so the names of `DOMException` never reach the application.
  */
 export class MediaErrorFactory {
-  private static readonly deniedNames = ['NotAllowedError', 'SecurityError']
+  /** besides a refusal, which every area shares */
+  private static readonly deniedNames = ['SecurityError']
   private static readonly notFoundNames = ['NotFoundError']
   private static readonly busyNames = ['NotReadableError', 'AbortError']
   private static readonly requirementNames = ['OverconstrainedError']
+  /** what the capture of the screen fails with when it was not called in answer to a click */
+  private static readonly withoutActivationNames = ['InvalidStateError', 'InvalidAccessError']
 
   /**
    * @param action what was attempted, used as the message: "Could not open the camera"
@@ -27,7 +30,7 @@ export class MediaErrorFactory {
 
     const name = BrowserError.nameOf(error)
 
-    if (MediaErrorFactory.deniedNames.includes(name)) {
+    if (BrowserError.isRefusal(error) || MediaErrorFactory.deniedNames.includes(name)) {
       return new PermissionDeniedError(kind === 'screen' ? 'display-capture' : kind, { cause: error })
     }
 
@@ -50,6 +53,62 @@ export class MediaErrorFactory {
     }
 
     return new MediaError(action, { cause: error })
+  }
+
+  /**
+   * Translates what the capture of the screen fails with. Without a click of the user just before, the browsers
+   * refuse the call, which says nothing about the permission.
+   *
+   * @param action what was attempted, used as the message: "Could not capture the screen"
+   * @param wasActivated whether the user had just clicked when the call was made; `undefined` where the browser
+   *   cannot tell
+   */
+  public static fromScreenCapture(
+    error: unknown,
+    action: string,
+    wasActivated: boolean | undefined
+  ): DeviceButlerError {
+    const isWithoutActivation =
+      BrowserError.hasName(error, ...MediaErrorFactory.withoutActivationNames) ||
+      (wasActivated === false && BrowserError.isRefusal(error))
+
+    if (isWithoutActivation) {
+      return new MediaError(`${action}: open() has to be called in answer to a click or a key of the user`, {
+        cause: error,
+      })
+    }
+
+    return MediaErrorFactory.from(error, action, 'screen')
+  }
+
+  /**
+   * Translates what sending the sound of an element to an audio output fails with.
+   *
+   * @param action what was attempted, used as the message of every other failure
+   * @param id the output the sound was sent to
+   */
+  public static fromAudioOutput(error: unknown, action: string, id: string): DeviceButlerError {
+    if (error instanceof DeviceButlerError) {
+      return error
+    }
+
+    if (MediaErrorFactory.notFoundNames.includes(BrowserError.nameOf(error))) {
+      return new MediaDeviceNotFoundError(`There is no audio output with the id '${id}'`, { cause: error })
+    }
+
+    if (BrowserError.isRefusal(error)) {
+      return new PermissionDeniedError('speaker-selection', { cause: error })
+    }
+
+    return new MediaError(action, { cause: error })
+  }
+
+  /**
+   * Whether the user closed the list of the audio outputs. The browser rejects with a refusal then, which is no
+   * refusal of a permission here.
+   */
+  public static isOutputChoiceCancelled(error: unknown): boolean {
+    return BrowserError.isRefusal(error)
   }
 
   /**

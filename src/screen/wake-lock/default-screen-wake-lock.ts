@@ -1,13 +1,11 @@
 import '../../core/disposable-polyfill.ts'
 
 import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
-import { BrowserError } from '../../core/errors/browser-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
-import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
-import { ScreenError } from '../errors/screen-error.ts'
+import { ScreenErrorFactory } from '../errors/screen-error-factory.ts'
 import type { ScreenWakeLock, ScreenWakeLockEvents } from './screen-wake-lock.ts'
 import { WakeLockHold } from './wake-lock-hold.ts'
 import { WakeLockSupport } from './wake-lock-support.ts'
@@ -115,9 +113,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
         return
       }
 
-      throw BrowserError.hasName(error, 'NotAllowedError')
-        ? new PermissionDeniedError('screen-wake-lock', { cause: error })
-        : new ScreenError('Could not keep the screen on', { cause: error })
+      throw ScreenErrorFactory.from(error, 'Could not keep the screen on', { permission: 'screen-wake-lock' })
     }
 
     // the last hold may have been released while the browser was asked

@@ -1,7 +1,5 @@
 import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import type { CaptureControllerLike } from '../../core/environment/display-media-like.ts'
-import { BrowserError } from '../../core/errors/browser-error.ts'
-import type { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
@@ -21,7 +19,6 @@ import type { ScreenCaptureSession } from './session/screen-capture-session.ts'
 export class DefaultScreenCaptureManager implements ScreenCaptureManager {
   private static readonly action = 'Could not capture the screen'
   /** what the browsers throw when the picker was asked for without a click of the user */
-  private static readonly withoutActivationNames = ['InvalidStateError', 'InvalidAccessError']
 
   /**
    * For applications that only capture the screen. Otherwise it is reached through `DeviceButler`.
@@ -78,7 +75,7 @@ export class DefaultScreenCaptureManager implements ScreenCaptureManager {
     try {
       stream = await capture(ScreenCaptureConstraints.options(merged, controller))
     } catch (error) {
-      throw DefaultScreenCaptureManager.translate(error, wasActivated)
+      throw MediaErrorFactory.fromScreenCapture(error, DefaultScreenCaptureManager.action, wasActivated)
     }
 
     // the browser decides about the focus right after the call, so this cannot wait
@@ -134,27 +131,6 @@ export class DefaultScreenCaptureManager implements ScreenCaptureManager {
     if (this.isDisposed) {
       throw new MediaError('The screen cannot be captured any more, the butler was disposed')
     }
-  }
-
-  /**
-   * @param wasActivated whether the user had just clicked when the call was made; `undefined` where the browser
-   *   cannot tell
-   */
-  private static translate(error: unknown, wasActivated: boolean | undefined): DeviceButlerError {
-    const name = BrowserError.nameOf(error)
-
-    const isWithoutActivation =
-      DefaultScreenCaptureManager.withoutActivationNames.includes(name) ||
-      (wasActivated === false && name === 'NotAllowedError')
-
-    if (isWithoutActivation) {
-      return new MediaError(
-        `${DefaultScreenCaptureManager.action}: open() has to be called in answer to a click or a key of the user`,
-        { cause: error }
-      )
-    }
-
-    return MediaErrorFactory.from(error, DefaultScreenCaptureManager.action, 'screen')
   }
 
   private static merge(

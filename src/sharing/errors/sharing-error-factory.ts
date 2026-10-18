@@ -16,7 +16,7 @@ export class SharingErrorFactory {
       return error
     }
 
-    return BrowserError.hasName(error, 'NotAllowedError')
+    return BrowserError.isRefusal(error)
       ? new PermissionDeniedError(permission, { cause: error })
       : new SharingError(message, { cause: error })
   }
@@ -25,6 +25,6 @@ export class SharingErrorFactory {
    * Whether the user closed what the browser showed without choosing anything.
    */
   public static isCancellation(error: unknown): boolean {
-    return BrowserError.hasName(error, 'AbortError')
+    return BrowserError.isCancellation(error)
   }
 }

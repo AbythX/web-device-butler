@@ -27,4 +27,19 @@ export class BrowserError {
   public static hasName(error: unknown, ...names: readonly string[]): boolean {
     return names.includes(BrowserError.nameOf(error))
   }
+
+  /**
+   * Whether the user or the browser said no (`NotAllowedError`). What a refusal means is up to the area that asked:
+   * the list of the audio outputs rejects with it when the user closes it.
+   */
+  public static isRefusal(error: unknown): boolean {
+    return BrowserError.hasName(error, 'NotAllowedError')
+  }
+
+  /**
+   * Whether the user closed what the browser showed without choosing anything (`AbortError`).
+   */
+  public static isCancellation(error: unknown): boolean {
+    return BrowserError.hasName(error, 'AbortError')
+  }
 }
