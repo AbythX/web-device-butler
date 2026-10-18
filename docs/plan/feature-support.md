@@ -14,7 +14,7 @@ export class WakeLockSupport {
 
   /** the Screen Wake Lock API where the page may use it; `undefined` otherwise */
   public static resolveFor(environment: BrowserEnvironment): WakeLock | undefined {
-    return environment.secured(environment.wakeLock)
+    return environment.secureContext?.wakeLock
   }
 }
 ```
@@ -61,14 +61,19 @@ outside a secure context; the parts do that themselves. Which APIs the browsers 
 
 ## Design
 
-### `environment.secured(api)`
+### `environment.secureContext`
 
-A method on `BrowserEnvironment` that returns what it is given in a secure context and `undefined` outside one:
+A property of `BrowserEnvironment` that is the environment itself in a secure context and `undefined` outside one,
+so the `?.` at the call shows that the API may be missing: `environment.secureContext?.wakeLock`. It is marked
+`@internal` and stripped from the published types; only the support classes use it.
 
 ```ts
-/** `api` where the page is in a secure context; `undefined` otherwise, as the browsers hide such APIs */
-public secured<Api>(api: Api | undefined): Api | undefined
+/** @internal */
+public get secureContext(): BrowserEnvironment | undefined
 ```
+
+First built as a method, `environment.secured(environment.wakeLock)`, and renamed in review: the name did not say
+that it hands back what it is given, or nothing.
 
 It is the shared part; the support classes are the per-part part. It replaces `isSecureContext ? x : undefined` and
 `isSecureContext && x !== undefined` everywhere.
@@ -129,8 +134,8 @@ Everything else answers exactly as today.
 
 One commit each; every step leaves the specs green.
 
-1. **`BrowserEnvironment.secured()`**, with a spec for secure, not secure and not stated.
-2. **Location and notifications** move onto `secured()` and get their handle method; `show()` of the notifications
+1. **`BrowserEnvironment.secureContext`**, with a spec for secure, not secure and not stated.
+2. **Location and notifications** move onto `secureContext` and get their handle method; `show()` of the notifications
    and both requesters ask the class instead of checking again.
 3. **`MotionSupport`**: the motion and its requester ask the same class, which fixes the disagreement; the guard
    `assertSupported` asks `canWatchAttitudeIn` / `canWatchMovementIn`.

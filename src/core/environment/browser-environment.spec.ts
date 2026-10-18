@@ -125,20 +125,17 @@ describe('browser-environment', () => {
     })
   })
 
-  describe('#secured', () => {
-    test('should return the api in a secure context', async () => {
-      const api = {}
+  describe('#secureContext', () => {
+    test('should be the environment in a secure context', async () => {
+      const secure = BrowserEnvironment.of({ isSecureContext: true })
+      const unstated = BrowserEnvironment.of({})
 
-      expect(BrowserEnvironment.of({ isSecureContext: true }).secured(api)).toBe(api)
-      expect(BrowserEnvironment.of({}).secured(api)).toBe(api)
+      expect(secure.secureContext).toBe(secure)
+      expect(unstated.secureContext).toBe(unstated)
     })
 
     test('should be undefined outside a secure context', async () => {
-      expect(BrowserEnvironment.of({ isSecureContext: false }).secured({})).toBeUndefined()
-    })
-
-    test('should be undefined without the api', async () => {
-      expect(BrowserEnvironment.of({ isSecureContext: true }).secured(undefined)).toBeUndefined()
+      expect(BrowserEnvironment.of({ isSecureContext: false }).secureContext).toBeUndefined()
     })
   })
 

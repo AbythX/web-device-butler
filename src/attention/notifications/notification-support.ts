@@ -18,6 +18,6 @@ export class NotificationSupport {
    * The notifications of the browser where the page may show them; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): NotificationFactory | undefined {
-    return environment.secured(environment.Notification)
+    return environment.secureContext?.Notification
   }
 }

@@ -17,7 +17,7 @@ export class MediaSupport {
    * otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): MediaDevices | undefined {
-    const mediaDevices = environment.secured(environment.mediaDevices)
+    const mediaDevices = environment.secureContext?.mediaDevices
 
     return typeof mediaDevices?.getUserMedia === 'function' ? mediaDevices : undefined
   }

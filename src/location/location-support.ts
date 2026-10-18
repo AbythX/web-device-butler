@@ -16,6 +16,6 @@ export class LocationSupport {
    * The Geolocation API where the page may use it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): Geolocation | undefined {
-    return environment.secured(environment.geolocation)
+    return environment.secureContext?.geolocation
   }
 }

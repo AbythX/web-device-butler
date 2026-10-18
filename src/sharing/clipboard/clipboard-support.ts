@@ -41,13 +41,13 @@ export class ClipboardSupport {
    * The clipboard of the system where the page may use it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): Clipboard | undefined {
-    return environment.secured(environment.clipboard)
+    return environment.secureContext?.clipboard
   }
 
   /**
    * What copied data is wrapped in, where the page may copy data; `undefined` where it only copies text.
    */
   public static resolveItemFor(environment: BrowserEnvironment): ClipboardItemFactory | undefined {
-    return environment.secured(environment.ClipboardItem)
+    return environment.secureContext?.ClipboardItem
   }
 }

@@ -16,6 +16,6 @@ export class WakeLockSupport {
    * The Screen Wake Lock API where the page may use it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): WakeLock | undefined {
-    return environment.secured(environment.wakeLock)
+    return environment.secureContext?.wakeLock
   }
 }

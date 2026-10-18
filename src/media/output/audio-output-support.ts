@@ -30,6 +30,6 @@ export class AudioOutputSupport {
    * The media devices of the browser where the page may list and choose outputs; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): OutputMediaDevices | undefined {
-    return environment.secured(environment.mediaDevices)
+    return environment.secureContext?.mediaDevices
   }
 }

@@ -18,29 +18,31 @@ export class MotionSupport {
    * Whether the page can follow how the device is turned (`deviceorientation`).
    */
   public static canWatchAttitudeIn(environment: BrowserEnvironment): boolean {
-    return MotionSupport.usable(environment, environment.DeviceOrientationEvent) !== undefined
+    return MotionSupport.listenableIn(environment)?.DeviceOrientationEvent !== undefined
   }
 
   /**
    * Whether the page can follow how the device moves (`devicemotion`).
    */
   public static canWatchMovementIn(environment: BrowserEnvironment): boolean {
-    return MotionSupport.usable(environment, environment.DeviceMotionEvent) !== undefined
+    return MotionSupport.listenableIn(environment)?.DeviceMotionEvent !== undefined
   }
 
   /**
    * The constructors of the events the page can listen to; Safari on iOS asks the user through them.
    */
   public static resolveFor(environment: BrowserEnvironment): SensorEventFactory[] {
-    return [environment.DeviceOrientationEvent, environment.DeviceMotionEvent].flatMap(
-      (factory) => MotionSupport.usable(environment, factory) ?? []
-    )
+    const listenable = MotionSupport.listenableIn(environment)
+
+    return listenable === undefined
+      ? []
+      : [listenable.DeviceOrientationEvent, listenable.DeviceMotionEvent].filter((factory) => factory !== undefined)
   }
 
-  private static usable(
-    environment: BrowserEnvironment,
-    factory: SensorEventFactory | undefined
-  ): SensorEventFactory | undefined {
-    return environment.isBrowser ? environment.secured(factory) : undefined
+  /**
+   * The environment where the page can listen to the sensors: in a secure context, with a window.
+   */
+  private static listenableIn(environment: BrowserEnvironment): BrowserEnvironment | undefined {
+    return environment.isBrowser ? environment.secureContext : undefined
   }
 }

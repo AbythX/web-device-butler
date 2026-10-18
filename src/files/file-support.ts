@@ -30,6 +30,6 @@ export class FileSupport {
    * The save dialog of the browser where the page may show it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): SaveFilePicker | undefined {
-    return environment.secured(environment.saveFilePicker)
+    return environment.secureContext?.saveFilePicker
   }
 }

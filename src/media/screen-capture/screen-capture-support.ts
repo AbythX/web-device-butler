@@ -16,6 +16,6 @@ export class ScreenCaptureSupport {
    * The capture of the screen (`getDisplayMedia`) where the page may use it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): DisplayMediaCapture | undefined {
-    return environment.secured(environment.displayMedia)
+    return environment.secureContext?.displayMedia
   }
 }

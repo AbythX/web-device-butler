@@ -17,6 +17,6 @@ export class StorageSupport {
    * The storage manager of the browser where the page may use it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): Navigator['storage'] | undefined {
-    return environment.secured(environment.originStorage)
+    return environment.secureContext?.originStorage
   }
 }

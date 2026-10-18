@@ -15,6 +15,6 @@ export class ShareSupport {
    * The share sheet of the system where the page may open it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): ShareSheet | undefined {
-    return environment.secured(environment.shareSheet)
+    return environment.secureContext?.shareSheet
   }
 }

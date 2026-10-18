@@ -17,6 +17,6 @@ export class CodeScanSupport {
    * The decoder of the browser where the page may use it; `undefined` otherwise.
    */
   public static resolveFor(environment: BrowserEnvironment): BarcodeDetectorFactory | undefined {
-    return environment.secured(environment.BarcodeDetector)
+    return environment.secureContext?.BarcodeDetector
   }
 }
