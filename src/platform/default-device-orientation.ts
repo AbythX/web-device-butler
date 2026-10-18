@@ -1,6 +1,7 @@
 import '../core/disposable-polyfill.ts'
 
 import type { BrowserEnvironment } from '../core/environment/browser-environment.ts'
+import { BrowserError } from '../core/errors/browser-error.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../core/events/event-emitter.ts'
 import type { Logger } from '../core/logging/logger.ts'
@@ -55,7 +56,7 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
       await screenOrientation.lock(orientation)
     } catch (error) {
       // a device that cannot be turned, such as a desktop, has the call and rejects it
-      throw DefaultDeviceOrientation.isNotSupported(error)
+      throw BrowserError.hasName(error, 'NotSupportedError')
         ? new UnsupportedError('orientation lock', { cause: error })
         : new ScreenError(`The browser did not keep the page in ${orientation}`, { cause: error })
     }
@@ -92,10 +93,6 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
 
   private readonly changed = (event: Pick<MediaQueryListEvent, 'matches'>): void => {
     this.emitSafely('change', event.matches ? 'portrait' : 'landscape', this.logger)
-  }
-
-  private static isNotSupported(error: unknown): boolean {
-    return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotSupportedError'
   }
 
   private unwatch(): void {

@@ -1,4 +1,5 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -31,9 +32,7 @@ export class ClipboardReadPermissionRequester implements PermissionRequester {
 
       return 'granted'
     } catch (error) {
-      return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotAllowedError'
-        ? 'denied'
-        : undefined
+      return BrowserError.hasName(error, 'NotAllowedError') ? 'denied' : undefined
     }
   }
 }

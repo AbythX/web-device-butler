@@ -1,5 +1,6 @@
 import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import type { CaptureControllerLike } from '../../core/environment/display-media-like.ts'
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import type { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import type { Logger } from '../../core/logging/logger.ts'
@@ -139,7 +140,7 @@ export class DefaultScreenCaptureManager implements ScreenCaptureManager {
    *   cannot tell
    */
   private static translate(error: unknown, wasActivated: boolean | undefined): DeviceButlerError {
-    const name = typeof error === 'object' && error !== null && 'name' in error ? String(error.name) : ''
+    const name = BrowserError.nameOf(error)
 
     const isWithoutActivation =
       DefaultScreenCaptureManager.withoutActivationNames.includes(name) ||

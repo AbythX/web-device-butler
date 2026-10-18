@@ -1,6 +1,7 @@
 import '../../core/disposable-polyfill.ts'
 
 import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
@@ -113,7 +114,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
         return
       }
 
-      throw DefaultScreenWakeLock.isRefusal(error)
+      throw BrowserError.hasName(error, 'NotAllowedError')
         ? new PermissionDeniedError('screen-wake-lock', { cause: error })
         : new ScreenError('Could not keep the screen on', { cause: error })
     }
@@ -188,9 +189,5 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
       this.announced = this.isActive
       this.emitSafely('change', this.announced, this.logger)
     }
-  }
-
-  private static isRefusal(error: unknown): boolean {
-    return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotAllowedError'
   }
 }
