@@ -10,6 +10,7 @@ import { MediaErrorFactory } from '../errors/media-error-factory.ts'
 import { MediaRequirementsError } from '../errors/media-requirements-error.ts'
 import type { ScreenCaptureFocus, ScreenCaptureRequirements } from './model/screen-capture-requirements.ts'
 import type { ScreenCaptureManager } from './screen-capture-manager.ts'
+import { ScreenCaptureSupport } from './screen-capture-support.ts'
 import { DefaultScreenCaptureSession, type ScreenCaptureTiming } from './session/default-screen-capture-session.ts'
 import { ScreenCaptureConstraints } from './session/screen-capture-constraints.ts'
 import type { ScreenCaptureSession } from './session/screen-capture-session.ts'
@@ -47,7 +48,7 @@ export class DefaultScreenCaptureManager implements ScreenCaptureManager {
   }
 
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.displayMedia !== undefined
+    return ScreenCaptureSupport.isSupportedIn(this.environment)
   }
 
   public get configuration(): Readonly<ScreenCaptureRequirements> {
@@ -61,9 +62,9 @@ export class DefaultScreenCaptureManager implements ScreenCaptureManager {
   public async open(requirements?: Partial<ScreenCaptureRequirements>): Promise<ScreenCaptureSession> {
     this.assertNotDisposed()
 
-    const capture = this.environment.displayMedia
+    const capture = ScreenCaptureSupport.resolveFor(this.environment)
 
-    if (capture === undefined || !this.environment.isSecureContext) {
+    if (capture === undefined) {
       throw new UnsupportedError('getDisplayMedia')
     }
 

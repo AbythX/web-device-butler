@@ -19,6 +19,7 @@ import { KeptRecordingArchive } from './kept/kept-recording-archive.ts'
 import { RecordingKeeper } from './kept/recording-keeper.ts'
 import type { MediaRecording, RecordingOptions, RecordingSource } from './media-recording.ts'
 import type { MediaRecordingManager } from './media-recording-manager.ts'
+import { RecordingSupport } from './recording-support.ts'
 
 /**
  * The implementation of {@link MediaRecordingManager}.
@@ -76,7 +77,7 @@ export class DefaultMediaRecordingManager implements MediaRecordingManager {
   }
 
   public get isSupported(): boolean {
-    return this.environment.MediaRecorder !== undefined
+    return RecordingSupport.isSupportedIn(this.environment)
   }
 
   public formats(
@@ -87,7 +88,7 @@ export class DefaultMediaRecordingManager implements MediaRecordingManager {
   }
 
   public canRecord(format: string): boolean {
-    const MediaRecorder = this.environment.MediaRecorder
+    const MediaRecorder = RecordingSupport.resolveFor(this.environment)
 
     return MediaRecorder !== undefined && typeof MediaRecorder.isTypeSupported === 'function'
       ? MediaRecorder.isTypeSupported(format)
@@ -95,7 +96,7 @@ export class DefaultMediaRecordingManager implements MediaRecordingManager {
   }
 
   public async record(source: RecordingSource, options: RecordingOptions = {}): Promise<MediaRecording> {
-    const MediaRecorder = this.environment.MediaRecorder
+    const MediaRecorder = RecordingSupport.resolveFor(this.environment)
 
     if (MediaRecorder === undefined) {
       throw new UnsupportedError('MediaRecorder')

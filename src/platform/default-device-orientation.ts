@@ -7,6 +7,7 @@ import { EventEmitter } from '../core/events/event-emitter.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { ScreenError } from '../screen/errors/screen-error.ts'
 import type { DeviceOrientation, DeviceOrientationEvents, OrientationKind } from './device-orientation.ts'
+import { OrientationLockSupport } from './orientation-lock-support.ts'
 
 /**
  * The implementation of {@link DeviceOrientation}.
@@ -42,13 +43,13 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
   }
 
   public get canLock(): boolean {
-    return typeof this.environment.screenOrientation?.lock === 'function'
+    return OrientationLockSupport.canLockIn(this.environment)
   }
 
   public async lock(orientation: OrientationKind): Promise<void> {
-    const screenOrientation = this.environment.screenOrientation
+    const screenOrientation = OrientationLockSupport.resolveFor(this.environment)
 
-    if (screenOrientation === undefined || typeof screenOrientation.lock !== 'function') {
+    if (screenOrientation === undefined) {
       throw new UnsupportedError('orientation lock')
     }
 

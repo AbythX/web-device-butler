@@ -175,9 +175,9 @@ export class DefaultDeviceLocation implements DeviceLocation {
   }
 
   private get geolocation(): Geolocation {
-    const geolocation = this.environment.geolocation
+    const geolocation = LocationSupport.resolveFor(this.environment)
 
-    if (!this.isSupported || geolocation === undefined) {
+    if (geolocation === undefined) {
       throw new UnsupportedError('geolocation')
     }
 

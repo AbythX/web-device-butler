@@ -1,4 +1,5 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import type { NotificationFactory } from '../../core/environment/notification-like.ts'
 
 /**
  * Whether the page can show notifications. Shared by the notifications and by the request of their permission, so
@@ -10,6 +11,13 @@ export class NotificationSupport {
    * on the home screen.
    */
   public static isSupportedIn(environment: BrowserEnvironment): boolean {
-    return environment.isSecureContext && environment.Notification !== undefined
+    return NotificationSupport.resolveFor(environment) !== undefined
+  }
+
+  /**
+   * The notifications of the browser where the page may show them; `undefined` otherwise.
+   */
+  public static resolveFor(environment: BrowserEnvironment): NotificationFactory | undefined {
+    return environment.secured(environment.Notification)
   }
 }

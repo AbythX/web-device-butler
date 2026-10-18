@@ -9,6 +9,13 @@ export class LocationSupport {
    * `false` outside a secure context and where the browser has no Geolocation API.
    */
   public static isSupportedIn(environment: BrowserEnvironment): boolean {
-    return environment.isSecureContext && environment.geolocation !== undefined
+    return LocationSupport.resolveFor(environment) !== undefined
+  }
+
+  /**
+   * The Geolocation API where the page may use it; `undefined` otherwise.
+   */
+  public static resolveFor(environment: BrowserEnvironment): Geolocation | undefined {
+    return environment.secured(environment.geolocation)
   }
 }

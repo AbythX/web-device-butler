@@ -10,6 +10,7 @@ import { PermissionDeniedError } from '../../permission/errors/permission-denied
 import { ScreenError } from '../errors/screen-error.ts'
 import type { ScreenWakeLock, ScreenWakeLockEvents } from './screen-wake-lock.ts'
 import { WakeLockHold } from './wake-lock-hold.ts'
+import { WakeLockSupport } from './wake-lock-support.ts'
 
 /**
  * The implementation of {@link ScreenWakeLock}.
@@ -40,7 +41,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
   }
 
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.wakeLock !== undefined
+    return WakeLockSupport.isSupportedIn(this.environment)
   }
 
   public get isRequested(): boolean {
@@ -97,7 +98,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
   }
 
   private async lock(): Promise<void> {
-    const wakeLock = this.environment.wakeLock
+    const wakeLock = WakeLockSupport.resolveFor(this.environment)
 
     // a browser refuses a page in the background; the lock is taken when the page returns
     if (wakeLock === undefined || this.sentinel !== undefined || this.isHidden) {

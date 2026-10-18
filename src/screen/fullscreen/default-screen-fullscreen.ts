@@ -6,6 +6,7 @@ import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
 import { ScreenError } from '../errors/screen-error.ts'
+import { type FullscreenDocument, FullscreenSupport } from './fullscreen-support.ts'
 import type { ScreenFullscreen, ScreenFullscreenEvents } from './screen-fullscreen.ts'
 
 /**
@@ -17,20 +18,6 @@ interface FullscreenElement extends Element {
   webkitEnterFullscreen?(): void
   webkitExitFullscreen?(): void
   webkitDisplayingFullscreen?: boolean
-}
-
-/**
- * The same for the document.
- */
-interface FullscreenDocument {
-  fullscreenEnabled?: boolean
-  webkitFullscreenEnabled?: boolean
-  fullscreenElement?: Element | null
-  webkitFullscreenElement?: Element | null
-  exitFullscreen?(): Promise<void>
-  webkitExitFullscreen?(): Promise<void> | void
-  addEventListener(type: string, listener: () => void): void
-  removeEventListener(type: string, listener: () => void): void
 }
 
 /**
@@ -62,17 +49,11 @@ export class DefaultScreenFullscreen extends EventEmitter<ScreenFullscreenEvents
   }
 
   public get isSupported(): boolean {
-    const document = this.document
-
-    return (
-      document !== undefined &&
-      (document.fullscreenEnabled ?? document.webkitFullscreenEnabled) !== false &&
-      (typeof document.exitFullscreen === 'function' || typeof document.webkitExitFullscreen === 'function')
-    )
+    return FullscreenSupport.isSupportedIn(this.environment)
   }
 
   public get element(): Element | undefined {
-    const document = this.document
+    const document = FullscreenSupport.resolveFor(this.environment)
 
     return (
       document?.fullscreenElement ??
@@ -116,7 +97,7 @@ export class DefaultScreenFullscreen extends EventEmitter<ScreenFullscreenEvents
   }
 
   public async exit(): Promise<void> {
-    const document = this.document
+    const document = FullscreenSupport.resolveFor(this.environment)
     const video = this.video
 
     try {
@@ -145,7 +126,7 @@ export class DefaultScreenFullscreen extends EventEmitter<ScreenFullscreenEvents
   }
 
   protected override onFirstListener(): void {
-    this.watchedDocument = this.document
+    this.watchedDocument = FullscreenSupport.resolveFor(this.environment)
 
     for (const type of DefaultScreenFullscreen.documentEvents) {
       this.watchedDocument?.addEventListener(type, this.changed)
@@ -184,9 +165,5 @@ export class DefaultScreenFullscreen extends EventEmitter<ScreenFullscreenEvents
 
   private readonly changed = (): void => {
     this.emitSafely('change', this.element, this.logger)
-  }
-
-  private get document(): FullscreenDocument | undefined {
-    return this.environment.isBrowser ? this.environment.document : undefined
   }
 }

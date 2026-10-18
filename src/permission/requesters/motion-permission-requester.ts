@@ -1,5 +1,6 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import type { SensorEventFactory } from '../../core/environment/sensor-events-like.ts'
+import { MotionSupport } from '../../motion/motion-support.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -18,10 +19,11 @@ export class MotionPermissionRequester implements PermissionRequester {
   public constructor(private readonly environment: BrowserEnvironment) {}
 
   /**
-   * `false` outside a secure context and where the browser does not report how the device is turned or moves.
+   * `false` outside a secure context, without a window, and where the browser does not report how the device is
+   * turned or moves.
    */
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.factories.length > 0
+    return MotionSupport.isSupportedIn(this.environment)
   }
 
   /**
@@ -82,8 +84,6 @@ export class MotionPermissionRequester implements PermissionRequester {
   }
 
   private get factories(): SensorEventFactory[] {
-    return [this.environment.DeviceOrientationEvent, this.environment.DeviceMotionEvent].filter(
-      (factory) => factory !== undefined
-    )
+    return MotionSupport.resolveFor(this.environment)
   }
 }

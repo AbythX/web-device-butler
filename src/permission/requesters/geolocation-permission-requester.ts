@@ -28,9 +28,9 @@ export class GeolocationPermissionRequester implements PermissionRequester {
    *   API can tell; `unsupported` where there is no Geolocation API
    */
   public request(): Promise<DevicePermissionState | undefined> {
-    const geolocation = this.environment.geolocation
+    const geolocation = LocationSupport.resolveFor(this.environment)
 
-    if (!this.isSupported || geolocation === undefined) {
+    if (geolocation === undefined) {
       return Promise.resolve('unsupported')
     }
 

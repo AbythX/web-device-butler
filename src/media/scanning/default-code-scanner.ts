@@ -7,6 +7,7 @@ import { DefaultPageLifecycle } from '../../platform/page/default-page-lifecycle
 import type { PageLifecycle } from '../../platform/page/page-lifecycle.ts'
 import { SessionClosedError } from '../errors/session-closed-error.ts'
 import type { CodeScanner, CodeScannerConfiguration } from './code-scanner.ts'
+import { CodeScanSupport } from './code-scan-support.ts'
 import { BarcodeDetectorDecoder } from './decoders/barcode-detector-decoder.ts'
 import type { CodeDecoder } from './decoders/code-decoder.ts'
 import { CodePictures, type CodeImage } from './frames/code-picture.ts'
@@ -49,7 +50,7 @@ export class DefaultCodeScanner implements CodeScanner {
   ) {}
 
   public get isSupported(): boolean {
-    return this.configuration.decoder !== undefined || this.environment.BarcodeDetector !== undefined
+    return this.configuration.decoder !== undefined || CodeScanSupport.hasBuiltInDecoderIn(this.environment)
   }
 
   public formats(decoder?: CodeDecoder): Promise<readonly CodeFormat[]> {
@@ -119,7 +120,7 @@ export class DefaultCodeScanner implements CodeScanner {
       return options.decoder
     }
 
-    const BarcodeDetector = this.environment.BarcodeDetector
+    const BarcodeDetector = CodeScanSupport.resolveFor(this.environment)
 
     if (BarcodeDetector === undefined) {
       throw new UnsupportedError('BarcodeDetector')

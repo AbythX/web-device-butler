@@ -483,6 +483,14 @@ export class BrowserEnvironment {
   }
 
   /**
+   * `api` where the page is in a secure context, `undefined` otherwise: the browsers hide such APIs from pages that
+   * were not loaded over HTTPS, and the library treats them as missing the same way where a browser does not.
+   */
+  public secured<Api>(api: Api | undefined): Api | undefined {
+    return this.isSecureContext ? api : undefined
+  }
+
+  /**
    * Reading some globals throws where the browser blocks them, for example `localStorage` with blocked cookies.
    */
   private optional<Value>(read: (globals: BrowserGlobals) => Value | null | undefined): Value | undefined {

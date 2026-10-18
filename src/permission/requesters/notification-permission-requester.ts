@@ -22,7 +22,7 @@ export class NotificationPermissionRequester implements PermissionRequester {
    *   ask because the call was not made in answer to a click
    */
   public async request(): Promise<DevicePermissionState | undefined> {
-    const Notification = this.environment.Notification
+    const Notification = NotificationSupport.resolveFor(this.environment)
 
     if (Notification === undefined) {
       return 'unsupported'
@@ -39,7 +39,7 @@ export class NotificationPermissionRequester implements PermissionRequester {
    * What the browser says without asking, for browsers whose Permissions API does not know notifications.
    */
   public query(): Promise<DevicePermissionState | undefined> {
-    const Notification = this.environment.Notification
+    const Notification = NotificationSupport.resolveFor(this.environment)
 
     return Promise.resolve(
       Notification === undefined ? undefined : NotificationPermissionRequester.stateOf(Notification.permission)

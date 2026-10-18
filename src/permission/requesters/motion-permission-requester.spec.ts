@@ -12,7 +12,11 @@ const asking = (answer: 'granted' | 'denied' | Error): SensorEventFactory => ({
 
 const silent: SensorEventFactory = { prototype: {} }
 
-const requesterOf = (globals: Partial<BrowserGlobals>) => new MotionPermissionRequester(BrowserEnvironment.of(globals))
+/** a page to listen on, which the sensors need */
+const page = { window: {} as Window, document: {} as Document }
+
+const requesterOf = (globals: Partial<BrowserGlobals>) =>
+  new MotionPermissionRequester(BrowserEnvironment.of({ ...page, ...globals }))
 
 /** what Chromium answers for its sensors */
 const permissions = (state: PermissionState | Error) =>
@@ -27,6 +31,12 @@ describe('motion-permission-requester', () => {
     expect(requesterOf({ DeviceOrientationEvent: silent }).isSupported).toBe(true)
     expect(requesterOf({}).isSupported).toBe(false)
     expect(requesterOf({ DeviceOrientationEvent: silent, isSecureContext: false }).isSupported).toBe(false)
+  })
+
+  test('should not be supported without a page, as the sensors cannot be listened to', () => {
+    expect(requesterOf({ DeviceOrientationEvent: silent, window: undefined, document: undefined }).isSupported).toBe(
+      false
+    )
   })
 
   describe('in Safari on iOS', () => {

@@ -6,6 +6,7 @@ import { WatchRegistry } from '../core/lifetime/watch-registry.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import type { DeviceMotion } from './device-motion.ts'
+import { MotionSupport } from './motion-support.ts'
 import type { Attitude, Movement } from './model/attitude.ts'
 import { MotionGeometry } from './model/motion-geometry.ts'
 import { SensorReadings } from './model/sensor-readings.ts'
@@ -40,15 +41,11 @@ export class DefaultDeviceMotion implements DeviceMotion {
   ) {}
 
   public get isSupported(): boolean {
-    return (
-      this.environment.isSecureContext &&
-      this.environment.isBrowser &&
-      (this.environment.DeviceOrientationEvent !== undefined || this.environment.DeviceMotionEvent !== undefined)
-    )
+    return MotionSupport.isSupportedIn(this.environment)
   }
 
   public watchAttitude(options: MotionWatchOptions = {}): MotionWatch<Attitude> {
-    this.assertSupported(this.environment.DeviceOrientationEvent !== undefined, 'DeviceOrientationEvent')
+    this.assertSupported(MotionSupport.canWatchAttitudeIn(this.environment), 'DeviceOrientationEvent')
 
     return this.watch<Attitude>(options, {
       // Chromium tells north only in an event of its own, and sends both
@@ -63,7 +60,7 @@ export class DefaultDeviceMotion implements DeviceMotion {
   }
 
   public watchMotion(options: MotionWatchOptions = {}): MotionWatch<Movement> {
-    this.assertSupported(this.environment.DeviceMotionEvent !== undefined, 'DeviceMotionEvent')
+    this.assertSupported(MotionSupport.canWatchMovementIn(this.environment), 'DeviceMotionEvent')
 
     return this.watch<Movement>(options, {
       events: ['devicemotion'],
@@ -94,8 +91,8 @@ export class DefaultDeviceMotion implements DeviceMotion {
     return this.watches.track(new DefaultMotionWatch(host, source, options, this.logger, this.timing))
   }
 
-  private assertSupported(hasEvent: boolean, feature: string): void {
-    if (!hasEvent || !this.environment.isSecureContext || !this.environment.isBrowser) {
+  private assertSupported(canWatch: boolean, feature: string): void {
+    if (!canWatch) {
       throw new UnsupportedError(feature)
     }
   }

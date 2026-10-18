@@ -125,6 +125,23 @@ describe('browser-environment', () => {
     })
   })
 
+  describe('#secured', () => {
+    test('should return the api in a secure context', async () => {
+      const api = {}
+
+      expect(BrowserEnvironment.of({ isSecureContext: true }).secured(api)).toBe(api)
+      expect(BrowserEnvironment.of({}).secured(api)).toBe(api)
+    })
+
+    test('should be undefined outside a secure context', async () => {
+      expect(BrowserEnvironment.of({ isSecureContext: false }).secured({})).toBeUndefined()
+    })
+
+    test('should be undefined without the api', async () => {
+      expect(BrowserEnvironment.of({ isSecureContext: true }).secured(undefined)).toBeUndefined()
+    })
+  })
+
   describe('#openBroadcastChannel', () => {
     test('should construct a channel with the name', async () => {
       const BroadcastChannel = vi.fn(function (this: { name: string }, name: string) {

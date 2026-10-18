@@ -59,9 +59,9 @@ export class DefaultDeviceNotifications extends EventEmitter<DeviceNotifications
   public async show(request: NotificationRequest): Promise<ShownNotification | undefined> {
     this.answer()
 
-    const Notification = this.environment.Notification
+    const Notification = NotificationSupport.resolveFor(this.environment)
 
-    if (Notification === undefined || !this.environment.isSecureContext) {
+    if (Notification === undefined) {
       throw new UnsupportedError('Notification')
     }
 
@@ -196,7 +196,7 @@ export class DefaultDeviceNotifications extends EventEmitter<DeviceNotifications
    * @throws UnsupportedError where the browser only lets a service worker show notifications, as Chromium on Android
    */
   private showFromPage(title: string, options: NotificationOptions & { tag: string }): ShownNotification {
-    const Notification = this.environment.Notification
+    const Notification = NotificationSupport.resolveFor(this.environment)
 
     if (Notification === undefined) {
       throw new UnsupportedError('Notification')

@@ -2,6 +2,7 @@ import { BrowserEnvironment } from '../../core/environment/browser-environment.t
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
 import type { DeviceVibration, VibrationName, VibrationPattern } from './device-vibration.ts'
+import { VibrationSupport } from './vibration-support.ts'
 
 /**
  * The implementation of {@link DeviceVibration}.
@@ -31,11 +32,11 @@ export class DefaultDeviceVibration implements DeviceVibration {
   ) {}
 
   public get isSupported(): boolean {
-    return this.environment.vibrate !== undefined
+    return VibrationSupport.isSupportedIn(this.environment)
   }
 
   public vibrate(pattern: VibrationPattern): boolean {
-    const vibrate = this.environment.vibrate
+    const vibrate = VibrationSupport.resolveFor(this.environment)
 
     if (vibrate === undefined) {
       return false
