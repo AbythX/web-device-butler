@@ -2,6 +2,7 @@ import '../core/disposable-polyfill.ts'
 
 import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
+import { WatchRegistry } from '../core/lifetime/watch-registry.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import type { DeviceMotion } from './device-motion.ts'
@@ -30,7 +31,7 @@ export class DefaultDeviceMotion implements DeviceMotion {
     return new DefaultDeviceMotion(environment, logger)
   }
 
-  private readonly watches = new Set<MotionWatch<unknown>>()
+  private readonly watches = new WatchRegistry<MotionWatch<unknown>>((watch) => watch.stop())
 
   public constructor(
     private readonly environment: BrowserEnvironment,
@@ -73,7 +74,7 @@ export class DefaultDeviceMotion implements DeviceMotion {
   }
 
   public dispose(): void {
-    ;[...this.watches].forEach((watch) => watch.stop())
+    this.watches.endAll()
   }
 
   /**
@@ -87,13 +88,10 @@ export class DefaultDeviceMotion implements DeviceMotion {
     const host: MotionWatchHost = {
       target: this.environment.window,
       // a watch the application stops is forgotten
-      stopped: (watch) => this.watches.delete(watch),
+      stopped: (watch) => this.watches.forget(watch),
     }
 
-    const watch = new DefaultMotionWatch(host, source, options, this.logger, this.timing)
-    this.watches.add(watch)
-
-    return watch
+    return this.watches.track(new DefaultMotionWatch(host, source, options, this.logger, this.timing))
   }
 
   private assertSupported(hasEvent: boolean, feature: string): void {

@@ -3,6 +3,7 @@ import '../core/disposable-polyfill.ts'
 import { CrossTabChannel } from '../core/coordination/channel/cross-tab-channel.ts'
 import { CrossTabLock } from '../core/coordination/lock/cross-tab-lock.ts'
 import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
+import { WatchRegistry } from '../core/lifetime/watch-registry.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import { ScopedLogger } from '../core/logging/scoped-logger.ts'
@@ -65,7 +66,7 @@ export class DefaultStorageManager implements StorageManager {
   private readonly loaders = new Map<string, StorageDriverLoader>()
   private readonly loading = new Map<string, Promise<StorageDriver>>()
   private readonly support = new Map<StorageDriver, Promise<boolean>>()
-  private readonly watches = new Set<StorageSpaceWatch>()
+  private readonly watches = new WatchRegistry<StorageSpaceWatch>((watch) => watch.dispose())
   private readonly selector = new StorageDriverSelector()
   /** the promise of the browser not to evict the data, asked for once; a refusal is asked again */
   private persisting: Promise<boolean> | undefined
@@ -172,23 +173,19 @@ export class DefaultStorageManager implements StorageManager {
   }
 
   public watchSpace(options: StorageSpaceWatchOptions = {}): StorageSpaceWatch {
-    const watch = new DefaultStorageSpaceWatch(
-      this.spaceReader,
-      options,
-      (listener) => this.changes.onRemoteWrite(listener),
-      new ScopedLogger('StorageSpaceWatch', this.logger),
-      (disposed) => this.watches.delete(disposed)
+    return this.watches.track(
+      new DefaultStorageSpaceWatch(
+        this.spaceReader,
+        options,
+        (listener) => this.changes.onRemoteWrite(listener),
+        new ScopedLogger('StorageSpaceWatch', this.logger),
+        (disposed) => this.watches.forget(disposed)
+      )
     )
-
-    this.watches.add(watch)
-
-    return watch
   }
 
   public dispose(): void {
-    for (const watch of [...this.watches]) {
-      watch.dispose()
-    }
+    this.watches.endAll()
 
     this.changes.dispose()
 

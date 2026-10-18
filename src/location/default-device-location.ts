@@ -2,6 +2,7 @@ import '../core/disposable-polyfill.ts'
 
 import { BrowserEnvironment } from '../core/environment/browser-environment.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
+import { WatchRegistry } from '../core/lifetime/watch-registry.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import { DevicePosition } from './device-position.ts'
@@ -28,7 +29,7 @@ export class DefaultDeviceLocation implements DeviceLocation {
     return new DefaultDeviceLocation(environment, logger, configuration)
   }
 
-  private readonly watches = new Set<LocationWatch>()
+  private readonly watches = new WatchRegistry<LocationWatch>((watch) => watch.stop())
 
   /**
    * @param configuration the defaults of every call
@@ -78,19 +79,15 @@ export class DefaultDeviceLocation implements DeviceLocation {
   }
 
   public watch(options: LocationOptions = {}): LocationWatch {
-    const watch = new DefaultLocationWatch(this.geolocation, this.merge(options), this.logger, (stopped) =>
-      this.watches.delete(stopped)
+    return this.watches.track(
+      new DefaultLocationWatch(this.geolocation, this.merge(options), this.logger, (stopped) =>
+        this.watches.forget(stopped)
+      )
     )
-
-    this.watches.add(watch)
-
-    return watch
   }
 
   public dispose(): void {
-    for (const watch of [...this.watches]) {
-      watch.stop()
-    }
+    this.watches.endAll()
   }
 
   /**
