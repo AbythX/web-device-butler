@@ -1,6 +1,7 @@
 import '../../core/disposable-polyfill.ts'
 
 import { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
@@ -79,7 +80,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
       return { id: deviceId, groupId, label, isDefault: deviceId === DefaultAudioOutputManager.defaultId }
     } catch (error) {
       // the user closed the list
-      if (DefaultAudioOutputManager.nameOf(error) === 'NotAllowedError') {
+      if (BrowserError.hasName(error, 'NotAllowedError')) {
         return undefined
       }
 
@@ -97,7 +98,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
     try {
       await element.setSinkId(id)
     } catch (error) {
-      switch (DefaultAudioOutputManager.nameOf(error)) {
+      switch (BrowserError.nameOf(error)) {
         case 'NotFoundError':
           throw new MediaDeviceNotFoundError(`There is no audio output with the id '${id}'`, { cause: error })
         case 'NotAllowedError':
@@ -170,9 +171,5 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
       label: device.label,
       isDefault: device === defaultDevice,
     }))
-  }
-
-  private static nameOf(error: unknown): unknown {
-    return typeof error === 'object' && error !== null && 'name' in error ? error.name : undefined
   }
 }

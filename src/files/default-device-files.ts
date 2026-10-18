@@ -1,4 +1,5 @@
 import { BrowserEnvironment, type SaveFilePickerOptions } from '../core/environment/browser-environment.ts'
+import { BrowserError } from '../core/errors/browser-error.ts'
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
@@ -43,7 +44,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
     try {
       handle = await showPicker(DefaultDeviceFiles.pickerOptionsFor(data, options))
     } catch (error) {
-      if (DefaultDeviceFiles.nameOf(error) === 'AbortError') {
+      if (BrowserError.hasName(error, 'AbortError')) {
         return 'cancelled'
       }
 
@@ -148,9 +149,5 @@ export class DefaultDeviceFiles implements DeviceFiles {
     const type = data.type.split(';')[0]?.trim() ?? data.type
 
     return { suggestedName: name, types: [{ description, accept: { [type]: [extension] } }] }
-  }
-
-  private static nameOf(error: unknown): unknown {
-    return typeof error === 'object' && error !== null && 'name' in error ? error.name : undefined
   }
 }

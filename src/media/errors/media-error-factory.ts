@@ -1,3 +1,4 @@
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import type { MediaSourceKind } from '../session/media-source-kind.ts'
@@ -24,7 +25,7 @@ export class MediaErrorFactory {
       return error
     }
 
-    const name = MediaErrorFactory.nameOf(error)
+    const name = BrowserError.nameOf(error)
 
     if (MediaErrorFactory.deniedNames.includes(name)) {
       return new PermissionDeniedError(kind === 'screen' ? 'display-capture' : kind, { cause: error })
@@ -55,13 +56,7 @@ export class MediaErrorFactory {
    * Whether the browser failed because a device cannot deliver what was asked of it.
    */
   public static isOverconstrained(error: unknown): boolean {
-    return MediaErrorFactory.requirementNames.includes(MediaErrorFactory.nameOf(error))
-  }
-
-  private static nameOf(error: unknown): string {
-    return typeof error === 'object' && error !== null && 'name' in error && typeof error.name === 'string'
-      ? error.name
-      : ''
+    return BrowserError.hasName(error, ...MediaErrorFactory.requirementNames)
   }
 
   private static constraintOf(error: unknown): string | undefined {

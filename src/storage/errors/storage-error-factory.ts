@@ -1,3 +1,4 @@
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import { StorageAccessDeniedError } from './storage-access-denied-error.ts'
 import { StorageError } from './storage-error.ts'
 import { StorageQuotaExceededError } from './storage-quota-exceeded-error.ts'
@@ -18,7 +19,7 @@ export class StorageErrorFactory {
       return error
     }
 
-    const name = StorageErrorFactory.nameOf(error)
+    const name = BrowserError.nameOf(error)
 
     if (StorageErrorFactory.quotaNames.includes(name)) {
       return new StorageQuotaExceededError(`${action}: the storage is full`, undefined, { cause: error })
@@ -35,12 +36,6 @@ export class StorageErrorFactory {
    * Whether the browser failed because a file or directory does not exist.
    */
   public static isNotFound(error: unknown): boolean {
-    return StorageErrorFactory.nameOf(error) === 'NotFoundError'
-  }
-
-  private static nameOf(error: unknown): string {
-    return typeof error === 'object' && error !== null && 'name' in error && typeof error.name === 'string'
-      ? error.name
-      : ''
+    return BrowserError.hasName(error, 'NotFoundError')
   }
 }
