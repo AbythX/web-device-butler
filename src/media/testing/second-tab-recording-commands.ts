@@ -19,9 +19,7 @@ export const recordKeptInSecondTab: BrowserCommand<[recording: SecondTabKeptReco
   context,
   recording
 ) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
-  // Firefox does not start a device in a tab that is in the background
-  await page.bringToFront()
+  const page = await SecondTab.inFront(context)
 
   return page.evaluate(async ({ namespace, id, milliseconds }) => {
     const modulePath = '/src/core/default-device-butler.ts'

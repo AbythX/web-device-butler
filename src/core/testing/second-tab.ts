@@ -1,4 +1,10 @@
 import type { BrowserContext, Page } from 'playwright'
+import type { BrowserCommand } from 'vitest/node'
+
+/**
+ * What a command of the specs is given: the browser of the spec and its page.
+ */
+type CommandContext = Parameters<BrowserCommand<[]>>[0]
 
 /**
  * A real second tab for the browser specs: another page in the same browser context, so it shares the origin with
@@ -18,7 +24,34 @@ export class SecondTab {
     '<!doctype html><title>second tab</title>' +
     '<script>globalThis.__vitest_browser_runner__ = { wrapDynamicImport: (load) => load() }</script>'
 
-  public static pageOf(context: BrowserContext, firstTabUrl: string): Promise<Page> {
+  /**
+   * The second tab of the browser that runs the spec of the command.
+   */
+  public static of(command: CommandContext): Promise<Page> {
+    return SecondTab.pageOf(command.context, command.page.url())
+  }
+
+  /**
+   * The second tab, brought to the front. Firefox does not start a camera or a microphone in a tab that is in the
+   * background, it waits until the tab is looked at; and only the tab in front can be seen by the user.
+   */
+  public static async inFront(command: CommandContext): Promise<Page> {
+    const page = await SecondTab.of(command)
+    await page.bringToFront()
+
+    return page
+  }
+
+  /**
+   * Closes the second tab, as a user would, without giving its page a chance to clean up.
+   */
+  public static async close(command: CommandContext): Promise<void> {
+    const page = SecondTab.pages.get(command.context)
+    SecondTab.pages.delete(command.context)
+    await (await page?.catch(() => undefined))?.close()
+  }
+
+  private static pageOf(context: BrowserContext, firstTabUrl: string): Promise<Page> {
     let page = SecondTab.pages.get(context)
 
     if (page === undefined) {
@@ -29,12 +62,6 @@ export class SecondTab {
     }
 
     return page
-  }
-
-  public static async close(context: BrowserContext): Promise<void> {
-    const page = SecondTab.pages.get(context)
-    SecondTab.pages.delete(context)
-    await (await page?.catch(() => undefined))?.close()
   }
 
   /**

@@ -9,8 +9,7 @@ import { SecondTab } from '../../core/testing/second-tab.ts'
  * @returns whether the second tab can be seen
  */
 export const answerNotificationsInSecondTab: BrowserCommand<[], Promise<boolean>> = async (context) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
-  await page.bringToFront()
+  const page = await SecondTab.inFront(context)
 
   return page.evaluate(async () => {
     const modulePath = '/src/core/default-device-butler.ts'
@@ -29,7 +28,7 @@ export const answerNotificationsInSecondTab: BrowserCommand<[], Promise<boolean>
  * Whether the user can see the second tab, as its page says.
  */
 export const isSecondTabVisible: BrowserCommand<[], Promise<boolean>> = async (context) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   return page.evaluate(() => document.visibilityState === 'visible')
 }
