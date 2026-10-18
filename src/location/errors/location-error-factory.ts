@@ -1,3 +1,4 @@
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import { LocationError } from './location-error.ts'
@@ -22,7 +23,7 @@ export class LocationErrorFactory {
       return error
     }
 
-    switch (LocationErrorFactory.codeOf(error)) {
+    switch (BrowserError.codeOf(error)) {
       case LocationErrorFactory.permissionDenied:
         return new PermissionDeniedError('geolocation', { cause: error })
       case LocationErrorFactory.positionUnavailable:
@@ -32,11 +33,5 @@ export class LocationErrorFactory {
       default:
         return new LocationError('Could not determine the position of the device', { cause: error })
     }
-  }
-
-  private static codeOf(error: unknown): number | undefined {
-    return typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'number'
-      ? error.code
-      : undefined
   }
 }

@@ -1,4 +1,6 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { LocationErrorFactory } from '../../location/errors/location-error-factory.ts'
+import { PermissionDeniedError } from '../errors/permission-denied-error.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -6,7 +8,6 @@ import type { PermissionRequester } from './permission-requester.ts'
  * Asks for the location once, which is the only way to make the browser show the prompt.
  */
 export class GeolocationPermissionRequester implements PermissionRequester {
-  private static readonly permissionDenied = 1
   /** in milliseconds; it starts once the user has answered the prompt */
   private static readonly timeout = 10_000
 
@@ -36,7 +37,7 @@ export class GeolocationPermissionRequester implements PermissionRequester {
       geolocation.getCurrentPosition(
         () => resolve('granted'),
         // a position that could not be determined says nothing about the permission
-        (error) => resolve(error.code === GeolocationPermissionRequester.permissionDenied ? 'denied' : undefined),
+        (error) => resolve(LocationErrorFactory.from(error) instanceof PermissionDeniedError ? 'denied' : undefined),
         // a device that never finds out where it is must not keep the request waiting forever
         { timeout: GeolocationPermissionRequester.timeout }
       )
