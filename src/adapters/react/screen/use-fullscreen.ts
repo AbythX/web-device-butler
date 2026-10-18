@@ -1,6 +1,7 @@
-import { useCallback, useState, useSyncExternalStore } from 'react'
+import { useCallback, useState } from 'react'
 
 import type { ScreenFullscreen } from '../../../screen/fullscreen/screen-fullscreen.ts'
+import { useEventValue } from '../use-event-value.ts'
 
 export interface UseFullscreen {
   /** the element that fills the screen; follows the user leaving with the key or the gesture of the system */
@@ -19,20 +20,7 @@ export interface UseFullscreen {
 export const useFullscreen = (fullscreen: ScreenFullscreen): UseFullscreen => {
   const [error, setError] = useState<unknown>()
 
-  const subscribe = useCallback(
-    (changed: () => void) => {
-      const subscription = fullscreen.on('change', changed)
-
-      return () => subscription.unsubscribe()
-    },
-    [fullscreen]
-  )
-
-  const element = useSyncExternalStore(
-    subscribe,
-    () => fullscreen.element,
-    () => undefined
-  )
+  const element = useEventValue(fullscreen, 'change', () => fullscreen.element, undefined)
 
   const attempt = useCallback(async (work: () => Promise<void>): Promise<void> => {
     setError(undefined)

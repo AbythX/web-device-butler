@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
 import type { WakeLockHold } from '../../../screen/wake-lock/wake-lock-hold.ts'
+import { useEventValue } from '../use-event-value.ts'
 
 export interface UseWakeLock {
   /** whether the browser keeps the screen on right now; `false` while the page is in the background */
@@ -26,20 +27,7 @@ export const useWakeLock = (wakeLock: ScreenWakeLock): UseWakeLock => {
   const hold = useRef<WakeLockHold | undefined>(undefined)
   const isWanted = useRef(false)
 
-  const subscribe = useCallback(
-    (changed: () => void) => {
-      const subscription = wakeLock.on('change', changed)
-
-      return () => subscription.unsubscribe()
-    },
-    [wakeLock]
-  )
-
-  const isActive = useSyncExternalStore(
-    subscribe,
-    () => wakeLock.isActive,
-    () => false
-  )
+  const isActive = useEventValue(wakeLock, 'change', () => wakeLock.isActive, false)
 
   const release = useCallback((): void => {
     isWanted.current = false
