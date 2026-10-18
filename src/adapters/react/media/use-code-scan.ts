@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
 import type { CodeScanner } from '../../../media/scanning/code-scanner.ts'
 import type { DetectedCode } from '../../../media/scanning/model/detected-code.ts'
 import type { CodeScan, CodeScanOptions, CodeScanSource } from '../../../media/scanning/scan/code-scan.ts'
+import { CodeScanController } from '../../state/media/code-scan-controller.ts'
+import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
 export interface UseCodeScan {
   /** the scan that runs; `undefined` before `start()` and after it ended */
@@ -26,47 +26,8 @@ export interface UseCodeScan {
  * when the component is unmounted; the session is not.
  */
 export const useCodeScan = (scanner: CodeScanner): UseCodeScan => {
-  const [scan, setScan] = useState<CodeScan>()
-  const [code, setCode] = useState<DetectedCode>()
-  const [error, setError] = useState<unknown>()
+  const latest = useLatest(scanner)
+  const controller = useController(() => new CodeScanController(() => latest.current))
 
-  /** the scan that runs, also for the callbacks of a render that is over */
-  const current = useRef<CodeScan | undefined>(undefined)
-
-  const stop = useCallback(async (): Promise<void> => {
-    await current.current?.stop()
-  }, [])
-
-  const start = useCallback(
-    (source: CodeScanSource, options?: CodeScanOptions): CodeScan | undefined => {
-      void current.current?.stop()
-      setError(undefined)
-
-      try {
-        const started = scanner.scan(source, options)
-
-        started.on('code', (found) => setCode(found))
-        started.on('ended', () => {
-          if (current.current === started) {
-            current.current = undefined
-            setScan(undefined)
-          }
-        })
-
-        current.current = started
-        setScan(started)
-
-        return started
-      } catch (failure) {
-        setError(failure)
-
-        return undefined
-      }
-    },
-    [scanner]
-  )
-
-  useEffect(() => () => void current.current?.stop(), [])
-
-  return { scan, code, isScanning: scan !== undefined, error, start, stop }
+  return { ...useSnapshot(controller), start: controller.start, stop: controller.stop }
 }

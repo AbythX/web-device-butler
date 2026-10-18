@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
-import type { WakeLockHold } from '../../../screen/wake-lock/wake-lock-hold.ts'
+import { WakeLockController } from '../../state/screen/wake-lock-controller.ts'
+import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 import { useEventValue } from '../use-event-value.ts'
 
 export interface UseWakeLock {
@@ -22,52 +21,9 @@ export interface UseWakeLock {
  * is unmounted.
  */
 export const useWakeLock = (wakeLock: ScreenWakeLock): UseWakeLock => {
-  const [isRequested, setIsRequested] = useState(false)
-  const [error, setError] = useState<unknown>()
-  const hold = useRef<WakeLockHold | undefined>(undefined)
-  const isWanted = useRef(false)
-
+  const latest = useLatest(wakeLock)
+  const controller = useController(() => new WakeLockController(() => latest.current))
   const isActive = useEventValue(wakeLock, 'change', () => wakeLock.isActive, false)
 
-  const release = useCallback((): void => {
-    isWanted.current = false
-    hold.current?.release()
-    hold.current = undefined
-    setIsRequested(false)
-  }, [])
-
-  const request = useCallback(async (): Promise<void> => {
-    if (isWanted.current) {
-      return
-    }
-
-    isWanted.current = true
-    setError(undefined)
-
-    try {
-      const requested = await wakeLock.request()
-
-      // released, or unmounted, while the browser was asked
-      if (isWanted.current) {
-        hold.current = requested
-        setIsRequested(true)
-      } else {
-        requested.release()
-      }
-    } catch (failure) {
-      isWanted.current = false
-      setError(failure)
-    }
-  }, [wakeLock])
-
-  useEffect(
-    () => () => {
-      isWanted.current = false
-      hold.current?.release()
-      hold.current = undefined
-    },
-    []
-  )
-
-  return { isActive, isRequested, error, request, release }
+  return { ...useSnapshot(controller), isActive, request: controller.request, release: controller.release }
 }

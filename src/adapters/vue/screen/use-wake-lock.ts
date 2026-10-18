@@ -1,8 +1,9 @@
-import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, type Ref, type ShallowRef } from 'vue'
 
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
-import type { WakeLockHold } from '../../../screen/wake-lock/wake-lock-hold.ts'
-import { untilScopeEnd, onScopeEnd } from '../scope.ts'
+import { WakeLockController } from '../../state/screen/wake-lock-controller.ts'
+import { untilScopeEnd } from '../scope.ts'
+import { useController } from '../use-controller.ts'
 
 export interface UseWakeLock {
   /** whether the browser keeps the screen on right now; `false` while the page is in the background */
@@ -22,46 +23,10 @@ export interface UseWakeLock {
  * unmounted.
  */
 export const useWakeLock = (wakeLock: ScreenWakeLock): UseWakeLock => {
+  const controller = new WakeLockController(() => wakeLock)
   const isActive = ref(wakeLock.isActive)
-  const isRequested = ref(false)
-  const error = shallowRef<unknown>()
-  let hold: WakeLockHold | undefined
-  let isWanted = false
 
   untilScopeEnd(wakeLock.on('change', (changed) => (isActive.value = changed)))
 
-  const release = (): void => {
-    isWanted = false
-    hold?.release()
-    hold = undefined
-    isRequested.value = false
-  }
-
-  const request = async (): Promise<void> => {
-    if (isWanted) {
-      return
-    }
-
-    isWanted = true
-    error.value = undefined
-
-    try {
-      const requested = await wakeLock.request()
-
-      // released, or unmounted, while the browser was asked
-      if (isWanted) {
-        hold = requested
-        isRequested.value = true
-      } else {
-        requested.release()
-      }
-    } catch (failure) {
-      isWanted = false
-      error.value = failure
-    }
-  }
-
-  onScopeEnd(release)
-
-  return { isActive, isRequested, error, request, release }
+  return { ...useController(controller), isActive, request: controller.request, release: controller.release }
 }
