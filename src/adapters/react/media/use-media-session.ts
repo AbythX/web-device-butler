@@ -32,18 +32,22 @@ export interface UseMediaSession<TSession, TRequirements> {
 }
 
 /**
+ * What every controller of a session is, whatever it follows besides.
+ */
+type SessionController = MediaSessionController<MediaSession, never, MediaSessionSnapshot<MediaSession>>
+
+/**
  * The session of a controller as state of a component. Shared by `useMediaSession` and the hooks that follow more of
  * the session.
+ *
+ * @returns the state with `open()` and `close()`, and the controller for what a hook adds
  */
-export const useMediaSessionOf = <
-  TSession extends MediaSession,
-  TRequirements,
-  Snapshot extends MediaSessionSnapshot<TSession>,
->(
-  create: () => MediaSessionController<TSession, TRequirements, Snapshot>
-): [Snapshot & UseMediaSession<TSession, TRequirements>, MediaSessionController<TSession, TRequirements, Snapshot>] => {
+export const useMediaSessionOf = <Controller extends SessionController>(
+  create: () => Controller
+): [ReturnType<Controller['read']> & Pick<Controller, 'open' | 'close'>, Controller] => {
   const controller = useController(create)
-  const snapshot = useSnapshot(controller)
+  // SAFETY: the snapshot of a controller is what its read() returns
+  const snapshot = useSnapshot(controller) as ReturnType<Controller['read']>
 
   return [{ ...snapshot, open: controller.open, close: controller.close }, controller]
 }

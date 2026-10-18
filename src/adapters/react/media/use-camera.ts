@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
-
 import type { CameraManager } from '../../../media/camera/camera-manager.ts'
 import type { CameraDescriptor } from '../../../media/camera/model/camera-descriptor.ts'
 import type { CameraRequirements } from '../../../media/camera/model/camera-requirements.ts'
 import type { CameraSettings } from '../../../media/camera/model/camera-settings.ts'
 import type { CameraSession } from '../../../media/camera/session/camera-session.ts'
-import { useMediaSession, type UseMediaSession } from './use-media-session.ts'
+import { CameraController } from '../../state/media/camera-controller.ts'
+import { useLatest } from '../use-controller.ts'
+import { useMediaSessionOf, type UseMediaSession } from './use-media-session.ts'
 
 export interface UseCamera extends UseMediaSession<CameraSession, CameraRequirements> {
   /** the camera the session runs; follows `switchTo()` */
@@ -22,22 +22,8 @@ export interface UseCamera extends UseMediaSession<CameraSession, CameraRequirem
  * again after a change.
  */
 export const useCamera = (manager: CameraManager): UseCamera => {
-  const media = useMediaSession(manager)
-  const { session } = media
-  const [descriptor, setDescriptor] = useState<CameraDescriptor>()
-  const [settings, setSettings] = useState<CameraSettings>()
+  const latest = useLatest(manager)
+  const [camera] = useMediaSessionOf(() => new CameraController(() => latest.current))
 
-  useEffect(() => {
-    setDescriptor(session?.descriptor)
-    setSettings(session?.settings)
-
-    const subscriptions = [
-      session?.on('devicechange', (changed) => setDescriptor(changed)),
-      session?.on('settingschange', (changed) => setSettings(changed)),
-    ]
-
-    return () => subscriptions.forEach((subscription) => subscription?.unsubscribe())
-  }, [session])
-
-  return { ...media, descriptor, settings }
+  return camera
 }

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 
 import type { MicrophoneManager } from '../../../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../../../media/microphone/model/microphone-requirements.ts'
 import type { MicrophoneSettings } from '../../../media/microphone/model/microphone-settings.ts'
 import type { MicrophoneSession } from '../../../media/microphone/session/microphone-session.ts'
-import { useMediaSession, type UseMediaSession } from './use-media-session.ts'
+import { MicrophoneController } from '../../state/media/microphone-controller.ts'
+import { useLatest } from '../use-controller.ts'
+import { useMediaSessionOf, type UseMediaSession } from './use-media-session.ts'
 
 export interface UseMicrophoneOptions {
   /**
@@ -29,49 +31,14 @@ export interface UseMicrophone extends UseMediaSession<MicrophoneSession, Microp
  * A microphone session as state of a component. The session is closed when the component is unmounted.
  */
 export const useMicrophone = (manager: MicrophoneManager, options: UseMicrophoneOptions = {}): UseMicrophone => {
-  const media = useMediaSession(manager)
-  const { session } = media
-  const [settings, setSettings] = useState<MicrophoneSettings>()
-  const [muted, setMutedState] = useState(false)
-  const [level, setLevel] = useState(0)
-  /** what the application asked for last, also before there was a session */
-  const wanted = useRef(false)
+  const latest = useLatest(manager)
   const measuresLevel = options.level === true
 
-  useEffect(() => {
-    setSettings(session?.settings)
-    setLevel(0)
-
-    if (session === undefined) {
-      return undefined
-    }
-
-    // a new session continues the way the application left the last one
-    session.muted = wanted.current
-
-    const subscriptions = [
-      session.on('settingschange', (changed) => setSettings(changed)),
-      session.on('mutechange', (changed) => {
-        wanted.current = changed
-        setMutedState(changed)
-      }),
-      measuresLevel ? session.level?.on('change', (changed) => setLevel(changed)) : undefined,
-    ]
-
-    return () => subscriptions.forEach((subscription) => subscription?.unsubscribe())
-  }, [session, measuresLevel])
-
-  const setMuted = useCallback(
-    (changed: boolean): void => {
-      wanted.current = changed
-      setMutedState(changed)
-
-      if (session !== undefined) {
-        session.muted = changed
-      }
-    },
-    [session]
+  const [microphone, controller] = useMediaSessionOf(
+    () => new MicrophoneController(() => latest.current, measuresLevel)
   )
 
-  return { ...media, settings, muted, level, setMuted }
+  useEffect(() => controller.setMeasuresLevel(measuresLevel), [controller, measuresLevel])
+
+  return { ...microphone, setMuted: controller.setMuted }
 }

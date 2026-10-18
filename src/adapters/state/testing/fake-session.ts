@@ -1,12 +1,16 @@
 import { EventEmitter } from '../../../core/events/event-emitter.ts'
-import type { MediaSession, MediaSessionEvents, MediaSessionState } from '../../../media/session/media-session.ts'
+import type { MediaSession, MediaSessionState } from '../../../media/session/media-session.ts'
 
 /**
- * A session without a device: it only has the state and the events a controller follows.
+ * A session without a device: it only has the state and the events a controller follows, and what a spec gives it.
  */
-export class FakeSession extends EventEmitter<MediaSessionEvents> {
+export class FakeSession extends EventEmitter<Record<string, unknown>> {
   public state: MediaSessionState = 'live'
   public closes = 0
+  public muted = false
+  public settings: unknown
+  public descriptor: unknown
+  public level: FakeSession | undefined
 
   public static opened(): MediaSession {
     return new FakeSession() as unknown as MediaSession
@@ -26,6 +30,17 @@ export class FakeSession extends EventEmitter<MediaSessionEvents> {
   public changeState(state: MediaSessionState): void {
     this.state = state
     this.emit('statechange', state)
+  }
+
+  public announce(type: string, payload: unknown): void {
+    this.emit(type, payload)
+  }
+
+  public get listening(): number {
+    return ['statechange', 'ended', 'devicechange', 'settingschange', 'mutechange', 'change'].reduce(
+      (count, type) => count + this.listenerCount(type),
+      0
+    )
   }
 }
 
