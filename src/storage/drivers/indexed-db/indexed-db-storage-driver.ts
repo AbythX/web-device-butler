@@ -200,7 +200,7 @@ export class IndexedDbStorageDriver extends StorageDriver {
         return await this.transact(mode, operation)
       } catch (error) {
         // the connection was closed for a version change between opening it and using it
-        if (error instanceof Error && error.name === 'InvalidStateError') {
+        if (StorageErrorFactory.isClosedConnection(error)) {
           this.connection = undefined
 
           return await this.transact(mode, operation)

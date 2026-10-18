@@ -5,7 +5,7 @@ import type { FakeMediaInput } from '../../testing/fake-media-devices.ts'
 import { DefaultMicrophoneManager } from '../default-microphone-manager.ts'
 import type { MicrophoneManager } from '../microphone-manager.ts'
 import type { MicrophoneConfiguration } from '../model/microphone-requirements.ts'
-import type { MicrophoneTiming } from '../session/microphone-session.ts'
+import type { MicrophoneTiming } from '../session/microphone-timing.ts'
 
 /**
  * What the microphone specs share: the microphones of a typical computer, and the microphone manager of a page in a

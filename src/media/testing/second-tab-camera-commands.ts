@@ -28,9 +28,7 @@ export const openCameraInSecondTab: BrowserCommand<
   [options: SecondTabCameraOptions],
   Promise<SecondTabCameraResult>
 > = async (context, options) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
-  // Firefox does not start a camera in a tab that is in the background, it waits until the tab is looked at
-  await page.bringToFront()
+  const page = await SecondTab.inFront(context)
 
   return page.evaluate(async ({ whenBusy, allowTakeover = true }) => {
     const modulePath = '/src/media/testing/input/test-input-manager.ts'
@@ -59,7 +57,7 @@ export const openCameraInSecondTab: BrowserCommand<
  * What became of the session that {@link openCameraInSecondTab} left open.
  */
 export const cameraInSecondTab: BrowserCommand<[], Promise<SecondTabCameraState>> = async (context) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   return page.evaluate(() => ({
     state: (Reflect.get(globalThis, 'cameraSession') as { state: string } | undefined)?.state,
@@ -71,7 +69,7 @@ export const cameraInSecondTab: BrowserCommand<[], Promise<SecondTabCameraState>
  * Closes the session that {@link openCameraInSecondTab} left open, the way an application does.
  */
 export const closeCameraInSecondTab: BrowserCommand<[], Promise<void>> = async (context) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   await page.evaluate(async () => {
     await (Reflect.get(globalThis, 'cameraSession') as { close(): Promise<void> } | undefined)?.close()
@@ -95,7 +93,7 @@ export const prepareCameraInSecondTab: BrowserCommand<
   [requirements: Record<string, unknown>],
   Promise<SecondTabCameraPreparation>
 > = async (context, requirements) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   return page.evaluate(async (configuration) => {
     const modulePath = '/src/media/camera/default-camera-manager.ts'

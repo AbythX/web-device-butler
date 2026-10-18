@@ -1,14 +1,26 @@
-import { DefaultDeviceButler, type DeviceButler, type WakeLockHold } from '../../src/index.ts'
+import {
+  DefaultDeviceButler,
+  type DeviceButler,
+  type MediaRecording,
+  type MicrophoneSession,
+  type ScreenCaptureRequirements,
+  type ScreenCaptureSession,
+  type WakeLockHold,
+} from '../../src/index.ts'
 import { DemoPage } from '../shared/demo-page.ts'
 
 /**
  * The demo page of the screen: the wake lock, an element that fills the screen, a page that is kept from turning,
- * and what the page is told about itself.
+ * a capture of the screen that is recorded with the microphone, and what the page is told about itself.
  */
 class ScreenDemo extends DemoPage {
   private readonly butler: DeviceButler
   /** the holds that are out, the oldest first */
   private readonly holds: WakeLockHold[] = []
+  private capture: ScreenCaptureSession | undefined
+  private microphone: MicrophoneSession | undefined
+  private recording: MediaRecording | undefined
+  private recordingUrl: string | undefined
 
   public constructor(page: Document) {
     super(page)
@@ -33,8 +45,71 @@ class ScreenDemo extends DemoPage {
     this.onClick('lock-landscape', () => orientation.lock('landscape'))
     this.onClick('unlock', () => orientation.unlock())
 
+    this.onClick('capture', () => this.openCapture())
+    this.onClick('capture-window', () => this.openCapture({ prefer: { surface: 'window' }, content: 'text' }))
+    this.onClick('capture-audio', () => this.openCapture({ require: { audio: true } }))
+    this.onClick('capture-monitor', () => this.openCapture({ require: { surface: 'monitor' } }))
+    this.onClick('capture-close', () => this.capture?.close())
+    this.onClick('tutorial-start', () => this.startTutorial())
+    this.onClick('tutorial-stop', () => this.stopTutorial())
+
     this.play()
     this.showFacts()
+  }
+
+  // ---- screen capture ----
+
+  private async openCapture(requirements?: ScreenCaptureRequirements): Promise<ScreenCaptureSession> {
+    await this.capture?.close()
+
+    const session = await this.butler.screenCapture.open(requirements)
+    this.capture = session
+    this.element<HTMLVideoElement>('capture-preview').srcObject = session.stream
+
+    session.on('settingschange', ({ width, height }) => this.note('screenCapture settingschange', `${width}x${height}`))
+    session.on('ended', ({ reason }) => {
+      this.note('screenCapture ended', reason)
+      this.element<HTMLVideoElement>('capture-preview').srcObject = null
+    })
+
+    return session
+  }
+
+  /**
+   * A tutorial: the screen with the voice of the user, in one file.
+   */
+  private async startTutorial(): Promise<void> {
+    const screen =
+      this.capture === undefined || this.capture.state === 'ended' ? await this.openCapture() : this.capture
+
+    this.microphone ??= await this.butler.microphone.open()
+
+    const recording = await this.butler.recorder.record(this.butler.media.join(screen, this.microphone))
+    this.recording = recording
+    recording.on('statechange', (state) => this.note('recording statechange', state))
+    // stopping to share the screen ends the recording as well
+    void recording.finished.then(
+      (result) => this.show(result.blob),
+      () => undefined
+    )
+  }
+
+  private async stopTutorial(): Promise<void> {
+    await this.recording?.stop()
+    await this.microphone?.close()
+    this.microphone = undefined
+  }
+
+  private show(blob: Blob | undefined): void {
+    const video = this.element<HTMLVideoElement>('capture-recording')
+
+    if (this.recordingUrl !== undefined) {
+      URL.revokeObjectURL(this.recordingUrl)
+    }
+
+    this.recordingUrl = blob === undefined ? undefined : URL.createObjectURL(blob)
+    video.hidden = this.recordingUrl === undefined
+    video.src = this.recordingUrl ?? ''
   }
 
   private get clip(): HTMLVideoElement {
@@ -99,6 +174,19 @@ class ScreenDemo extends DemoPage {
       'Fills the screen': fullscreen.element?.id ?? 'nothing',
       Orientation: orientation.current ?? 'unknown',
     })
+
+    const { screenCapture } = this.butler
+    const capture = this.capture?.state === 'ended' ? undefined : this.capture
+    const settings = capture?.settings
+
+    this.describe('capture-facts', {
+      Supported: String(screenCapture.isSupported),
+      Shared: capture === undefined ? 'nothing' : (capture.surface ?? 'not reported'),
+      Size: settings === undefined ? '' : `${settings.width}x${settings.height} at ${settings.frameRate} fps`,
+      Sound: capture === undefined ? '' : String(capture.audio !== undefined),
+      Recording: this.recording?.state ?? 'none',
+    })
+    this.element('capture-state').textContent = capture?.state ?? ''
 
     this.element('holds').textContent = `${this.holds.length} out, ${wakeLock.isRequested ? '' : 'not '}requested`
   }

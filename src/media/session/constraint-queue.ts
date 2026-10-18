@@ -1,9 +1,9 @@
 import type { Logger } from '../../core/logging/logger.ts'
-import type { MediaKind } from '../access/media-access-state.ts'
 import { MediaErrorFactory } from '../errors/media-error-factory.ts'
 import { SessionClosedError } from '../errors/session-closed-error.ts'
 import type { ConstraintChange, PlatformQuirk } from '../quirks/platform-quirk.ts'
 import { PlatformQuirks } from '../quirks/platform-quirks.ts'
+import type { MediaSourceKind } from './media-source-kind.ts'
 import type { TrackCapabilities, TrackConstraints, TrackSettings } from './track-constraints.ts'
 
 /**
@@ -17,7 +17,7 @@ export class ConstraintQueue {
 
   public constructor(
     private currentTrack: MediaStreamTrack,
-    private readonly kind: MediaKind,
+    private readonly kind: MediaSourceKind,
     private readonly quirks: readonly PlatformQuirk[],
     private readonly logger: Logger
   ) {}

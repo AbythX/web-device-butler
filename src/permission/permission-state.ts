@@ -8,6 +8,8 @@ export type DevicePermissionName =
   | 'persistent-storage'
   | 'clipboard-read'
   | 'screen-wake-lock'
+  | 'motion'
+  | 'notifications'
 
 /**
  * - `prompt`: the browser asks the user when the permission is requested

@@ -2,14 +2,19 @@ import type { ServiceIdentifier } from 'inversify'
 
 import type { TabCoordination } from '../../core/coordination/tab-coordination.ts'
 import type { DeviceButler } from '../../core/device-butler.ts'
+import type { DeviceNotifications } from '../../attention/notifications/device-notifications.ts'
+import type { DeviceVibration } from '../../attention/vibration/device-vibration.ts'
 import type { DeviceFiles } from '../../files/device-files.ts'
 import type { DeviceLocation } from '../../location/device-location.ts'
 import type { CameraManager } from '../../media/camera/camera-manager.ts'
 import type { MediaManager } from '../../media/combined/media-manager.ts'
 import type { MicrophoneManager } from '../../media/microphone/microphone-manager.ts'
+import type { CodeScanner } from '../../media/scanning/code-scanner.ts'
+import type { ScreenCaptureManager } from '../../media/screen-capture/screen-capture-manager.ts'
 import type { AudioOutputManager } from '../../media/output/audio-output-manager.ts'
 import type { MediaRecordingManager } from '../../media/recording/media-recording-manager.ts'
 import type { DeviceNetwork } from '../../network/device-network.ts'
+import type { DeviceMotion } from '../../motion/device-motion.ts'
 import type { OutboxManager } from '../../outbox/outbox.ts'
 import type { PermissionManager } from '../../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../../platform/device-orientation.ts'
@@ -43,9 +48,13 @@ export class DeviceButlerBindings {
    */
   public static readonly Microphone = DeviceButlerBindings.identifier<MicrophoneManager>('Microphone')
   /**
-   * Identifies the manager of camera and microphone together, `butler.media`.
+   * Identifies the manager of camera and microphone together and of joined sessions, `butler.media`.
    */
   public static readonly Media = DeviceButlerBindings.identifier<MediaManager>('Media')
+  /**
+   * Identifies the capture of the screen, `butler.screenCapture`.
+   */
+  public static readonly ScreenCapture = DeviceButlerBindings.identifier<ScreenCaptureManager>('ScreenCapture')
   /**
    * Identifies the permission manager, `butler.permission`.
    */
@@ -67,6 +76,10 @@ export class DeviceButlerBindings {
    */
   public static readonly Orientation = DeviceButlerBindings.identifier<DeviceOrientation>('Orientation')
   /**
+   * Identifies the sensors of how the device is turned and moves, `butler.motion`.
+   */
+  public static readonly Motion = DeviceButlerBindings.identifier<DeviceMotion>('Motion')
+  /**
    * Identifies the lifecycle of the page, `butler.page`.
    */
   public static readonly Page = DeviceButlerBindings.identifier<PageLifecycle>('Page')
@@ -74,6 +87,10 @@ export class DeviceButlerBindings {
    * Identifies the recorder, `butler.recorder`.
    */
   public static readonly Recorder = DeviceButlerBindings.identifier<MediaRecordingManager>('Recorder')
+  /**
+   * Identifies the reader of codes, `butler.scanner`.
+   */
+  public static readonly Scanner = DeviceButlerBindings.identifier<CodeScanner>('Scanner')
   /**
    * Identifies the audio outputs, `butler.audioOutput`.
    */
@@ -98,6 +115,14 @@ export class DeviceButlerBindings {
    * Identifies the clipboard, `butler.clipboard`.
    */
   public static readonly Clipboard = DeviceButlerBindings.identifier<DeviceClipboard>('Clipboard')
+  /**
+   * Identifies the notifications of the system, `butler.notifications`.
+   */
+  public static readonly Notifications = DeviceButlerBindings.identifier<DeviceNotifications>('Notifications')
+  /**
+   * Identifies the vibration of the device, `butler.vibration`.
+   */
+  public static readonly Vibration = DeviceButlerBindings.identifier<DeviceVibration>('Vibration')
   /**
    * Identifies the files of the device, `butler.files`.
    */

@@ -96,6 +96,22 @@ for (const { item, attempts, lastError } of await reports.entries()) {
 }
 ```
 
+A report that waited for a network is sent while the user does something else. Tell them once it arrived, unless
+they look at the application anyway:
+
+```ts
+sendButton.onclick = () => butler.permission.request('notifications') // the browsers ask only in a click
+
+reports.on('sent', ({ item }) =>
+  butler.notifications.show({ title: 'Report sent', body: item.note, tag: 'field-report', when: 'unseen' })
+)
+```
+
+- `when: 'unseen'` shows it only while no tab of the application can be seen: the tabs ask each other.
+- One `tag` for every report: the second notification replaces the first, and does not pile up.
+- Where notifications cannot be shown, `butler.vibration.vibrate('success')` is a small sign on a phone, and
+  nothing elsewhere.
+
 ## The note that is half written
 
 On a phone a page in the background is thrown away without another word, so the note is kept when the page is

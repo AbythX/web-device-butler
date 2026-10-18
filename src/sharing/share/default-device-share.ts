@@ -2,6 +2,7 @@ import { BrowserEnvironment } from '../../core/environment/browser-environment.t
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { SharingErrorFactory } from '../errors/sharing-error-factory.ts'
 import type { DeviceShare, ShareContent } from './device-share.ts'
+import { ShareSupport } from './share-support.ts'
 
 /**
  * The implementation of {@link DeviceShare}.
@@ -17,13 +18,13 @@ export class DefaultDeviceShare implements DeviceShare {
   public constructor(private readonly environment: BrowserEnvironment) {}
 
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.shareSheet !== undefined
+    return ShareSupport.isSupportedIn(this.environment)
   }
 
   public canShare(content: ShareContent): boolean {
-    const sheet = this.environment.shareSheet
+    const sheet = ShareSupport.resolveFor(this.environment)
 
-    if (!this.isSupported || sheet === undefined || DefaultDeviceShare.isEmpty(content)) {
+    if (sheet === undefined || DefaultDeviceShare.isEmpty(content)) {
       return false
     }
 
@@ -34,7 +35,7 @@ export class DefaultDeviceShare implements DeviceShare {
   }
 
   public async share(content: ShareContent): Promise<boolean> {
-    const sheet = this.environment.shareSheet
+    const sheet = ShareSupport.resolveFor(this.environment)
 
     if (sheet === undefined || !this.canShare(content)) {
       throw new UnsupportedError('share')

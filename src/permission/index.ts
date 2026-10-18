@@ -11,9 +11,15 @@ export type {
   PermissionRequestOptions,
 } from './permission-state.ts'
 
+export type { PermissionPreparation } from './permission-preparation.ts'
+
 export { ClipboardReadPermissionRequester } from './requesters/clipboard-read-permission-requester.ts'
 
 export { GeolocationPermissionRequester } from './requesters/geolocation-permission-requester.ts'
+
+export { MotionPermissionRequester } from './requesters/motion-permission-requester.ts'
+
+export { NotificationPermissionRequester } from './requesters/notification-permission-requester.ts'
 
 export type { PermissionRequester } from './requesters/permission-requester.ts'
 

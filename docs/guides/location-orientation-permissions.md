@@ -1,4 +1,4 @@
-# Location, orientation, platform, permissions
+# Location, orientation, motion, platform, permissions
 
 The small areas of the device. Try them: `pnpm demo`, page `location/`.
 
@@ -83,10 +83,10 @@ What a device cannot tell is `undefined`, never `null` or `NaN`.
 ```ts
 using watch = butler.location.watch({ highAccuracy: true })
 
-watch.on('position', (position) => {})
+watch.on('change', (position) => {})
 watch.on('error', (error) => {})
 
-watch.position // the latest one; undefined until the first arrived
+watch.current // the latest position; undefined until the first arrived
 watch.isActive
 watch.stop()
 ```
@@ -121,6 +121,50 @@ wider than tall.
 `butler.orientation.lock('landscape')` keeps the page from turning, which most browsers only do for a page that
 fills the screen. See [filling the screen](screen-network-sharing.md#keeping-the-page-from-turning).
 
+## Motion and heading
+
+`butler.motion` reads the sensors: how the device is turned, where it points, and how it moves. For a spirit level,
+a compass, a picture that follows the device, or a shake.
+
+```ts
+// Safari on iOS reports nothing until the user allowed it, which it asks only in answer to a click
+button.onclick = () => butler.permission.request('motion')
+
+using attitude = butler.motion.watchAttitude({ rate: 30 })
+attitude.on('change', ({ pitch, roll, heading }) => {
+  level.draw(pitch, roll)
+  compass.point(heading) // undefined where the device cannot tell north
+})
+
+using motion = butler.motion.watchMotion()
+motion.on('change', ({ acceleration, accelerationIncludingGravity, rotationRate }) => {})
+```
+
+Every value is for the **screen as it is held**: the same whether a phone is held upright or sideways. The browser
+reports its angles in the frame of the device held the natural way, and leaves turning them to the page; the
+library does that with the angle of the screen.
+
+| Value     | Meaning                                                                                         |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `pitch`   | the turn around the axis of the screen from left to right: `0` flat with the screen up, `90` upright facing the user, more when tilted back further. -180 to 180. |
+| `roll`    | how far the right edge of the screen is below the horizon, what a spirit level shows. -90 to 90. While the device is pitched it is smaller than the browser's `gamma`. |
+| `heading` | degrees clockwise from north: where the top edge of the screen points while the device lies more flat than upright, where its back points while it is held more upright. Taken from the compass of Safari, and from the event `deviceorientationabsolute` of Chromium. |
+| `raw`     | `alpha`, `beta`, `gamma` and `absolute`, as the browser reported them                           |
+
+The movement has `acceleration` (without gravity, where the device can separate it),
+`accelerationIncludingGravity` (a device lying still has 9.8 along `z`) and `rotationRate` in degrees per second,
+each with `x` to the right edge of the screen, `y` to its top edge and `z` out of the screen towards the user.
+
+- `rate` limits how many values per second are reported. A device measures up to 60 times per second, and a page
+  that redraws on each one has little time for anything else. The last value is always reported.
+- A watch says `unavailable` once when the device reports nothing: a desktop sends one event without values, and
+  Safari sends nothing before the permission is granted. `watch.isAvailable` tells the same. Values that arrive
+  later are reported as usual.
+- `butler.motion.isSupported` is `false` where the browser has no events for the sensors, or the page was not loaded
+  over HTTPS. A desktop browser has the events and no sensors.
+- `butler.prepare({ motion: true })` requests the permission, which in Safari has to be in answer to a click. Its
+  `error` is a `PermissionDeniedError` once the user refused, and an `UnsupportedError` where there are no events.
+
 ## Platform
 
 ```ts
@@ -146,7 +190,7 @@ butler.permission.on('change', ({ name, state }) => {})
 ```
 
 The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`, `'clipboard-read'`,
-`'screen-wake-lock'`.
+`'screen-wake-lock'`, `'motion'`, `'notifications'`.
 
 | State         | Meaning                                                                          | A permission screen shows          |
 | ------------- | -------------------------------------------------------------------------------- | ---------------------------------- |
@@ -164,6 +208,11 @@ The names: `'camera'`, `'microphone'`, `'geolocation'`, `'persistent-storage'`, 
   rejects with a `MediaDeviceBusyError`.
 - `request('clipboard-read')` reads the clipboard once, and `request('screen-wake-lock')` keeps the screen on for
   a moment, because using the feature is the only way to find out.
+- `request('motion')` asks the user in Safari on iOS, for both sensors in one click; outside a click Safari does not
+  ask, and the state stays `prompt`. Chromium knows the sensors as permissions it grants without asking, and
+  Firefox does not ask at all; both report `granted`.
+- `request('notifications')` asks the user where the browser does, in Safari and Firefox only in answer to a click;
+  see [notifications](notifications-vibration.md#the-permission).
 - `request('persistent-storage')` is `butler.storage.persist()` as a permission. Whether the user is asked is up to
   the browser: some decide by themselves, by how much the site is used.
 

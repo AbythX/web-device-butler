@@ -27,10 +27,15 @@ components with [`web-device-butler/vue`](../../README.md#vue), or an import of 
 | `butler.camera`      | lists and selects cameras, opens camera sessions                      | [Camera](camera.md)                                |
 | `butler.microphone`  | the same for microphones                                              | [Microphone](microphone.md)                        |
 | `butler.media`       | opens a camera and a microphone as one session                        | [Microphone](microphone.md#camera-and-microphone-together) |
+| `butler.screenCapture` | captures a screen, a window or a tab the user chooses               | [Screen capture](screen-capture.md)                |
+| `butler.scanner`     | reads QR codes and bar codes from a camera or a picture               | [Code scanning](code-scanning.md)                  |
 | `butler.storage`     | opens stores, reports the space of the origin                         | [Storage](storage.md)                              |
 | `butler.location`    | where the device is                                                   | [Location, ...](location-orientation-permissions.md) |
 | `butler.orientation` | how the device is held                                                | [Location, ...](location-orientation-permissions.md#orientation) |
+| `butler.motion`      | how the device is turned and moves, and where it points               | [Location, ...](location-orientation-permissions.md#motion-and-heading) |
 | `butler.platform`    | iOS or Android                                                        | [Location, ...](location-orientation-permissions.md#platform) |
+| `butler.notifications` | shows notifications of the system, only while nobody looks if asked | [Notifications, ...](notifications-vibration.md)   |
+| `butler.vibration`   | makes the device vibrate                                              | [Notifications, ...](notifications-vibration.md#vibration) |
 | `butler.permission`  | the state of every permission, and requesting them                    | [Location, ...](location-orientation-permissions.md#permissions) |
 | `butler.coordination`| whether the browser can coordinate tabs                               | [Several tabs](multiple-tabs.md)                   |
 
@@ -42,8 +47,10 @@ import { DefaultStorageManager } from 'web-device-butler/storage'
 const storage = DefaultStorageManager.create({ namespace: 'my-app' })
 ```
 
-The same exists for `/camera` (`DefaultCameraManager.create()`), `/microphone` (`DefaultMicrophoneManager.create()`)
-and `/location` (`DefaultDeviceLocation.create()`).
+The same exists for `/camera` (`DefaultCameraManager.create()`), `/microphone` (`DefaultMicrophoneManager.create()`),
+`/location` (`DefaultDeviceLocation.create()`), `/screen-capture` (`DefaultScreenCaptureManager.create()`),
+`/scanning` (`DefaultCodeScanner.create()`), `/motion` (`DefaultDeviceMotion.create()`) and `/attention`
+(`DefaultDeviceVibration.create()`).
 
 ## Interfaces and their implementations
 
@@ -116,9 +123,11 @@ camera?.selected // the camera open() will start
 ```
 
 For the storage it says which backend the stores are kept in and asks for the protection against eviction the
-configuration names; for the location it requests the permission.
+configuration names; for the location it requests the permission. `prepare({ motion: true, notifications: true })`
+requests those permissions too, in answer to a click.
 
-It reports per section instead of throwing, leaves no device running, and is cheap when it is called again. It is
+Every section says why its part cannot be used in `error`, `undefined` where it can, and the parts that need a
+permission report it in `permission`. It reports per section instead of throwing, leaves no device running, and is cheap when it is called again. It is
 optional: `open()` does the same on demand. See [the set-up screen](../use-cases/set-up-screen.md).
 
 ## Lifetimes

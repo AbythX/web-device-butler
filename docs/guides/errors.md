@@ -35,23 +35,30 @@ A call that was aborted through its `signal` rejects with the reason of the sign
 | `PermissionDeniedError` | the user or the browser refused                                | `permission` | how to unblock it in the settings of the browser. Asking again shows no prompt in most browsers. |
 | `UnsupportedError`      | the browser or the page (no HTTPS) does not have what was asked for | `feature` | that the feature is not available here; hide it next time  |
 
-## Camera and microphone
+## Camera, microphone, screen capture
 
-All extend `MediaError`. A `MediaError` itself is thrown for what fits none of them, and for a camera or microphone
-that is asked for after its butler was disposed.
+All extend `MediaError`. A `MediaError` itself is thrown for what fits none of them, for a camera, microphone or
+capture of the screen that is asked for after its butler was disposed, and for a capture of the screen that was not
+asked for in answer to a click.
 
 | Error                      | Thrown when                                              | Fields                                         | What to do                                                        |
 | -------------------------- | -------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
-| `MediaDeviceBusyError`     | the device is held and `whenBusy` does not get it        | `kind`, `holder`: `'this-tab'`, `'other-tab'`, `'unknown'` | `other-tab`: offer `whenBusy: 'takeover'`. `unknown`: another application has it; ask the user to close it. |
-| `MediaRequirementsError`   | no device can deliver what was required                  | `constraint`, where the browser names one      | the message says which requirement removed which device. Loosen `require`, or say that the device lacks the feature. |
+| `MediaDeviceBusyError`     | the device is held and `whenBusy` does not get it; never for the screen | `kind`, `holder`: `'this-tab'`, `'other-tab'`, `'unknown'` | `other-tab`: offer `whenBusy: 'takeover'`. `unknown`: another application has it; ask the user to close it. |
+| `MediaRequirementsError`   | no device can deliver what was required, or what the user chose to share does not have it | `constraint`, where the browser names one; the first missing trait of a capture of the screen | the message says which requirement removed which device. Loosen `require`, or say that the device lacks the feature. For the screen, tell the user what to choose. |
 | `MediaDeviceNotFoundError` | there is no device of the kind, or none with the id      |                                                | say that there is no camera; forget a stored id                   |
 | `SessionClosedError`       | something was asked of a session that has ended          |                                                | open a new session. Listen to `ended` to know earlier.            |
 
 A recording that could not be written rejects with a `MediaError` whose `cause` says why; see
-[recording](recording.md#how-it-ends).
+[recording](recording.md#how-it-ends). A recording that is kept in the storage rejects with the `StorageError` of
+the write instead, such as `StorageQuotaExceededError`, and stays in the storage as `interrupted`.
+
+Reading codes throws an `UnsupportedError` where there is no decoder, and a `SessionClosedError` for a scan of a
+session that has ended, or from `next()` of a scan that ends; see [code scanning](code-scanning.md#errors). A
+picture a decoder cannot read is no error.
 
 `prepare()` of the butler, the camera, the microphone and the storage does not throw these: it reports them as `error` of its
-result, so a set-up screen can go on without a camera.
+result, so a set-up screen can go on without a camera. `butler.prepare()` does the same for the location, the sensors
+and the notifications: a refused permission is a `PermissionDeniedError`, a missing part an `UnsupportedError`.
 
 ## Screen and sharing
 
@@ -61,8 +68,11 @@ result, so a set-up screen can go on without a camera.
 | `SharingError` | the share sheet or the clipboard failed for a reason that is not a refusal | offer another way, such as a download; `cause` has the details |
 | `FileError`    | a file could not be written where the user chose                         | say so, and offer to save it again                            |
 
-A refusal is a `PermissionDeniedError` whose `permission` is `screen-wake-lock`, `share`, `clipboard` or
-`speaker-selection`. A share sheet the user closes is not an error: `share()` resolves with `false`.
+A refusal is a `PermissionDeniedError` whose `permission` is `screen-wake-lock`, `share`, `clipboard`,
+`speaker-selection` or `notifications`. A notification is refused with it as long as the permission was not
+granted, and an `UnsupportedError` says that the page cannot show notifications at all, also on Chromium for
+Android without a service worker; see [notifications](notifications-vibration.md#errors). A picker of a capture of the screen that the user cancelled is a `PermissionDeniedError` whose
+`permission` is `display-capture`. A share sheet the user closes is not an error: `share()` resolves with `false`.
 
 ## Location
 

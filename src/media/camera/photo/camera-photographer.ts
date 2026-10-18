@@ -24,7 +24,7 @@ export class CameraPhotographer {
    */
   public async take(stream: MediaStream, options: CameraPhotoOptions = {}): Promise<Blob> {
     const [track] = stream.getVideoTracks()
-    const ImageCapture = this.environment.ImageCapture
+    const ImageCapture = this.environment.secureContext?.ImageCapture
 
     if (options.source !== 'frame' && ImageCapture !== undefined && track !== undefined) {
       try {

@@ -139,19 +139,19 @@ describe('default-device-location', () => {
     test('should report every position of the device', async () => {
       const watch = sut.watch()
       const positions: DevicePosition[] = []
-      watch.on('position', (position) => positions.push(position))
+      watch.on('change', (position) => positions.push(position))
 
       geolocation.moveTo(berlin)
       geolocation.moveTo(hamburg)
 
       expect(positions.map(({ latitude }) => latitude)).toEqual([berlin.latitude, hamburg.latitude])
-      expect(watch.position).toBe(positions[1])
+      expect(watch.current).toBe(positions[1])
     })
 
     test('should have no position before the first one arrived', async () => {
       const watch = sut.watch()
 
-      expect(watch.position).toBeUndefined()
+      expect(watch.current).toBeUndefined()
       expect(watch.isActive).toBe(true)
     })
 
@@ -166,7 +166,7 @@ describe('default-device-location', () => {
       const errors: DeviceButlerError[] = []
       const positions: DevicePosition[] = []
       watch.on('error', (error) => errors.push(error))
-      watch.on('position', (position) => positions.push(position))
+      watch.on('change', (position) => positions.push(position))
 
       geolocation.fail(FakeGeolocation.positionUnavailable)
       geolocation.fail(FakeGeolocation.timeout)
@@ -193,7 +193,7 @@ describe('default-device-location', () => {
     test('should stop following the device', async () => {
       const watch = sut.watch()
       const positions: DevicePosition[] = []
-      watch.on('position', (position) => positions.push(position))
+      watch.on('change', (position) => positions.push(position))
 
       watch.stop()
       watch.stop()
@@ -210,7 +210,7 @@ describe('default-device-location', () => {
 
       watch.stop()
 
-      expect(watch.position?.latitude).toBe(berlin.latitude)
+      expect(watch.current?.latitude).toBe(berlin.latitude)
     })
 
     test('should be stopped at the end of a using block', async () => {
@@ -229,8 +229,8 @@ describe('default-device-location', () => {
       first.stop()
       geolocation.moveTo(berlin)
 
-      expect(first.position).toBeUndefined()
-      expect(second.position?.latitude).toBe(berlin.latitude)
+      expect(first.current).toBeUndefined()
+      expect(second.current?.latitude).toBe(berlin.latitude)
     })
 
     test('should throw where the browser has no location', async () => {
@@ -362,22 +362,22 @@ describe('default-device-location', () => {
     test('should not announce positions without what is required', async () => {
       using watch = sut.watch({ require: { accuracy: 50 } })
       const accuracies: number[] = []
-      watch.on('position', (position) => accuracies.push(position.accuracy))
+      watch.on('change', (position) => accuracies.push(position.accuracy))
 
       geolocation.moveTo({ ...berlin, accuracy: 400 })
       geolocation.moveTo({ ...berlin, accuracy: 20 })
       geolocation.moveTo({ ...berlin, accuracy: 90 })
 
       expect(accuracies).toEqual([20])
-      expect(watch.position?.accuracy).toBe(20)
+      expect(watch.current?.accuracy).toBe(20)
     })
 
     test('should let the application tell whether a position has what is preferred', async () => {
       using watch = sut.watch({ require: { accuracy: 100 } })
       geolocation.moveTo({ ...berlin, accuracy: 60 })
 
-      expect(watch.position?.satisfies({ accuracy: 10 })).toBe(false)
-      expect(watch.position?.missing({ accuracy: 10, speed: true })).toEqual(['accuracy of 10 m', 'speed'])
+      expect(watch.current?.satisfies({ accuracy: 10 })).toBe(false)
+      expect(watch.current?.missing({ accuracy: 10, speed: true })).toEqual(['accuracy of 10 m', 'speed'])
     })
   })
 

@@ -1,6 +1,11 @@
+import type { DeviceNotifications } from '../attention/notifications/device-notifications.ts'
+import type { NotificationPreparation } from '../attention/notifications/notification-preparation.ts'
+import type { DeviceVibration } from '../attention/vibration/device-vibration.ts'
 import type { DeviceFiles } from '../files/device-files.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
 import type { LocationPreparation } from '../location/location-preparation.ts'
+import type { DeviceMotion } from '../motion/device-motion.ts'
+import type { MotionPreparation } from '../motion/motion-preparation.ts'
 import type { CameraPreparation } from '../media/camera/camera-preparation.ts'
 import type { AudioOutputManager } from '../media/output/audio-output-manager.ts'
 import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
@@ -16,6 +21,8 @@ import type { MediaManager } from '../media/combined/media-manager.ts'
 import type { MicrophonePreparation } from '../media/microphone/microphone-preparation.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../media/microphone/model/microphone-requirements.ts'
+import type { CodeScanner } from '../media/scanning/code-scanner.ts'
+import type { ScreenCaptureManager } from '../media/screen-capture/screen-capture-manager.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import type { DevicePlatform } from '../platform/device-platform.ts'
@@ -38,6 +45,10 @@ export interface DeviceButlerPrepareOptions {
   microphone?: boolean | Partial<MicrophoneRequirements>
   /** `true` requests the permission to ask where the device is */
   location?: boolean
+  /** `true` requests the permission to read how the device is turned and moves; in Safari only in answer to a click */
+  motion?: boolean
+  /** `true` requests the permission to show notifications; in Safari and Firefox only in answer to a click */
+  notifications?: boolean
 }
 
 /**
@@ -48,6 +59,8 @@ export interface DeviceButlerPreparation {
   readonly camera?: CameraPreparation
   readonly microphone?: MicrophonePreparation
   readonly location?: LocationPreparation
+  readonly motion?: MotionPreparation
+  readonly notifications?: NotificationPreparation
 }
 
 /**
@@ -63,8 +76,11 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
   /** finds the microphones, chooses one and opens sessions */
   readonly microphone: MicrophoneManager
 
-  /** opens a camera and a microphone together */
+  /** opens a camera and a microphone together, and joins sessions for one recording */
   readonly media: MediaManager
+
+  /** captures a screen, a window or a tab that the user chooses */
+  readonly screenCapture: ScreenCaptureManager
 
   /** what the user has allowed, and asking for it */
   readonly permission: PermissionManager
@@ -81,11 +97,17 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
   /** how the device is held, and keeping the page that way */
   readonly orientation: DeviceOrientation
 
+  /** how the device is turned and moves, from its sensors: pitch, roll, the heading, acceleration */
+  readonly motion: DeviceMotion
+
   /** whether the user can see the page, and when it is about to go */
   readonly page: PageLifecycle
 
   /** records what a camera or a microphone delivers */
   readonly recorder: MediaRecordingManager
+
+  /** reads QR codes and bar codes in the pictures of a camera, or in a single picture */
+  readonly scanner: CodeScanner
 
   /** the speakers and headsets, and sending sound to one of them */
   readonly audioOutput: AudioOutputManager
@@ -104,6 +126,12 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
 
   /** the clipboard of the system */
   readonly clipboard: DeviceClipboard
+
+  /** shows notifications of the system, with the service worker of the application where it has one */
+  readonly notifications: DeviceNotifications
+
+  /** makes the device vibrate */
+  readonly vibration: DeviceVibration
 
   /** saves files to the device and takes files the user chooses */
   readonly files: DeviceFiles
@@ -125,7 +153,7 @@ export interface DeviceButler extends Disposable, AsyncDisposable {
   prepare(options?: DeviceButlerPrepareOptions): Promise<DeviceButlerPreparation>
 
   /**
-   * Releases everything the butler holds. Cameras and microphones stop at once and cannot be opened through this
+   * Releases everything the butler holds. Cameras, microphones and captures of the screen stop at once and cannot be opened through this
    * butler any more; the other tabs get them a moment later.
    *
    * @returns a promise that resolves once the cameras and microphones are free for others

@@ -4,7 +4,7 @@ import { BrowserEnvironment } from '../../../core/environment/browser-environmen
 import { StorageAccessDeniedError } from '../../errors/storage-access-denied-error.ts'
 import { StorageQuotaExceededError } from '../../errors/storage-quota-exceeded-error.ts'
 import { StorageUnsupportedError } from '../../errors/storage-unsupported-error.ts'
-import { FakeStorage } from '../../testing/fake-storage.ts'
+import { FakeStorage } from '../../../core/testing/fake-storage.ts'
 import { LocalStorageDriver } from './local-storage-driver.ts'
 
 describe('web-storage-driver', () => {

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { DeviceNetwork, NetworkConnection } from '../../../network/device-network.ts'
+import { useEventValue } from '../use-event-value.ts'
 
 export interface UseNetwork {
   /** `false` if the device has no network; `undefined` where there is no browser, as during server-side rendering */
@@ -13,20 +14,7 @@ export interface UseNetwork {
  * Whether the device has a network, as state of a component.
  */
 export const useNetwork = (network: DeviceNetwork): UseNetwork => {
-  const subscribe = useCallback(
-    (changed: () => void) => {
-      const subscription = network.on('change', changed)
-
-      return () => subscription.unsubscribe()
-    },
-    [network]
-  )
-
-  const isOnline = useSyncExternalStore(
-    subscribe,
-    () => network.isOnline,
-    () => undefined
-  )
+  const isOnline = useEventValue(network, 'change', () => network.isOnline, undefined)
 
   // every read of the connection is a new object, so it is kept as state and not read during a render
   const [connection, setConnection] = useState<NetworkConnection>()

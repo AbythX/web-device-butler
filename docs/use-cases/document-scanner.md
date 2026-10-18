@@ -3,6 +3,8 @@
 **Goal.** The user photographs documents with the back camera of a phone, with light and zoom where the phone has
 them. The photos survive a reload and do not fill the memory.
 
+A document with a QR code or a bar code on it can be read as well: see the [code scanner](code-scanner.md).
+
 **Demo.** `pnpm demo`, page `use-cases/document-scanner/`. Source:
 [`demo/use-cases/document-scanner/main.ts`](../../demo/use-cases/document-scanner/main.ts).
 

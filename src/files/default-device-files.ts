@@ -3,7 +3,8 @@ import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import type { Logger } from '../core/logging/logger.ts'
 import { NullLogger } from '../core/logging/null-logger.ts'
 import type { DeviceFiles, FilePickOptions, FileSaveOptions, FileSaveOutcome } from './device-files.ts'
-import { FileError } from './errors/file-error.ts'
+import { FileErrorFactory } from './errors/file-error-factory.ts'
+import { FileSupport } from './file-support.ts'
 
 /**
  * The implementation of {@link DeviceFiles}.
@@ -28,11 +29,11 @@ export class DefaultDeviceFiles implements DeviceFiles {
   ) {}
 
   public get canChooseWhereToSave(): boolean {
-    return this.environment.isSecureContext && this.environment.saveFilePicker !== undefined
+    return FileSupport.canChooseWhereToSaveIn(this.environment)
   }
 
   public async save(data: Blob, options: FileSaveOptions): Promise<FileSaveOutcome> {
-    const showPicker = this.canChooseWhereToSave ? this.environment.saveFilePicker : undefined
+    const showPicker = FileSupport.resolveFor(this.environment)
 
     if (showPicker === undefined) {
       return this.download(data, options.name)
@@ -43,7 +44,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
     try {
       handle = await showPicker(DefaultDeviceFiles.pickerOptionsFor(data, options))
     } catch (error) {
-      if (DefaultDeviceFiles.nameOf(error) === 'AbortError') {
+      if (FileErrorFactory.isCancellation(error)) {
         return 'cancelled'
       }
 
@@ -58,7 +59,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
       await writable.write(data)
       await writable.close()
     } catch (error) {
-      throw new FileError(`Could not write the file '${options.name}'`, { cause: error })
+      throw FileErrorFactory.from(error, `Could not write the file '${options.name}'`)
     }
 
     return 'saved'
@@ -67,7 +68,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
   public pick(options: FilePickOptions = {}): Promise<File[]> {
     const { accept, multiple = false, capture, signal } = options
 
-    if (!this.environment.isBrowser) {
+    if (!FileSupport.canPickIn(this.environment)) {
       return Promise.reject(new UnsupportedError('document'))
     }
 
@@ -112,7 +113,7 @@ export class DefaultDeviceFiles implements DeviceFiles {
    * Hands the file to the browser as a download, through a link that is clicked for the user.
    */
   private download(data: Blob, name: string): FileSaveOutcome {
-    if (!this.environment.isBrowser) {
+    if (!FileSupport.canSaveIn(this.environment)) {
       throw new UnsupportedError('document')
     }
 
@@ -148,9 +149,5 @@ export class DefaultDeviceFiles implements DeviceFiles {
     const type = data.type.split(';')[0]?.trim() ?? data.type
 
     return { suggestedName: name, types: [{ description, accept: { [type]: [extension] } }] }
-  }
-
-  private static nameOf(error: unknown): unknown {
-    return typeof error === 'object' && error !== null && 'name' in error ? error.name : undefined
   }
 }

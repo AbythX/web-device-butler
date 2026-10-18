@@ -11,8 +11,8 @@
       <nav><a href="../">All demos</a></nav>
       <h1>Screen and page</h1>
       <p class="hint">
-        Keeping the screen on, filling it with an element, keeping the page from turning, and what happens to the page
-        as a whole. Nothing is requested before you press a button.
+        Keeping the screen on, filling it with an element, keeping the page from turning, capturing what is on the
+        screen, and what happens to the page as a whole. Nothing is requested before you press a button.
       </p>
 
       <section>
@@ -53,6 +53,29 @@
           </div>
           <video id="clip" muted playsinline></video>
         </div>
+      </section>
+
+      <section>
+        <h2>Screen capture <small id="capture-state"></small></h2>
+        <p class="hint">
+          The browser shows its own picker. Choose a window to see a requirement fail on <code>require: monitor</code>,
+          and press the stop button of the browser to see the session end with <code>device</code>. Phones cannot
+          capture their screen.
+        </p>
+        <div class="actions">
+          <button id="capture">open()</button>
+          <button id="capture-window">open({ prefer: window, content: text })</button>
+          <button id="capture-audio">open({ require: audio })</button>
+          <button id="capture-monitor">open({ require: monitor })</button>
+          <button id="capture-close">close()</button>
+        </div>
+        <div class="actions">
+          <button id="tutorial-start">record with the microphone</button>
+          <button id="tutorial-stop">stop the recording</button>
+        </div>
+        <dl id="capture-facts"></dl>
+        <video id="capture-preview" muted playsinline autoplay></video>
+        <video id="capture-recording" controls playsinline hidden></video>
       </section>
 
       <section>

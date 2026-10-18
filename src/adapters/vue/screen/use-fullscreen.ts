@@ -1,6 +1,7 @@
-import { computed, getCurrentScope, onScopeDispose, shallowRef, type ComputedRef, type ShallowRef } from 'vue'
+import { computed, shallowRef, type ComputedRef, type ShallowRef } from 'vue'
 
 import type { ScreenFullscreen } from '../../../screen/fullscreen/screen-fullscreen.ts'
+import { untilScopeEnd } from '../scope.ts'
 
 export interface UseFullscreen {
   /** the element that fills the screen; follows the user leaving with the key or the gesture of the system */
@@ -20,7 +21,7 @@ export const useFullscreen = (fullscreen: ScreenFullscreen): UseFullscreen => {
   const element = shallowRef(fullscreen.element)
   const error = shallowRef<unknown>()
 
-  const subscription = fullscreen.on('change', (changed) => (element.value = changed))
+  untilScopeEnd(fullscreen.on('change', (changed) => (element.value = changed)))
 
   const attempt = async (work: () => Promise<void>): Promise<void> => {
     error.value = undefined
@@ -31,10 +32,6 @@ export const useFullscreen = (fullscreen: ScreenFullscreen): UseFullscreen => {
     } catch (failure) {
       error.value = failure
     }
-  }
-
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => subscription.unsubscribe())
   }
 
   return {

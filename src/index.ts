@@ -27,6 +27,8 @@ export { ConsoleLogger } from './core/logging/console-logger.ts'
 
 export type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions } from './core/device-butler.ts'
 
+export type { Preparation } from './core/preparation/preparation.ts'
+
 export { DefaultDeviceButler } from './core/default-device-butler.ts'
 
 export type { DeviceButlerConfiguration } from './core/device-butler-configuration.ts'
@@ -34,6 +36,35 @@ export type { DeviceButlerConfiguration } from './core/device-butler-configurati
 export { BrowserEnvironment } from './core/environment/browser-environment.ts'
 
 export type { BrowserGlobals } from './core/environment/browser-environment.ts'
+
+export type {
+  BarcodeDetectorFactory,
+  BarcodeDetectorLike,
+  DetectedBarcodeLike,
+} from './core/environment/barcode-detector-like.ts'
+
+export type {
+  NotificationFactory,
+  NotificationLike,
+  NotificationRegistrationLike,
+  ServiceWorkerContainerLike,
+  WorkerNotificationLike,
+} from './core/environment/notification-like.ts'
+
+export type {
+  MotionReadingLike,
+  OrientationReadingLike,
+  RotationReadingLike,
+  SensorEventFactory,
+  VectorReadingLike,
+} from './core/environment/sensor-events-like.ts'
+
+export type {
+  CaptureControllerLike,
+  DisplayMediaCapture,
+  DisplayMediaOptionsLike,
+  DisplayVideoConstraints,
+} from './core/environment/display-media-like.ts'
 
 export { PageVisibility } from './core/environment/page-visibility.ts'
 
@@ -44,6 +75,8 @@ export { EventEmitter } from './core/events/event-emitter.ts'
 export type { EventListener, Listenable } from './core/events/listenable.ts'
 
 export { EventSubscription } from './core/events/event-subscription.ts'
+
+export type { Watch, WatchEvents } from './core/lifetime/watch.ts'
 
 export type { Logger } from './core/logging/logger.ts'
 
@@ -67,6 +100,10 @@ export * from './media/index.ts'
 
 export * from './media/microphone/index.ts'
 
+export * from './media/screen-capture/index.ts'
+
+export * from './media/scanning/index.ts'
+
 export * from './files/index.ts'
 
 export * from './network/index.ts'
@@ -78,6 +115,10 @@ export * from './permission/index.ts'
 export * from './location/index.ts'
 
 export * from './platform/index.ts'
+
+export * from './motion/index.ts'
+
+export * from './attention/index.ts'
 
 export * from './screen/index.ts'
 

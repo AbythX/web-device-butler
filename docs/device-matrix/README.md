@@ -51,6 +51,49 @@ No device has been recorded yet.
 - Does Safari on iOS deliver new frames from the `<video>` of the fabric adapter, which is not part of the page?
 - Do the settings of a track swap width and height when the phone is turned? `settingschange` relies on it.
 
+For notifications, the page `use-cases/field-report/` asks for the permission with "Tell me when it was sent" and
+notifies once the outbox has sent a report, while no tab of it can be seen. Send a report without a network, switch
+to another application, turn the network on. Open for it:
+
+- Does `when: 'unseen'` get its answer from a tab that is frozen in time, or does it treat silence as "not seen"?
+- Which phones vibrate for a page at all, and only after a tap?
+- Does Chromium on Android throw on `new Notification()` as expected, and show it through a service worker?
+
+For the sensors, the page `location/` has a section "Motion and compass". Press `request('motion')` and the watches,
+hold the phone flat, upright and sideways, and turn it once around. Open for it:
+
+- Is `webkitCompassHeading` still there in Safari on iOS, and does it point where the top edge points while the phone
+  lies flat, and where the back points while it is upright?
+- Does `deviceorientationabsolute` give the heading in Chromium on Android?
+- Do pitch and roll stay right when the phone is held sideways, in both directions?
+- Does Firefox on Android send `absolute: true` with `deviceorientation`?
+
+For reading codes, the page `use-cases/code-scanner/` scans with the back camera. Hold a QR code and the bar code of
+a product in front of it, with and without `always zxing-wasm` and `only the middle of the picture`. Open for it:
+
+- How many pictures per second does a phone read with the code detector of the browser, and with zxing-wasm?
+- Does continuous focus keep a code sharp at a short distance, or does the scanner have to focus on the region?
+- Does Safari on iOS deliver new pictures to the `<video>` of the scanner, which is not part of the page?
+
+For the recordings that are kept in the storage, the page `use-cases/voice-memo/` records memos that way. Record a
+memo for a minute, switch to another application until the browser throws the page away (or kill the browser), and
+open the page again: the memo should be listed as `interrupted`. Open for it:
+
+- Does the MP4 that Safari writes play when it is cut off after a piece, or does it need the end that `stop()`
+  writes? Chromium writes fragmented MP4, which does.
+- How much of the last second is lost when Safari on iOS throws a page away in the background?
+
+For the capture of the screen, the page `screen/` has a section of its own. Press each `open()` there, choose
+a screen, a window and a tab in turn, press the stop button of the browser, and record with the microphone. Write
+what you saw into the notes. Open for it:
+
+- Which browsers share the sound of a tab, of a window, of the whole screen?
+- Does the stop button of the browser end the track in every browser, or only mute it?
+- Does `content: 'text'` change what is recorded, visibly?
+- Which browsers report `displaySurface` and `cursor`? Firefox reported neither in the specs, so `require` cannot
+  check them there.
+- Which error does each browser throw on macOS while the system does not allow it to record the screen?
+
 For the microphones, the page `microphone/` builds the same kind of report: press `prepare()` and `open()`,
 switch each processing, watch the level, then repeat `open()` in a second tab, with and without `exclusive`. Save it
 as `docs/device-matrix/<device>-<browser>-microphone.json`. Open for them:

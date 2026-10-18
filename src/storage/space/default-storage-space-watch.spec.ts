@@ -33,7 +33,7 @@ describe('default-storage-space-watch', () => {
   })
 
   afterEach(() => {
-    watches.forEach((watch) => watch.dispose())
+    watches.forEach((watch) => watch.stop())
     vi.useRealTimers()
   })
 
@@ -180,7 +180,7 @@ describe('default-storage-space-watch', () => {
     })
   })
 
-  describe('#dispose', () => {
+  describe('#stop', () => {
     test('should stop polling and reporting', async () => {
       const unsubscribe = vi.fn()
       const sut = createWatch({ interval: 1000 }, () => new EventSubscription(unsubscribe))
@@ -188,7 +188,7 @@ describe('default-storage-space-watch', () => {
       sut.on('change', listener)
       await vi.advanceTimersByTimeAsync(0)
 
-      sut.dispose()
+      sut.stop()
       reader.read.mockResolvedValue(spaceWith(200))
       await vi.advanceTimersByTimeAsync(10_000)
 
@@ -197,14 +197,16 @@ describe('default-storage-space-watch', () => {
       expect(unsubscribe).toHaveBeenCalledTimes(1)
     })
 
-    test('should say once that it was disposed', async () => {
-      const disposed = vi.fn()
-      const sut = createWatch({}, undefined, undefined, disposed)
+    test('should say once that it has stopped', async () => {
+      const stopped = vi.fn()
+      const sut = createWatch({}, undefined, undefined, stopped)
+      expect(sut.isActive).toBe(true)
 
-      sut.dispose()
-      sut.dispose()
+      sut.stop()
+      sut.stop()
 
-      expect(disposed).toHaveBeenCalledExactlyOnceWith(sut)
+      expect(sut.isActive).toBe(false)
+      expect(stopped).toHaveBeenCalledExactlyOnceWith(sut)
     })
 
     test('should report a failing listener to the logger instead of failing the read', async () => {
@@ -219,19 +221,19 @@ describe('default-storage-space-watch', () => {
       expect(logger.error).toHaveBeenCalledTimes(1)
     })
 
-    test('should not report a read that finishes after it was disposed', async () => {
+    test('should not report a read that finishes after it has stopped', async () => {
       const sut = createWatch()
       const listener = vi.fn()
       sut.on('change', listener)
 
-      sut.dispose()
+      sut.stop()
       await vi.advanceTimersByTimeAsync(0)
 
       expect(listener).not.toHaveBeenCalled()
       expect(sut.current).toBeUndefined()
     })
 
-    test('should stop when it is disposed by a using block', async () => {
+    test('should stop at the end of a using block', async () => {
       {
         using sut = createWatch({ interval: 1000 })
         expect(sut.current).toBeUndefined()

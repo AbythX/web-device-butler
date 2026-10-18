@@ -1,7 +1,7 @@
 # web-device-butler
 
-One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, location,
-screen, network, sharing.
+One library for the browser APIs that are tied to the device: storage, camera, microphone, recording, screen capture,
+code scanning, location, motion, screen, network, sharing, notifications.
 An application says what it needs, not how the browser provides it.
 
 - **Storage**: one interface over `localStorage`, `sessionStorage`, OPFS, IndexedDB and memory.
@@ -9,24 +9,34 @@ An application says what it needs, not how the browser provides it.
   `deviceId`.
 - **Recording and photos**: a format the browser can write, a recording that survives a camera that is started
   again, a photo from every browser.
+- **Screen capture**: say what the user should share, and get told when what they chose does not have it; record it
+  together with their voice.
+- **Code scanning**: QR codes and bar codes from a camera or a picture, with the code detector of the browser where
+  there is one and zxing-wasm everywhere else.
+- **Notifications**: from the service worker where there is one and from the page elsewhere, and only while the user
+  sees no tab of the application, if that is what it should be.
 - **Several tabs**: the same application in two tabs does not lose stored updates and does not fight over the camera.
 - **Not losing what was captured**: files saved where the user finds them, an outbox that sends once there is a
-  network, recordings that are handed over before the page goes away.
+  network, recordings that are kept in the storage while they run and found again after the page went away.
 - **No runtime dependencies** in the core. Vue, React, inversify and fabric are optional entry points.
 
 This page is a tour. The rest is in [`docs`](docs/README.md):
 
 - **Guides** per area: [getting started](docs/guides/getting-started.md), [camera](docs/guides/camera.md),
   [microphone](docs/guides/microphone.md), [recording](docs/guides/recording.md),
+  [screen capture](docs/guides/screen-capture.md), [code scanning](docs/guides/code-scanning.md),
   [storage](docs/guides/storage.md), [screen, network, sharing](docs/guides/screen-network-sharing.md),
   [files, the outbox, the page](docs/guides/files-outbox-page.md),
+  [notifications and vibration](docs/guides/notifications-vibration.md),
   [location, orientation, permissions](docs/guides/location-orientation-permissions.md),
   [several tabs](docs/guides/multiple-tabs.md), [errors](docs/guides/errors.md).
 - **Use cases** with complete code: a [document scanner](docs/use-cases/document-scanner.md),
   [voice memos](docs/use-cases/voice-memo.md), a [video message](docs/use-cases/video-message.md),
   [settings in several tabs](docs/use-cases/settings-across-tabs.md), a [set-up screen](docs/use-cases/set-up-screen.md),
   a [camera with an overlay](docs/use-cases/camera-with-overlay.md), [recording a route](docs/use-cases/track-a-route.md),
-  a [field report](docs/use-cases/field-report.md) that is sent once there is a network.
+  a [field report](docs/use-cases/field-report.md) that is sent once there is a network, a
+  [screen tutorial](docs/use-cases/screen-tutorial.md) with the voice of the user, a
+  [code scanner](docs/use-cases/code-scanner.md).
 - **Demos** that run them: `pnpm demo`, see [`demo`](demo/README.md).
 
 > **Status.** Early releases, on GitHub Packages only. Everything is tested against fakes and in Chromium and Firefox with the fake
@@ -153,6 +163,56 @@ const { blob, mimeType, duration } = await recording.stop()
 - A device that is started again or switched continues the recording in a new segment (`result.segments`), because
   a browser cannot continue a file with another track.
 - `into: (segment) => store.writeStream(key)` writes the recording into a stream instead of memory.
+- `keep: { namespace: 'memos' }` keeps it in the storage piece by piece while it runs. A page that is thrown away
+  loses at most the last second, and the next visit finds the recording in `butler.recorder.kept('memos')` as
+  `interrupted`.
+
+## Screen capture
+
+```ts
+// in answer to a click: the browser shows its picker only then
+await using screen = await butler.screenCapture.open({
+  require: { audio: true },
+  prefer: { surface: 'window' },
+  content: 'text',
+})
+
+screen.surface // what the user chose: 'monitor' | 'window' | 'browser'
+screen.on('ended', ({ reason }) => {
+  /* 'device': the user pressed "stop sharing" */
+})
+
+// the screen with the voice of the user, in one recording
+await using microphone = await butler.microphone.open()
+const recording = await butler.recorder.record(butler.media.join(screen, microphone))
+```
+
+- `prefer` is a hint for the picker and for what the browser delivers. `require` is checked once the user has
+  chosen: a capture without it is stopped, and `open()` fails with a `MediaRequirementsError` that names it.
+- `isSupported` is `false` on phones, whose browsers cannot capture the screen.
+- No other tab can take a capture over; several can run at once.
+
+## Code scanning
+
+```ts
+import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url'
+import { ZxingCodeDecoder } from 'web-device-butler/zxing'
+
+// without a decoder, the code detector of the browser, which only Chromium has on some systems
+const butler = DefaultDeviceButler.create({ scanner: { decoder: new ZxingCodeDecoder({ wasmUrl }) } })
+
+await using camera = await butler.camera.open({ require: { facing: 'back' }, prefer: { focus: true } })
+await using scan = butler.scanner.scan(camera, { formats: ['qr_code', 'ean_13'] })
+
+const { format, value, corners } = await scan.next()
+
+const codes = await butler.scanner.detect(file) // a picture the user chose
+```
+
+- A code that stays in sight is reported once (`repeatAfter`). `region` looks at a part of the picture only; the
+  corners are in the pixels of the whole picture.
+- The scan looks at no more than `rate` pictures per second (default 10), one at a time, and at none while the page
+  is in the background or the camera is muted.
 
 ## Storage
 
@@ -197,12 +257,16 @@ const precise = await butler.location.current({
 })
 
 using watch = butler.location.watch()
-watch.on('position', (position) => {
+watch.on('change', (position) => {
   /* DevicePosition */
 })
 
 butler.orientation.current // 'portrait' | 'landscape'
 butler.orientation.on('change', (orientation) => {})
+
+await butler.permission.request('motion') // Safari on iOS: in answer to a click
+using attitude = butler.motion.watchAttitude({ rate: 30 })
+attitude.on('change', ({ pitch, roll, heading }) => {}) // for the screen as it is held; heading from north
 
 butler.platform.isIos
 
@@ -228,6 +292,21 @@ await butler.audioOutput.route(player, (await butler.audioOutput.list())[1])
 ```
 
 Each part says whether the browser has it (`isSupported`, `canEnter()`, `canShare()`, `canRoute()`).
+
+## Notifications and vibration
+
+```ts
+await butler.permission.request('notifications') // in answer to a click
+
+await butler.notifications.show({ title: 'Report sent', tag: 'outbox', when: 'unseen' })
+butler.notifications.on('click', ({ tag, data }) => {})
+
+butler.vibration.vibrate('success') // false where the device cannot
+```
+
+- `when: 'unseen'` shows it only while no tab of the application can be seen; the tabs ask each other.
+- The service worker of the application shows it where there is one, which Chromium on Android requires.
+  `forwardNotificationEvents(self)` of `web-device-butler/worker` hands its clicks to the page.
 
 ## Files, the outbox, the page
 
@@ -267,17 +346,23 @@ Every error extends `DeviceButlerError`, sets `name` and keeps the error of the 
 
 ## Entry points
 
-| Import                                                             | Contains                                                              |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `web-device-butler`                                                | the whole core                                                        |
-| `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                             |
-| `web-device-butler/media`, `/permission`, `/platform`              | the combined session, recording, audio outputs, permissions, platform |
-| `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard     |
-| `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network            |
-| `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                      |
-| `web-device-butler/vue`                                            | composables, needs `vue`                                              |
-| `web-device-butler/inversify`                                      | container module, needs `inversify` 8                                 |
-| `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric`                           |
+| Import                                                             | Contains                                                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `web-device-butler`                                                | the whole core                                                                         |
+| `web-device-butler/storage`, `/camera`, `/microphone`, `/location` | one area, with its own `create()` factory                                              |
+| `web-device-butler/screen-capture`                                 | the capture of the screen, with its own `create()` factory                             |
+| `web-device-butler/media`, `/permission`, `/platform`              | the combined session, joined sessions, recording, audio outputs, permissions, platform |
+| `web-device-butler/attention`                                      | notifications and vibration                                                            |
+| `web-device-butler/worker`                                         | for the service worker: hands clicks on notifications to the page                      |
+| `web-device-butler/motion`                                         | pitch, roll, heading and acceleration from the sensors                                 |
+| `web-device-butler/network`, `/screen`, `/sharing`                 | online state; wake lock and fullscreen; share sheet and clipboard                      |
+| `web-device-butler/files`, `/outbox`                               | saving and choosing files; sending once there is a network                             |
+| `web-device-butler/react`                                          | hooks, needs `react` 18 or later                                                       |
+| `web-device-butler/vue`                                            | composables, needs `vue`                                                               |
+| `web-device-butler/inversify`                                      | container module, needs `inversify` 8                                                  |
+| `web-device-butler/scanning`                                       | the reader of codes, with its own `create()` factory                                   |
+| `web-device-butler/zxing`                                          | a decoder of codes for every browser, needs `zxing-wasm`                               |
+| `web-device-butler/fabric`                                         | canvas renderer of a camera, needs `fabric`                                            |
 
 ### Vue
 
@@ -289,8 +374,8 @@ const camera = useCamera(butler.camera) // session, state, settings, error, isOp
 const theme = useStoredValue(settingsStore, 'theme') // follows other components and other tabs
 ```
 
-Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useOrientation`,
-`useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
+Sessions and watches are closed when the component is unmounted. Also: `useMicrophone`, `useScreenCapture`,
+`useCodeScan`, `useAttitude`, `useMovement`, `useNotifications`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useRecording`, `useFullscreen`.
 
 ### React
 
@@ -312,7 +397,7 @@ const Capture = () => {
 ```
 
 The same hooks as the Vue composables, with plain values instead of refs: `useMicrophone` (with `setMuted()`),
-`useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
+`useScreenCapture`, `useCodeScan`, `useAttitude`, `useMovement`, `useNotifications`, `useOrientation`, `useLocation`, `useNetwork`, `useWakeLock`, `useFullscreen`, `useStoredValue`. Sessions,
 recordings and watches are closed when the component is unmounted. Before React 19 the provider is
 `<DeviceButlerContext.Provider value={butler}>`.
 

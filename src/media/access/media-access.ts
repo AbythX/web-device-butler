@@ -24,6 +24,8 @@ import {
 } from './media-access-state.ts'
 import { MediaLease } from './media-lease.ts'
 import type { MediaMessages } from './media-messages.ts'
+import { MediaSupport } from './media-support.ts'
+import type { MediaAccessTiming } from './media-access-timing.ts'
 
 /**
  * Whether the device can be opened as far as the tabs of this library are concerned. `held-by-this-tab` means this
@@ -53,13 +55,6 @@ export interface MediaAccessEvents {
   availabilitychange: MediaAvailability
   /** a device was plugged in or removed */
   devicechange: undefined
-}
-
-export interface MediaAccessTiming {
-  /** how long a take-over waits for the holder, in milliseconds */
-  takeoverTimeout?: number
-  /** how often a device that another tab holds is checked again, in milliseconds */
-  availabilityInterval?: number
 }
 
 /**
@@ -125,7 +120,7 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
    * `false` where the browser has no cameras and microphones for this page, for example without HTTPS.
    */
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && typeof this.environment.mediaDevices?.getUserMedia === 'function'
+    return MediaSupport.isSupportedIn(this.environment)
   }
 
   /**
@@ -246,9 +241,9 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
    * before that, and asking can cause failures later on.
    */
   public async enumerate(): Promise<MediaDeviceInfo[]> {
-    const mediaDevices = this.environment.mediaDevices
+    const mediaDevices = MediaSupport.resolveFor(this.environment)
 
-    if (!this.isSupported || mediaDevices === undefined || !this.currentState.isGranted('any')) {
+    if (mediaDevices === undefined || !this.currentState.isGranted('any')) {
       return []
     }
 
@@ -292,7 +287,7 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
 
   protected override onFirstListener(type: keyof MediaAccessEvents): void {
     if (type === 'devicechange') {
-      this.environment.mediaDevices?.addEventListener?.('devicechange', this.devicesChanged)
+      MediaSupport.resolveFor(this.environment)?.addEventListener?.('devicechange', this.devicesChanged)
     }
 
     if (type === 'availabilitychange') {
@@ -307,7 +302,7 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
 
   protected override onLastListenerRemoved(type: keyof MediaAccessEvents): void {
     if (type === 'devicechange') {
-      this.environment.mediaDevices?.removeEventListener?.('devicechange', this.devicesChanged)
+      MediaSupport.resolveFor(this.environment)?.removeEventListener?.('devicechange', this.devicesChanged)
     }
 
     if (type === 'availabilitychange') {
@@ -532,7 +527,7 @@ export class MediaAccess extends EventEmitter<MediaAccessEvents> implements Disp
    * The one call to `getUserMedia` of the library.
    */
   private capture(constraints: MediaTrackConstraints): Promise<MediaStream> {
-    const mediaDevices = this.environment.mediaDevices
+    const mediaDevices = MediaSupport.resolveFor(this.environment)
 
     if (mediaDevices === undefined) {
       throw new UnsupportedError('mediaDevices')

@@ -1,5 +1,4 @@
-import type { Listenable } from '../../core/events/listenable.ts'
-
+import type { Watch, WatchEvents } from '../../core/lifetime/watch.ts'
 import type { StorageSpace } from './storage-space.ts'
 
 export interface StorageSpaceWatchOptions {
@@ -9,7 +8,7 @@ export interface StorageSpaceWatchOptions {
   lowBelow?: number
 }
 
-export interface StorageSpaceWatchEvents {
+export interface StorageSpaceWatchEvents extends WatchEvents<StorageSpace> {
   /** the space differs from the last read; also emitted for the first read */
   change: StorageSpace
   /** the available space crossed below `lowBelow`, or was below it on the first read */
@@ -18,21 +17,11 @@ export interface StorageSpaceWatchEvents {
 
 /**
  * Watches the space of the origin, for the duration of a recording or for a settings screen. It polls, because the
- * browser has no event for it, and stops when it is disposed.
+ * browser has no event for it, and stops when it is stopped. `current` is the result of the last read.
  */
-export interface StorageSpaceWatch extends Listenable<StorageSpaceWatchEvents>, Disposable {
-  /**
-   * The result of the last read, `undefined` until the first one has finished.
-   */
-  readonly current: StorageSpace | undefined
-
+export interface StorageSpaceWatch extends Watch<StorageSpace, StorageSpaceWatchEvents> {
   /**
    * Reads the space now instead of waiting for the next interval.
    */
   refresh(): Promise<void>
-
-  /**
-   * Stops measuring and forgets every listener. Calling it again does nothing.
-   */
-  dispose(): void
 }

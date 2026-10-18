@@ -1,4 +1,5 @@
 import {
+  type Attitude,
   DefaultDeviceButler,
   type DeviceButler,
   type DevicePermissionName,
@@ -7,11 +8,13 @@ import {
   type LocationOptions,
   type LocationTraits,
   type LocationWatch,
+  type MotionWatch,
+  type Movement,
 } from '../../src/index.ts'
 import { DemoPage } from '../shared/demo-page.ts'
 
 /**
- * The demo page of the small areas: the location, the orientation, the platform and the permissions.
+ * The demo page of the small areas: the location, the orientation, the sensors, the platform and the permissions.
  */
 class LocationDemo extends DemoPage {
   private static readonly permissions: readonly DevicePermissionName[] = [
@@ -19,6 +22,7 @@ class LocationDemo extends DemoPage {
     'microphone',
     'geolocation',
     'persistent-storage',
+    'motion',
   ]
 
   private readonly butler: DeviceButler
@@ -27,6 +31,8 @@ class LocationDemo extends DemoPage {
   private watch: LocationWatch | undefined
   /** where the watch started, to show how far the device moved */
   private origin: DevicePosition | undefined
+  private attitude: MotionWatch<Attitude> | undefined
+  private movement: MotionWatch<Movement> | undefined
 
   public constructor(page: Document) {
     super(page)
@@ -46,6 +52,10 @@ class LocationDemo extends DemoPage {
     this.onClick('current', async () => this.showPosition(await this.butler.location.current(this.options)))
     this.onClick('watch', () => this.startWatch())
     this.onClick('stop', () => this.watch?.stop())
+
+    this.onClick('motion-request', () => this.request('motion'))
+    this.onClick('motion-start', () => this.startMotion())
+    this.onClick('motion-stop', () => this.stopMotion())
 
     this.showFacts()
     this.showPermissions()
@@ -99,7 +109,7 @@ class LocationDemo extends DemoPage {
     this.element('positions').replaceChildren()
 
     const watch = this.butler.location.watch(this.options)
-    watch.on('position', (position) => {
+    watch.on('change', (position) => {
       this.origin ??= position
       this.showPosition(position)
       this.element('positions').prepend(
@@ -120,7 +130,56 @@ class LocationDemo extends DemoPage {
     this.watch = watch
   }
 
+  private startMotion(): void {
+    this.stopMotion()
+
+    // a few values per second are enough to look at, and keep the page calm
+    const attitude = this.butler.motion.watchAttitude({ rate: 20 })
+    const movement = this.butler.motion.watchMotion({ rate: 5 })
+
+    attitude.on('change', () => this.showMotion())
+    movement.on('change', () => this.showMotion())
+    attitude.on('unavailable', () => this.logger.info('The device does not report how it is turned'))
+    movement.on('unavailable', () => this.logger.info('The device does not report how it moves'))
+
+    this.attitude = attitude
+    this.movement = movement
+  }
+
+  private stopMotion(): void {
+    this.attitude?.stop()
+    this.movement?.stop()
+  }
+
   // ---- output ----
+
+  private showMotion(): void {
+    const attitude = this.attitude?.current
+    const movement = this.movement?.current
+    const gravity = movement?.accelerationIncludingGravity
+
+    this.describe('motion', {
+      Pitch: LocationDemo.degrees(attitude?.pitch),
+      Roll: LocationDemo.degrees(attitude?.roll),
+      Heading: LocationDemo.degrees(attitude?.heading),
+      'Raw alpha, beta, gamma':
+        attitude === undefined
+          ? 'none'
+          : `${LocationDemo.degrees(attitude.raw.alpha)}, ${LocationDemo.degrees(attitude.raw.beta)}, ${LocationDemo.degrees(attitude.raw.gamma)}` +
+            (attitude.raw.absolute ? ', from north' : ''),
+      Gravity:
+        gravity === undefined
+          ? 'not reported'
+          : `${gravity.x.toFixed(1)}, ${gravity.y.toFixed(1)}, ${gravity.z.toFixed(1)}`,
+      Available: `${String(this.attitude?.isAvailable ?? 'unknown')}, ${String(this.movement?.isAvailable ?? 'unknown')}`,
+    })
+
+    // the needle points north: against the heading of the screen
+    this.element('needle').style.transform = `rotate(${-(attitude?.heading ?? 0)}deg)`
+    // the bubble goes to the side that is up, as in a spirit level
+    this.element('bubble').style.translate =
+      `${LocationDemo.clamp(-(attitude?.roll ?? 0))}% ${LocationDemo.clamp(attitude?.pitch ?? 0)}%`
+  }
 
   private showFacts(): void {
     const { platform, orientation, location, coordination } = this.butler
@@ -158,6 +217,17 @@ class LocationDemo extends DemoPage {
       Speed: LocationDemo.optional(position.speed, 'm/s'),
       Determined: new Date(position.timestamp).toLocaleTimeString(),
     })
+  }
+
+  private static degrees(value: number | undefined): string {
+    return value === undefined ? 'not reported' : `${Math.round(value)}°`
+  }
+
+  /**
+   * How far the bubble of the level moves, in percent of its size.
+   */
+  private static clamp(value: number): number {
+    return Math.max(-40, Math.min(40, value))
   }
 
   /**

@@ -218,7 +218,7 @@ export class OpfsStorageDriver extends StorageDriver {
   }
 
   private async root(): Promise<FileSystemDirectoryHandle> {
-    const storage = this.environment.originStorage
+    const storage = this.environment.secureContext?.originStorage
 
     if (typeof storage?.getDirectory !== 'function') {
       throw new StorageUnsupportedError(`The storage driver '${this.name}' is not available`)

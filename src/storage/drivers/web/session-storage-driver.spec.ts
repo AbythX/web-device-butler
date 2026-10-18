@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
 import { BrowserEnvironment } from '../../../core/environment/browser-environment.ts'
-import { FakeStorage } from '../../testing/fake-storage.ts'
+import { FakeStorage } from '../../../core/testing/fake-storage.ts'
 import { StorageDriverContract } from '../../testing/storage-driver-contract.ts'
 import { SessionStorageDriver } from './session-storage-driver.ts'
 

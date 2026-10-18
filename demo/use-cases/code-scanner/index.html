@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>web-device-butler: code scanner</title>
+    <link rel="stylesheet" href="../../shared/demo.css" />
+    <style>
+      .viewfinder {
+        position: relative;
+        max-width: 640px;
+      }
+
+      .viewfinder video,
+      .viewfinder canvas {
+        width: 100%;
+        display: block;
+      }
+
+      .viewfinder canvas {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav><a href="../../">All demos</a></nav>
+      <h1>Code scanner</h1>
+      <p class="hint">
+        Reads QR codes and the bar codes of products with the back camera, and in a picture you choose. Where the
+        browser has no code detector of its own, the codes are read with zxing-wasm. Described in
+        <code>docs/use-cases/code-scanner.md</code>.
+      </p>
+
+      <section>
+        <form id="options">
+          <label><input type="checkbox" name="format" value="qr_code" checked /> QR code</label>
+          <label><input type="checkbox" name="format" value="ean_13" checked /> EAN-13</label>
+          <label><input type="checkbox" name="format" value="code_128" /> Code 128</label>
+          <label><input type="checkbox" name="format" value="data_matrix" /> Data Matrix</label>
+          <label><input type="checkbox" name="middle" /> only the middle of the picture</label>
+          <label><input type="checkbox" name="zxing" /> always zxing-wasm</label>
+        </form>
+        <div class="actions">
+          <button id="start">Scan with the camera</button>
+          <button id="stop" disabled>Stop</button>
+          <button id="torch" disabled>Torch</button>
+          <button id="choose">Read a picture</button>
+          <input type="file" id="picture" accept="image/*" hidden />
+        </div>
+        <p id="status" class="status"></p>
+        <dl id="facts"></dl>
+        <div class="viewfinder">
+          <video id="preview" autoplay muted playsinline hidden></video>
+          <canvas id="overlay"></canvas>
+        </div>
+      </section>
+
+      <section>
+        <h2>Codes</h2>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Format</th>
+                <th>Value</th>
+                <th>From</th>
+              </tr>
+            </thead>
+            <tbody id="codes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -9,9 +9,12 @@ import { DemoPage } from '../../shared/demo-page.ts'
 
 /**
  * The use case of a video message: a camera and a microphone as one session, which no other tab can interrupt
- * while it records.
+ * while it records, and a recording that survives a page that is thrown away.
  */
 class VideoMessage extends DemoPage {
+  /** the message that is being recorded, in the storage until it is stopped */
+  private static readonly draft = { namespace: 'video-messages', id: 'draft' }
+
   private readonly butler: DeviceButler
 
   private session: CombinedMediaSession | undefined
@@ -31,6 +34,30 @@ class VideoMessage extends DemoPage {
     this.onClick('record', () => this.record())
     this.onClick('finish', () => this.recording?.stop())
     this.onClick('close', () => this.session?.close())
+
+    void this.run('Looking for an interrupted message', () => this.recover())
+  }
+
+  /**
+   * A message the last visit could not finish: the page was thrown away or crashed while it recorded.
+   */
+  private async recover(): Promise<void> {
+    const { namespace, id } = VideoMessage.draft
+    const draft = await this.butler.recorder.kept(namespace).get(id)
+
+    if (draft?.state !== 'interrupted') {
+      return
+    }
+
+    const { blob, segments } = await draft.read()
+    const message = blob ?? segments[0]?.blob
+
+    if (message !== undefined) {
+      this.showMessage(message)
+      this.status(`A message of ${Math.round(draft.duration / 1000)} s was interrupted; this is what was kept`)
+    }
+
+    await draft.delete()
   }
 
   private async start(whenBusy: MediaBusyPolicy): Promise<void> {
@@ -59,8 +86,8 @@ class VideoMessage extends DemoPage {
     }
 
     // While it runs, a tab that asks with `whenBusy: 'takeover'` gets a MediaDeviceBusyError, and the screen stays
-    // on. A short message fits in memory.
-    const recording = await this.butler.recorder.record(session, { keepAwake: true })
+    // on. It is kept in the storage until it is stopped, so the next visit finds it if this page is thrown away.
+    const recording = await this.butler.recorder.record(session, { keepAwake: true, keep: VideoMessage.draft })
     this.recording = recording
 
     // however it ends: stopped here, or because the session ended

@@ -2,11 +2,12 @@ export { MediaAccess } from './access/media-access.ts'
 
 export type {
   MediaAccessEvents,
-  MediaAccessTiming,
   MediaAcquireOptions,
   MediaAvailability,
   MediaBusyPolicy,
 } from './access/media-access.ts'
+
+export type { MediaAccessTiming } from './access/media-access-timing.ts'
 
 export { MediaAccessState } from './access/media-access-state.ts'
 
@@ -27,6 +28,14 @@ export type {
 export { DefaultCombinedMediaSession } from './combined/default-combined-media-session.ts'
 
 export type { CombinedMediaRequirements, MediaManager } from './combined/media-manager.ts'
+
+export type {
+  JoinedMediaSource,
+  JoinedMediaSourceEnd,
+  JoinedMediaSourceEvents,
+} from './combined/joined-media-source.ts'
+
+export { DefaultJoinedMediaSource } from './combined/default-joined-media-source.ts'
 
 export { DefaultMediaManager } from './combined/default-media-manager.ts'
 
@@ -89,6 +98,21 @@ export { DefaultMediaRecordingManager } from './recording/default-media-recordin
 
 export { WebmDuration } from './recording/webm/webm-duration.ts'
 
+export { RecordingFile } from './recording/recording-file.ts'
+
+export type {
+  KeptRecording,
+  KeptRecordingState,
+  KeptRecordings,
+  RecordingKeepOptions,
+} from './recording/kept/kept-recording.ts'
+
+export { KeptRecordingArchive } from './recording/kept/kept-recording-archive.ts'
+
+export type { KeptRecordingDescription, KeptSegmentDescription } from './recording/kept/kept-recording-archive.ts'
+
+export { RecordingKeeper } from './recording/kept/recording-keeper.ts'
+
 export { IosTorchResetsOnZoomQuirk } from './quirks/ios-torch-resets-on-zoom-quirk.ts'
 
 export { PlatformQuirk } from './quirks/platform-quirk.ts'
@@ -108,6 +132,10 @@ export type {
 } from './session/media-session.ts'
 
 export { BaseMediaSession } from './session/base-media-session.ts'
+
+export type { MediaSessionHold } from './session/media-session-hold.ts'
+
+export type { MediaSourceKind } from './session/media-source-kind.ts'
 
 export type {
   TrackCapabilities,

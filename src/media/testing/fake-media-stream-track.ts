@@ -10,6 +10,8 @@ export interface FakeTrackOptions {
   constraints?: MediaTrackConstraints
   /** like Chrome: the processing of the sound is decided when the track starts, later changes are accepted and ignored */
   processingOnlyAtStart?: boolean
+  /** what the track reports besides the size of the picture, for example `{ displaySurface: 'window' }` */
+  settings?: Record<string, unknown>
   onStop?: () => void
 }
 
@@ -28,6 +30,7 @@ export class FakeMediaStreamTrack {
   public readonly label: string
   public enabled = true
   public muted = false
+  public contentHint = ''
   public readyState: 'live' | 'ended' = 'live'
 
   /** every call of `applyConstraints`, in order */
@@ -48,8 +51,8 @@ export class FakeMediaStreamTrack {
     this.label = options.label
     this.settings =
       options.kind === 'video'
-        ? { deviceId: options.deviceId, ...FakeMediaStreamTrack.defaultPicture }
-        : { deviceId: options.deviceId, ...this.defaultSound() }
+        ? { deviceId: options.deviceId, ...FakeMediaStreamTrack.defaultPicture, ...options.settings }
+        : { deviceId: options.deviceId, ...this.defaultSound(), ...options.settings }
 
     if (options.constraints !== undefined) {
       this.constraints = options.constraints
@@ -145,6 +148,13 @@ export class FakeMediaStreamTrack {
   public turn(): void {
     const { width, height } = this.settings
     Object.assign(this.settings, { width: height, height: width })
+  }
+
+  /**
+   * The shared window was resized.
+   */
+  public resize(width: number, height: number): void {
+    Object.assign(this.settings, { width, height })
   }
 
   public mute(): void {

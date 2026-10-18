@@ -14,7 +14,7 @@ type SecondTabCommand<Argument, Result = void> = BrowserCommand<[argument: Argum
  * Increments a number in the second tab, `times` times and overlapping.
  */
 export const incrementInSecondTab: SecondTabCommand<SecondTabEntry & { times: number }> = async (context, entry) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   await page.evaluate(async ({ driver, namespace, key, times }) => {
     const modulePath = '/src/storage/index.ts'
@@ -39,7 +39,7 @@ export const incrementInSecondTab: SecondTabCommand<SecondTabEntry & { times: nu
  * Sets a value in the second tab.
  */
 export const setInSecondTab: SecondTabCommand<SecondTabEntry & { value: unknown }> = async (context, entry) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   await page.evaluate(async ({ driver, namespace, key, value }) => {
     const modulePath = '/src/storage/index.ts'
@@ -58,7 +58,7 @@ export const openWriteStreamInSecondTab: SecondTabCommand<SecondTabEntry & { tex
   context,
   entry
 ) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   await page.evaluate(async ({ driver, namespace, key, text }) => {
     const modulePath = '/src/storage/index.ts'
@@ -75,7 +75,7 @@ export const openWriteStreamInSecondTab: SecondTabCommand<SecondTabEntry & { tex
  * Closes the stream that {@link openWriteStreamInSecondTab} left open.
  */
 export const closeWriteStreamInSecondTab: BrowserCommand<[], Promise<void>> = async (context) => {
-  const page = await SecondTab.pageOf(context.context, context.page.url())
+  const page = await SecondTab.of(context)
 
   await page.evaluate(async () => {
     await (Reflect.get(globalThis, 'openWriter') as WritableStreamDefaultWriter).close()
@@ -86,7 +86,7 @@ export const closeWriteStreamInSecondTab: BrowserCommand<[], Promise<void>> = as
  * Closes the second tab, as a user would, without giving its page a chance to clean up.
  */
 export const closeSecondTab: BrowserCommand<[], Promise<void>> = async (context) => {
-  await SecondTab.close(context.context)
+  await SecondTab.close(context)
 }
 
 declare module 'vitest/browser' {

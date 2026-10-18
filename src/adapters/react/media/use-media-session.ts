@@ -1,21 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import type { MediaSession } from '../../../media/session/media-session.ts'
+import {
+  MediaSessionController,
+  type MediaSessionOpener,
+  type MediaSessionSnapshot,
+} from '../../state/media/media-session-controller.ts'
+import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
-import type { MediaInputDescriptor } from '../../../media/input/media-input-descriptor.ts'
-import type { MediaInputManager } from '../../../media/input/media-input-manager.ts'
-import type { MediaInputRequirements } from '../../../media/input/media-input-requirements.ts'
-import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../../media/session/media-session.ts'
+export type { MediaSessionOpener } from '../../state/media/media-session-controller.ts'
 
-export interface UseMediaSession<TSession, TRequirements> {
-  /** the open session; `undefined` before `open()` and after the session ended */
-  readonly session: TSession | undefined
-  /** `undefined` while there is no session */
-  readonly state: MediaSessionState | undefined
-  /** `true` between the call of `open()` and its outcome */
-  readonly isOpening: boolean
-  /** why the last `open()` failed; cleared by the next one */
-  readonly error: unknown
-  /** why the last session ended */
-  readonly ended: MediaSessionEnd | undefined
+export interface UseMediaSession<TSession, TRequirements> extends MediaSessionSnapshot<TSession> {
   /**
    * Opens a session, after closing the one that is open. A failure is not thrown, it ends up in `error`.
    *
@@ -29,103 +22,36 @@ export interface UseMediaSession<TSession, TRequirements> {
 }
 
 /**
+ * What every controller of a session is, whatever it follows besides.
+ */
+type SessionController = MediaSessionController<MediaSession, never, MediaSessionSnapshot<MediaSession>>
+
+/**
+ * The session of a controller as state of a component. Shared by `useMediaSession` and the hooks that follow more of
+ * the session.
+ *
+ * @returns the state with `open()` and `close()`, and the controller for what a hook adds
+ */
+export const useMediaSessionOf = <Controller extends SessionController>(
+  create: () => Controller
+): [ReturnType<Controller['read']> & Pick<Controller, 'open' | 'close'>, Controller] => {
+  const controller = useController(create)
+  // SAFETY: the snapshot of a controller is what its read() returns
+  const snapshot = useSnapshot(controller) as ReturnType<Controller['read']>
+
+  return [{ ...snapshot, open: controller.open, close: controller.close }, controller]
+}
+
+/**
  * The session of a manager as state of a component. The session is closed when the component is unmounted.
  *
- * Shared by `useCamera` and `useMicrophone`.
+ * Shared by `useCamera`, `useMicrophone` and `useScreenCapture`.
  */
-export const useMediaSession = <
-  TDescriptor extends MediaInputDescriptor,
-  TSession extends MediaSession,
-  TRequirements extends MediaInputRequirements,
->(
-  manager: MediaInputManager<TDescriptor, TSession, TRequirements>
+export const useMediaSession = <TSession extends MediaSession, TRequirements>(
+  manager: MediaSessionOpener<TSession, TRequirements>
 ): UseMediaSession<TSession, TRequirements> => {
-  const [session, setSession] = useState<TSession>()
-  const [state, setState] = useState<MediaSessionState>()
-  const [isOpening, setIsOpening] = useState(false)
-  const [error, setError] = useState<unknown>()
-  const [ended, setEnded] = useState<MediaSessionEnd>()
+  const latest = useLatest(manager)
+  const [media] = useMediaSessionOf(() => new MediaSessionController<TSession, TRequirements>(() => latest.current, {}))
 
-  /** the session that is open, also for the callbacks of a render that is over */
-  const current = useRef<TSession | undefined>(undefined)
-  const isMounted = useRef(true)
-  const openings = useRef(0)
-  /** calls of `open()` run one after another, so each one finds the session of the one before it */
-  const turn = useRef<Promise<unknown>>(Promise.resolve())
-
-  const close = useCallback(async (): Promise<void> => {
-    await current.current?.close()
-  }, [])
-
-  const start = useCallback(
-    async (requirements?: Partial<TRequirements>): Promise<TSession | undefined> => {
-      try {
-        if (!isMounted.current) {
-          return undefined
-        }
-
-        await current.current?.close()
-        const opened = await manager.open(requirements)
-
-        // the component may have been unmounted while the device was starting
-        if (!isMounted.current) {
-          await opened.close()
-
-          return undefined
-        }
-
-        opened.on('statechange', (changed) => {
-          if (current.current === opened) {
-            setState(changed)
-          }
-        })
-        opened.on('ended', (end) => {
-          if (current.current === opened) {
-            current.current = undefined
-            setSession(undefined)
-            setState(undefined)
-            setEnded(end)
-          }
-        })
-
-        current.current = opened
-        setSession(opened)
-        setState(opened.state)
-
-        return opened
-      } catch (failure) {
-        setError(failure)
-
-        return undefined
-      } finally {
-        setIsOpening(--openings.current > 0)
-      }
-    },
-    [manager]
-  )
-
-  const open = useCallback(
-    (requirements?: Partial<TRequirements>): Promise<TSession | undefined> => {
-      setError(undefined)
-      setIsOpening(true)
-      openings.current++
-
-      const opening = turn.current.then(() => start(requirements))
-      turn.current = opening
-
-      return opening
-    },
-    [start]
-  )
-
-  useEffect(() => {
-    isMounted.current = true
-
-    return () => {
-      isMounted.current = false
-      void current.current?.close()
-    }
-  }, [])
-
-  return { session, state, isOpening, error, ended, open, close }
+  return media
 }

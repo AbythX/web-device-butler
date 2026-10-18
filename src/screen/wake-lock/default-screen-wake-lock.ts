@@ -5,10 +5,10 @@ import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
-import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
-import { ScreenError } from '../errors/screen-error.ts'
+import { ScreenErrorFactory } from '../errors/screen-error-factory.ts'
 import type { ScreenWakeLock, ScreenWakeLockEvents } from './screen-wake-lock.ts'
 import { WakeLockHold } from './wake-lock-hold.ts'
+import { WakeLockSupport } from './wake-lock-support.ts'
 
 /**
  * The implementation of {@link ScreenWakeLock}.
@@ -39,7 +39,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
   }
 
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.wakeLock !== undefined
+    return WakeLockSupport.isSupportedIn(this.environment)
   }
 
   public get isRequested(): boolean {
@@ -96,7 +96,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
   }
 
   private async lock(): Promise<void> {
-    const wakeLock = this.environment.wakeLock
+    const wakeLock = WakeLockSupport.resolveFor(this.environment)
 
     // a browser refuses a page in the background; the lock is taken when the page returns
     if (wakeLock === undefined || this.sentinel !== undefined || this.isHidden) {
@@ -113,9 +113,7 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
         return
       }
 
-      throw DefaultScreenWakeLock.isRefusal(error)
-        ? new PermissionDeniedError('screen-wake-lock', { cause: error })
-        : new ScreenError('Could not keep the screen on', { cause: error })
+      throw ScreenErrorFactory.from(error, 'Could not keep the screen on', { permission: 'screen-wake-lock' })
     }
 
     // the last hold may have been released while the browser was asked
@@ -188,9 +186,5 @@ export class DefaultScreenWakeLock extends EventEmitter<ScreenWakeLockEvents> im
       this.announced = this.isActive
       this.emitSafely('change', this.announced, this.logger)
     }
-  }
-
-  private static isRefusal(error: unknown): boolean {
-    return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotAllowedError'
   }
 }

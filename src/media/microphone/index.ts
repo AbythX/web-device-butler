@@ -33,11 +33,8 @@ export { MicrophoneSettings } from './model/microphone-settings.ts'
 
 export { MicrophoneConstraints } from './session/microphone-constraints.ts'
 
-export type {
-  MicrophoneSession,
-  MicrophoneSessionEvents,
-  MicrophoneSessionHost,
-  MicrophoneTiming,
-} from './session/microphone-session.ts'
+export type { MicrophoneSession, MicrophoneSessionEvents, MicrophoneSessionHost } from './session/microphone-session.ts'
+
+export type { MicrophoneTiming } from './session/microphone-timing.ts'
 
 export { DefaultMicrophoneSession } from './session/default-microphone-session.ts'

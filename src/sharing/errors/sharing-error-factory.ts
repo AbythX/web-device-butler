@@ -1,3 +1,4 @@
+import { BrowserError } from '../../core/errors/browser-error.ts'
 import { DeviceButlerError } from '../../core/errors/device-butler-error.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import { SharingError } from './sharing-error.ts'
@@ -15,7 +16,7 @@ export class SharingErrorFactory {
       return error
     }
 
-    return SharingErrorFactory.nameOf(error) === 'NotAllowedError'
+    return BrowserError.isRefusal(error)
       ? new PermissionDeniedError(permission, { cause: error })
       : new SharingError(message, { cause: error })
   }
@@ -24,10 +25,6 @@ export class SharingErrorFactory {
    * Whether the user closed what the browser showed without choosing anything.
    */
   public static isCancellation(error: unknown): boolean {
-    return SharingErrorFactory.nameOf(error) === 'AbortError'
-  }
-
-  private static nameOf(error: unknown): unknown {
-    return typeof error === 'object' && error !== null && 'name' in error ? error.name : undefined
+    return BrowserError.isCancellation(error)
   }
 }
