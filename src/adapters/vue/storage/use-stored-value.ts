@@ -52,11 +52,13 @@ export const useStoredValue = <T>(store: Store<T>, key: string): UseStoredValue<
       }
     })
 
-  untilScopeEnd(store.on('change', (change) => {
-    if (change.key === key) {
-      void load()
-    }
-  }))
+  untilScopeEnd(
+    store.on('change', (change) => {
+      if (change.key === key) {
+        void load()
+      }
+    })
+  )
 
   void load()
 

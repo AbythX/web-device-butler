@@ -1,14 +1,14 @@
-import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 
 import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../../media/session/media-session.ts'
-import { onScopeEnd } from '../scope.ts'
+import {
+  MediaSessionController,
+  type MediaSessionOpener,
+  type MediaSessionSnapshot,
+} from '../../state/media/media-session-controller.ts'
+import { type SnapshotRefs, useController } from '../use-controller.ts'
 
-/**
- * What opens the sessions: the manager of the cameras, of the microphones or of the capture of the screen.
- */
-export interface MediaSessionOpener<TSession, TRequirements> {
-  open(requirements?: Partial<TRequirements>): Promise<TSession>
-}
+export type { MediaSessionOpener } from '../../state/media/media-session-controller.ts'
 
 export interface UseMediaSession<TSession, TRequirements> {
   /** the open session; `undefined` before `open()` and after the session ended */
@@ -34,85 +34,27 @@ export interface UseMediaSession<TSession, TRequirements> {
 }
 
 /**
+ * The session of a controller as reactive state. Shared by `useMediaSession` and the composables that follow more of
+ * the session.
+ */
+export const bindMediaSession = <
+  TSession extends MediaSession,
+  TRequirements,
+  Snapshot extends MediaSessionSnapshot<TSession>,
+>(
+  controller: MediaSessionController<TSession, TRequirements, Snapshot>
+): UseMediaSession<TSession, TRequirements> & SnapshotRefs<Snapshot> => ({
+  ...useController(controller),
+  open: controller.open,
+  close: controller.close,
+})
+
+/**
  * The session of a manager as reactive state. The session is closed when the component is unmounted.
  *
  * Shared by `useCamera`, `useMicrophone` and `useScreenCapture`.
  */
 export const useMediaSession = <TSession extends MediaSession, TRequirements>(
   manager: MediaSessionOpener<TSession, TRequirements>
-): UseMediaSession<TSession, TRequirements> => {
-  const session = shallowRef<TSession>()
-  const state = ref<MediaSessionState>()
-  const isOpening = ref(false)
-  const error = shallowRef<unknown>()
-  const ended = shallowRef<MediaSessionEnd>()
-
-  let isDisposed = false
-  let openings = 0
-  /** calls of `open()` run one after another, so each one finds the session of the one before it */
-  let turn: Promise<unknown> = Promise.resolve()
-
-  const close = async (): Promise<void> => {
-    await session.value?.close()
-  }
-
-  const start = async (requirements?: Partial<TRequirements>): Promise<TSession | undefined> => {
-    try {
-      if (isDisposed) {
-        return undefined
-      }
-
-      await close()
-      const opened = await manager.open(requirements)
-
-      // the component may have been unmounted while the device was starting
-      if (isDisposed) {
-        await opened.close()
-
-        return undefined
-      }
-
-      opened.on('statechange', (changed) => {
-        if (session.value === opened) {
-          state.value = changed
-        }
-      })
-      opened.on('ended', (end) => {
-        if (session.value === opened) {
-          session.value = undefined
-          state.value = undefined
-          ended.value = end
-        }
-      })
-
-      session.value = opened
-      state.value = opened.state
-
-      return opened
-    } catch (failure) {
-      error.value = failure
-
-      return undefined
-    } finally {
-      isOpening.value = --openings > 0
-    }
-  }
-
-  const open = (requirements?: Partial<TRequirements>): Promise<TSession | undefined> => {
-    error.value = undefined
-    isOpening.value = true
-    openings++
-
-    const opening = turn.then(() => start(requirements))
-    turn = opening
-
-    return opening
-  }
-
-  onScopeEnd(() => {
-    isDisposed = true
-    void close()
-  })
-
-  return { session, state, isOpening, error, ended, open, close }
-}
+): UseMediaSession<TSession, TRequirements> =>
+  bindMediaSession(new MediaSessionController<TSession, TRequirements>(() => manager, {}))
