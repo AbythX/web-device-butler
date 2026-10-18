@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
 import type { DeviceMotion } from '../../../motion/device-motion.ts'
 import type { Attitude, Movement } from '../../../motion/model/attitude.ts'
 import type { MotionWatch, MotionWatchOptions } from '../../../motion/watch/motion-watch.ts'
+import { MotionController } from '../../state/device/motion-controller.ts'
+import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
 export interface UseMotionWatch<Value> {
   /** the latest value; `undefined` until the first one arrived */
@@ -25,46 +25,10 @@ export interface UseMotionWatch<Value> {
 export const useMotionWatch = <Value>(
   open: (options?: MotionWatchOptions) => MotionWatch<Value>
 ): UseMotionWatch<Value> => {
-  const [value, setValue] = useState<Value>()
-  const [isAvailable, setIsAvailable] = useState<boolean>()
-  const [error, setError] = useState<unknown>()
-  const [isWatching, setIsWatching] = useState(false)
-  const watch = useRef<MotionWatch<Value> | undefined>(undefined)
-  /** the latest way to open a watch, so `start` stays the same function across renders */
-  const opener = useRef(open)
-  opener.current = open
+  const latest = useLatest(open)
+  const controller = useController(() => new MotionController(() => latest.current))
 
-  const stop = useCallback((): void => {
-    watch.current?.stop()
-    watch.current = undefined
-    setIsWatching(false)
-  }, [])
-
-  const start = useCallback(
-    (options?: MotionWatchOptions): void => {
-      stop()
-      setError(undefined)
-
-      try {
-        const started = opener.current(options)
-        started.on('change', (changed) => {
-          setValue(changed)
-          setIsAvailable(true)
-        })
-        started.on('unavailable', () => setIsAvailable(false))
-
-        watch.current = started
-        setIsWatching(true)
-      } catch (failure) {
-        setError(failure)
-      }
-    },
-    [stop]
-  )
-
-  useEffect(() => () => watch.current?.stop(), [])
-
-  return { value, isAvailable, error, isWatching, start, stop }
+  return { ...useSnapshot(controller), start: controller.start, stop: controller.stop }
 }
 
 /**

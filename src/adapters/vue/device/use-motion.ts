@@ -1,9 +1,10 @@
-import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 
 import type { DeviceMotion } from '../../../motion/device-motion.ts'
 import type { Attitude, Movement } from '../../../motion/model/attitude.ts'
 import type { MotionWatch, MotionWatchOptions } from '../../../motion/watch/motion-watch.ts'
-import { onScopeEnd } from '../scope.ts'
+import { MotionController } from '../../state/device/motion-controller.ts'
+import { useController } from '../use-controller.ts'
 
 export interface UseMotionWatch<Value> {
   /** the latest value; `undefined` until the first one arrived */
@@ -26,40 +27,9 @@ export interface UseMotionWatch<Value> {
 export const useMotionWatch = <Value>(
   open: (options?: MotionWatchOptions) => MotionWatch<Value>
 ): UseMotionWatch<Value> => {
-  const value = shallowRef<Value>()
-  const isAvailable = ref<boolean>()
-  const error = shallowRef<unknown>()
-  const isWatching = ref(false)
-  let watch: MotionWatch<Value> | undefined
+  const controller = new MotionController(() => open)
 
-  const stop = (): void => {
-    watch?.stop()
-    watch = undefined
-    isWatching.value = false
-  }
-
-  const start = (options?: MotionWatchOptions): void => {
-    stop()
-    error.value = undefined
-
-    try {
-      const started = open(options)
-      started.on('change', (changed) => {
-        value.value = changed
-        isAvailable.value = true
-      })
-      started.on('unavailable', () => (isAvailable.value = false))
-
-      watch = started
-      isWatching.value = true
-    } catch (failure) {
-      error.value = failure
-    }
-  }
-
-  onScopeEnd(stop)
-
-  return { value, isAvailable, error, isWatching, start, stop }
+  return { ...useController(controller), start: controller.start, stop: controller.stop }
 }
 
 /**

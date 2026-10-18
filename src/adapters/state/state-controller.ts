@@ -48,9 +48,16 @@ export abstract class StateController<Snapshot extends object> {
   }
 
   /**
-   * Changes the fields in one step, so the component renders once.
+   * Changes the fields in one step, so the component renders once. Fields that keep their value change nothing.
    */
   protected change(partial: Partial<Snapshot>): void {
+    // SAFETY: the keys of a partial snapshot are fields of the snapshot
+    const fields = Object.keys(partial) as (keyof Snapshot)[]
+
+    if (fields.every((field) => Object.is(partial[field], this.current[field]))) {
+      return
+    }
+
     this.current = { ...this.current, ...partial }
 
     for (const listener of [...this.listeners]) {

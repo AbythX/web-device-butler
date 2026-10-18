@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
 import type { DeviceLocation } from '../../../location/device-location.ts'
 import type { DevicePosition } from '../../../location/device-position.ts'
 import type { LocationOptions } from '../../../location/location-options.ts'
-import type { LocationWatch } from '../../../location/location-watch.ts'
+import { LocationController } from '../../state/device/location-controller.ts'
+import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
 export interface UseLocation {
   /** the latest position; `undefined` until the first one arrived */
@@ -22,50 +21,8 @@ export interface UseLocation {
  * because asking shows the permission prompt. The watch is stopped when the component is unmounted.
  */
 export const useLocation = (location: DeviceLocation): UseLocation => {
-  const [position, setPosition] = useState<DevicePosition>()
-  const [error, setError] = useState<unknown>()
-  const [isWatching, setIsWatching] = useState(false)
-  const watch = useRef<LocationWatch | undefined>(undefined)
+  const latest = useLatest(location)
+  const controller = useController(() => new LocationController(() => latest.current))
 
-  const stop = useCallback((): void => {
-    watch.current?.stop()
-    watch.current = undefined
-    setIsWatching(false)
-  }, [])
-
-  const start = useCallback(
-    (options?: LocationOptions): void => {
-      stop()
-      setError(undefined)
-
-      try {
-        const started = location.watch(options)
-        started.on('position', (changed) => {
-          setPosition(changed)
-          setError(undefined)
-        })
-        started.on('error', (failure) => {
-          setError(failure)
-          // a refused permission ends the watch
-          setIsWatching(started.isActive)
-        })
-
-        watch.current = started
-        setIsWatching(true)
-      } catch (failure) {
-        setError(failure)
-      }
-    },
-    [location, stop]
-  )
-
-  useEffect(
-    () => () => {
-      watch.current?.stop()
-      watch.current = undefined
-    },
-    []
-  )
-
-  return { position, error, isWatching, start, stop }
+  return { ...useSnapshot(controller), start: controller.start, stop: controller.stop }
 }
