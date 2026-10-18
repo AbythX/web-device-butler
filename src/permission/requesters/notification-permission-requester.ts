@@ -1,4 +1,5 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { NotificationSupport } from '../../attention/notifications/notification-support.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -13,7 +14,7 @@ export class NotificationPermissionRequester implements PermissionRequester {
    * on the home screen.
    */
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.Notification !== undefined
+    return NotificationSupport.isSupportedIn(this.environment)
   }
 
   /**

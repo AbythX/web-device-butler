@@ -16,6 +16,7 @@ import type {
   ShownNotification,
 } from './device-notifications.ts'
 import { type NotificationMessages, NotificationWorkerMessages } from './notification-messages.ts'
+import { NotificationSupport } from './notification-support.ts'
 
 export interface NotificationTiming {
   /** how long the other tabs have to say that they can be seen, in milliseconds */
@@ -52,7 +53,7 @@ export class DefaultDeviceNotifications extends EventEmitter<DeviceNotifications
   public get isSupported(): boolean {
     this.answer()
 
-    return this.environment.isSecureContext && this.environment.Notification !== undefined
+    return NotificationSupport.isSupportedIn(this.environment)
   }
 
   public async show(request: NotificationRequest): Promise<ShownNotification | undefined> {
