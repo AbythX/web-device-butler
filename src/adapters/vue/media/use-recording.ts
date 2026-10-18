@@ -1,4 +1,4 @@
-import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 
 import type {
   MediaRecording,
@@ -8,7 +8,8 @@ import type {
   RecordingSource,
 } from '../../../media/recording/media-recording.ts'
 import type { MediaRecordingManager } from '../../../media/recording/media-recording-manager.ts'
-import { onScopeEnd } from '../scope.ts'
+import { RecordingController } from '../../state/media/recording-controller.ts'
+import { useController } from '../use-controller.ts'
 
 export interface UseRecording {
   /** the recording that runs; `undefined` before `start()` and once it is over */
@@ -45,107 +46,13 @@ export interface UseRecording {
  * unmounted.
  */
 export const useRecording = (recorder: MediaRecordingManager): UseRecording => {
-  const recording = shallowRef<MediaRecording>()
-  const state = ref<MediaRecordingState>()
-  const duration = ref(0)
-  const bytes = ref(0)
-  const result = shallowRef<RecordingResult>()
-  const error = shallowRef<unknown>()
-  let isDisposed = false
-
-  /** what a recording leaves, as a result or as an error, for the one that is current */
-  const follow = (started: MediaRecording): Promise<RecordingResult | undefined> =>
-    started.finished.then(
-      (finished) => {
-        if (recording.value === started) {
-          recording.value = undefined
-          state.value = undefined
-          duration.value = finished.duration
-          bytes.value = finished.bytes
-          result.value = finished
-        }
-
-        return finished
-      },
-      (failure: unknown) => {
-        if (recording.value === started) {
-          recording.value = undefined
-          state.value = undefined
-          error.value = failure
-        }
-
-        return undefined
-      }
-    )
-
-  const stop = async (): Promise<RecordingResult | undefined> => {
-    const running = recording.value
-
-    if (running === undefined) {
-      return undefined
-    }
-
-    running.stop().catch(() => undefined)
-
-    return follow(running)
-  }
-
-  const start = async (source: RecordingSource, options?: RecordingOptions): Promise<MediaRecording | undefined> => {
-    await stop()
-    result.value = undefined
-    error.value = undefined
-    duration.value = 0
-    bytes.value = 0
-
-    try {
-      const started = await recorder.record(source, options)
-
-      // the component may have been unmounted while the recording was starting
-      if (isDisposed) {
-        await started.stop().catch(() => undefined)
-
-        return undefined
-      }
-
-      started.on('statechange', (changed) => {
-        if (recording.value === started && changed !== 'stopped') {
-          state.value = changed
-        }
-      })
-      started.on('progress', (progress) => {
-        if (recording.value === started) {
-          duration.value = progress.duration
-          bytes.value = progress.bytes
-        }
-      })
-
-      recording.value = started
-      state.value = started.state
-      void follow(started)
-
-      return started
-    } catch (failure) {
-      error.value = failure
-
-      return undefined
-    }
-  }
-
-  onScopeEnd(() => {
-    isDisposed = true
-    void stop()
-  })
+  const controller = new RecordingController(() => recorder)
 
   return {
-    recording,
-    state,
-    duration,
-    bytes,
-    result,
-    error,
-    start,
-    stop,
-    pause: () => recording.value?.pause(),
-    resume: () => recording.value?.resume(),
+    ...useController(controller),
+    start: controller.start,
+    stop: controller.stop,
+    pause: controller.pause,
+    resume: controller.resume,
   }
 }
