@@ -17,7 +17,7 @@ export class DefaultStorageSpaceWatch extends EventEmitter<StorageSpaceWatchEven
   private timer: ReturnType<typeof setInterval> | undefined
   private latest: StorageSpace | undefined
   private pending: Promise<void> | undefined
-  private isDisposed = false
+  private isStopped = false
 
   private readonly remoteWrites: EventSubscription | undefined
 
@@ -25,14 +25,14 @@ export class DefaultStorageSpaceWatch extends EventEmitter<StorageSpaceWatchEven
    * @param onRemoteWrite registers a listener for writes that another tab announced, so the watch does not wait for
    *   the next interval after one
    * @param logger receives the failures of listeners
-   * @param disposed called once, when the watch was disposed
+   * @param stopped called once, when the watch has stopped
    */
   public constructor(
     private readonly reader: StorageSpaceReader,
     private readonly options: StorageSpaceWatchOptions = {},
     onRemoteWrite?: (listener: () => void) => EventSubscription,
     private readonly logger: Logger = new NullLogger(),
-    private readonly disposed: (watch: StorageSpaceWatch) => void = () => undefined
+    private readonly stopped: (watch: StorageSpaceWatch) => void = () => undefined
   ) {
     super()
 
@@ -40,6 +40,10 @@ export class DefaultStorageSpaceWatch extends EventEmitter<StorageSpaceWatchEven
 
     this.timer = setInterval(() => void this.refresh(), options.interval ?? DefaultStorageSpaceWatch.defaultInterval)
     void this.refresh()
+  }
+
+  public get isActive(): boolean {
+    return !this.isStopped
   }
 
   public get current(): StorageSpace | undefined {
@@ -55,13 +59,13 @@ export class DefaultStorageSpaceWatch extends EventEmitter<StorageSpaceWatchEven
     return this.pending
   }
 
-  public dispose(): void {
-    if (this.isDisposed) {
+  public stop(): void {
+    if (this.isStopped) {
       return
     }
 
-    this.isDisposed = true
-    this.disposed(this)
+    this.isStopped = true
+    this.stopped(this)
     clearInterval(this.timer)
     this.timer = undefined
     this.remoteWrites?.unsubscribe()
@@ -69,16 +73,16 @@ export class DefaultStorageSpaceWatch extends EventEmitter<StorageSpaceWatchEven
   }
 
   /**
-   * Calls {@link dispose}, so the object can be declared with `using`.
+   * Calls {@link stop}, so the object can be declared with `using`.
    */
   public [Symbol.dispose](): void {
-    this.dispose()
+    this.stop()
   }
 
   private async read(): Promise<void> {
     const space = await this.reader.read()
 
-    if (this.isDisposed) {
+    if (this.isStopped) {
       return
     }
 

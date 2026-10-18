@@ -3,8 +3,11 @@ import type { Logger } from '../../core/logging/logger.ts'
 import type { CameraManager } from '../camera/camera-manager.ts'
 import type { MicrophoneManager } from '../microphone/microphone-manager.ts'
 import type { MicrophoneSession } from '../microphone/session/microphone-session.ts'
+import type { MediaSession } from '../session/media-session.ts'
 import { DefaultCombinedMediaSession } from './default-combined-media-session.ts'
 import type { CombinedMediaSession } from './combined-media-session.ts'
+import { DefaultJoinedMediaSource } from './default-joined-media-source.ts'
+import type { JoinedMediaSource } from './joined-media-source.ts'
 import type { CombinedMediaRequirements, MediaManager } from './media-manager.ts'
 
 /**
@@ -34,5 +37,9 @@ export class DefaultMediaManager implements MediaManager {
       await Promise.allSettled([camera.close(), microphone?.close()])
       throw error
     }
+  }
+
+  public join(first: MediaSession, ...others: MediaSession[]): JoinedMediaSource {
+    return new DefaultJoinedMediaSource([first, ...others], this.environment.createMediaStream([]), this.logger)
   }
 }

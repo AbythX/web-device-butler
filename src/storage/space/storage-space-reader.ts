@@ -1,4 +1,5 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { StorageSupport } from '../storage-support.ts'
 import { StorageSpace } from './storage-space.ts'
 
 /**
@@ -11,7 +12,7 @@ export class StorageSpaceReader {
    * Never rejects. Where the browser has no estimate, the result is not known.
    */
   public async read(): Promise<StorageSpace> {
-    const storage = this.environment.originStorage
+    const storage = StorageSupport.resolveFor(this.environment)
 
     if (storage === undefined) {
       return StorageSpace.unknown()
@@ -36,7 +37,7 @@ export class StorageSpaceReader {
    */
   public async persist(): Promise<boolean> {
     try {
-      return (await this.environment.originStorage?.persist?.()) ?? false
+      return (await StorageSupport.resolveFor(this.environment)?.persist?.()) ?? false
     } catch {
       return false
     }
@@ -44,7 +45,7 @@ export class StorageSpaceReader {
 
   private async isPersistent(): Promise<boolean> {
     try {
-      return (await this.environment.originStorage?.persisted?.()) ?? false
+      return (await StorageSupport.resolveFor(this.environment)?.persisted?.()) ?? false
     } catch {
       return false
     }

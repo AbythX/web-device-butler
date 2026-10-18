@@ -15,8 +15,9 @@ import { StorageUnsupportedError } from '../errors/storage-unsupported-error.ts'
 import { StorageVersionError } from '../errors/storage-version-error.ts'
 import { DefaultStorageManager } from '../default-storage-manager.ts'
 import type { StorageManager } from '../storage-manager.ts'
-import { FakeBrowser } from '../testing/fake-browser.ts'
-import { FakeStorage } from '../testing/fake-storage.ts'
+import { FakeStorageBrowser } from '../testing/fake-storage-browser.ts'
+import { FakeOrigin } from '../../core/testing/fake-origin.ts'
+import { FakeStorage } from '../../core/testing/fake-storage.ts'
 import type { Store } from './store.ts'
 import type { StoreChange } from './store-change.ts'
 
@@ -41,12 +42,12 @@ const readAll = async (stream: ReadableStream<Uint8Array> | undefined) =>
   stream === undefined ? undefined : decoder.decode(await new Response(stream).arrayBuffer())
 
 describe('default-store', () => {
-  let browser!: FakeBrowser
+  let browser!: FakeStorageBrowser
   let logger!: MockProxy<Logger>
   let tab!: StorageManager
 
   beforeEach(() => {
-    browser = new FakeBrowser()
+    browser = new FakeStorageBrowser()
     logger = mock<Logger>()
     tab = browser.openTab({}, logger)
   })
@@ -813,7 +814,7 @@ describe('default-store', () => {
 
   describe('a full storage', () => {
     test('should fail with the space of the origin and keep the old entry', async () => {
-      browser = new FakeBrowser({}, new FakeStorage(200))
+      browser = new FakeStorageBrowser({}, new FakeOrigin(new FakeStorage(200)))
       const store = await browser.openTab().open({ driver: 'local', namespace: 'test' })
       await store.set('key', 'small')
 

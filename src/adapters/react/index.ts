@@ -4,17 +4,29 @@ export { useLocation } from './device/use-location.ts'
 
 export type { UseLocation } from './device/use-location.ts'
 
+export { useAttitude, useMotionWatch, useMovement } from './device/use-motion.ts'
+
+export type { UseMotionWatch } from './device/use-motion.ts'
+
 export { useNetwork } from './device/use-network.ts'
 
 export type { UseNetwork } from './device/use-network.ts'
+
+export { useNotifications } from './device/use-notifications.ts'
+
+export type { UseNotifications } from './device/use-notifications.ts'
 
 export { useCamera } from './media/use-camera.ts'
 
 export type { UseCamera } from './media/use-camera.ts'
 
+export { useCodeScan } from './media/use-code-scan.ts'
+
+export type { UseCodeScan } from './media/use-code-scan.ts'
+
 export { useMediaSession } from './media/use-media-session.ts'
 
-export type { UseMediaSession } from './media/use-media-session.ts'
+export type { MediaSessionOpener, UseMediaSession } from './media/use-media-session.ts'
 
 export { useMicrophone } from './media/use-microphone.ts'
 
@@ -23,6 +35,10 @@ export type { UseMicrophone, UseMicrophoneOptions } from './media/use-microphone
 export { useRecording } from './media/use-recording.ts'
 
 export type { UseRecording } from './media/use-recording.ts'
+
+export { useScreenCapture } from './media/use-screen-capture.ts'
+
+export type { UseScreenCapture } from './media/use-screen-capture.ts'
 
 export { useFullscreen } from './screen/use-fullscreen.ts'
 

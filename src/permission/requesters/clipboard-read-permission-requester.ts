@@ -1,4 +1,7 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
+import { ClipboardSupport } from '../../sharing/clipboard/clipboard-support.ts'
+import { SharingErrorFactory } from '../../sharing/errors/sharing-error-factory.ts'
+import { PermissionDeniedError } from '../errors/permission-denied-error.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
 
@@ -12,7 +15,7 @@ export class ClipboardReadPermissionRequester implements PermissionRequester {
    * `false` outside a secure context and where the browser does not let pages read the clipboard.
    */
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && typeof this.environment.clipboard?.readText === 'function'
+    return ClipboardSupport.canReadIn(this.environment)
   }
 
   /**
@@ -20,7 +23,7 @@ export class ClipboardReadPermissionRequester implements PermissionRequester {
    *   can tell
    */
   public async request(): Promise<DevicePermissionState | undefined> {
-    const clipboard = this.environment.clipboard
+    const clipboard = ClipboardSupport.resolveFor(this.environment)
 
     if (!this.isSupported || clipboard === undefined) {
       return 'unsupported'
@@ -31,9 +34,9 @@ export class ClipboardReadPermissionRequester implements PermissionRequester {
 
       return 'granted'
     } catch (error) {
-      return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotAllowedError'
-        ? 'denied'
-        : undefined
+      const failure = SharingErrorFactory.from(error, 'clipboard', 'The browser could not read the clipboard')
+
+      return failure instanceof PermissionDeniedError ? 'denied' : undefined
     }
   }
 }

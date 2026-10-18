@@ -1,3 +1,4 @@
+import type { DisplayMediaOptionsLike } from '../../core/environment/display-media-like.ts'
 import { FakeMediaStream } from './fake-media-stream.ts'
 import { FakeMediaStreamTrack } from './fake-media-stream-track.ts'
 
@@ -28,8 +29,23 @@ export interface FakeMediaDevicesOptions {
 }
 
 export interface FakeMediaCall {
-  readonly method: 'getUserMedia' | 'enumerateDevices'
+  readonly method: 'getUserMedia' | 'enumerateDevices' | 'getDisplayMedia'
   readonly constraints?: MediaStreamConstraints
+}
+
+/**
+ * What the user chooses in the picker of a capture of the screen.
+ */
+export interface FakeDisplayChoice {
+  surface: 'monitor' | 'window' | 'browser'
+  /** whether the user shares the sound as well; it is only shared where it was asked for. Default: `false` */
+  audio?: boolean
+  /** default: 1920 */
+  width?: number
+  /** default: 1080 */
+  height?: number
+  /** like an older browser: the track does not say what was shared */
+  hidesSurface?: boolean
 }
 
 type PermissionKind = 'camera' | 'microphone'
@@ -76,6 +92,13 @@ export class FakeMediaDevices {
   /** every track that was ever started */
   public readonly tracks: FakeMediaStreamTrack[] = []
   public readonly permission: Record<PermissionKind, 'prompt' | 'granted' | 'denied'>
+
+  /** what the user chooses the next time the picker is shown; `cancel` closes it */
+  public displayChoice: FakeDisplayChoice | 'cancel' = { surface: 'monitor' }
+  /** what `getDisplayMedia()` throws instead of showing the picker, for example without a click */
+  public displayError: unknown
+  /** every call of `getDisplayMedia()`, with its options */
+  public readonly displayRequests: DisplayMediaOptionsLike[] = []
 
   /** runs before every call is answered */
   public beforeCall: ((call: FakeMediaCall) => void | Promise<void>) | undefined
@@ -162,6 +185,46 @@ export class FakeMediaDevices {
     this.tracks.push(track)
 
     return new FakeMediaStream([track]) as unknown as MediaStream
+  }
+
+  public readonly getDisplayMedia = async (options: DisplayMediaOptionsLike = {}): Promise<MediaStream> => {
+    this.calls.push({ method: 'getDisplayMedia' })
+    this.displayRequests.push(options)
+    await this.beforeCall?.({ method: 'getDisplayMedia' })
+
+    if (this.displayError !== undefined) {
+      throw this.displayError
+    }
+
+    const choice = this.displayChoice
+
+    if (choice === 'cancel') {
+      throw new DOMException('Permission denied by user', 'NotAllowedError')
+    }
+
+    const video = new FakeMediaStreamTrack({
+      kind: 'video',
+      deviceId: `screen:${choice.surface}`,
+      label: `screen:${choice.surface}`,
+      settings: {
+        width: choice.width ?? 1920,
+        height: choice.height ?? 1080,
+        ...(choice.hidesSurface === true ? {} : { displaySurface: choice.surface, cursor: 'always' }),
+      },
+    })
+
+    const isSoundShared = choice.audio === true && options.audio !== undefined && options.audio !== false
+
+    const sound = isSoundShared
+      ? new FakeMediaStreamTrack({ kind: 'audio', deviceId: 'screen:audio', label: 'screen:audio' })
+      : undefined
+
+    // the sound first, as some browsers list it: the session has to find the picture itself
+    const tracks = sound === undefined ? [video] : [sound, video]
+
+    this.tracks.push(...tracks)
+
+    return new FakeMediaStream(tracks) as unknown as MediaStream
   }
 
   public readonly enumerateDevices = async (): Promise<MediaDeviceInfo[]> => {

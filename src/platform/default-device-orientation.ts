@@ -4,8 +4,9 @@ import type { BrowserEnvironment } from '../core/environment/browser-environment
 import { UnsupportedError } from '../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../core/events/event-emitter.ts'
 import type { Logger } from '../core/logging/logger.ts'
-import { ScreenError } from '../screen/errors/screen-error.ts'
+import { ScreenErrorFactory } from '../screen/errors/screen-error-factory.ts'
 import type { DeviceOrientation, DeviceOrientationEvents, OrientationKind } from './device-orientation.ts'
+import { OrientationLockSupport } from './orientation-lock-support.ts'
 
 /**
  * The implementation of {@link DeviceOrientation}.
@@ -41,13 +42,13 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
   }
 
   public get canLock(): boolean {
-    return typeof this.environment.screenOrientation?.lock === 'function'
+    return OrientationLockSupport.canLockIn(this.environment)
   }
 
   public async lock(orientation: OrientationKind): Promise<void> {
-    const screenOrientation = this.environment.screenOrientation
+    const screenOrientation = OrientationLockSupport.resolveFor(this.environment)
 
-    if (screenOrientation === undefined || typeof screenOrientation.lock !== 'function') {
+    if (screenOrientation === undefined) {
       throw new UnsupportedError('orientation lock')
     }
 
@@ -55,9 +56,9 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
       await screenOrientation.lock(orientation)
     } catch (error) {
       // a device that cannot be turned, such as a desktop, has the call and rejects it
-      throw DefaultDeviceOrientation.isNotSupported(error)
-        ? new UnsupportedError('orientation lock', { cause: error })
-        : new ScreenError(`The browser did not keep the page in ${orientation}`, { cause: error })
+      throw ScreenErrorFactory.from(error, `The browser did not keep the page in ${orientation}`, {
+        feature: 'orientation lock',
+      })
     }
   }
 
@@ -92,10 +93,6 @@ export class DefaultDeviceOrientation extends EventEmitter<DeviceOrientationEven
 
   private readonly changed = (event: Pick<MediaQueryListEvent, 'matches'>): void => {
     this.emitSafely('change', event.matches ? 'portrait' : 'landscape', this.logger)
-  }
-
-  private static isNotSupported(error: unknown): boolean {
-    return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotSupportedError'
   }
 
   private unwatch(): void {

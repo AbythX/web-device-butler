@@ -5,14 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>web-device-butler: location, orientation, permissions</title>
     <link rel="stylesheet" href="../shared/demo.css" />
+    <style>
+      .instruments {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .dial {
+        position: relative;
+        width: 10rem;
+        height: 10rem;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+      }
+
+      #needle {
+        position: absolute;
+        left: calc(50% - 0.25rem);
+        top: 10%;
+        width: 0.5rem;
+        height: 40%;
+        background: #dc2626;
+        transform-origin: 50% 100%;
+      }
+
+      #bubble {
+        position: absolute;
+        left: calc(50% - 1rem);
+        top: calc(50% - 1rem);
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: #22c55e;
+      }
+    </style>
   </head>
   <body>
     <main>
       <nav><a href="../">All demos</a></nav>
       <h1>Location, orientation, permissions</h1>
       <p class="hint">
-        Where the device is, how it is held and what the page is allowed to use. Nothing is requested before you press a
-        button.
+        Where the device is, how it is held, how it is turned and what the page is allowed to use. Nothing is requested
+        before you press a button.
       </p>
 
       <section>
@@ -89,6 +124,24 @@
           <button id="stop">watch.stop()</button>
         </div>
         <dl id="position"></dl>
+      </section>
+
+      <section>
+        <h2>Motion and compass</h2>
+        <p class="hint">
+          Safari on iOS reports nothing until <code>request('motion')</code> was answered in a click. A desktop has no
+          sensors: the watches say <code>unavailable</code>. North is shown where the device knows it.
+        </p>
+        <div class="actions">
+          <button id="motion-request">request('motion')</button>
+          <button id="motion-start">watchAttitude() and watchMotion()</button>
+          <button id="motion-stop">stop()</button>
+        </div>
+        <div class="instruments">
+          <div class="dial" title="compass: the needle points north"><div id="needle"></div></div>
+          <div class="dial" title="spirit level"><div id="bubble"></div></div>
+        </div>
+        <dl id="motion"></dl>
       </section>
 
       <section>

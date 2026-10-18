@@ -1,7 +1,8 @@
 # Voice memos
 
-**Goal.** The user records memos of any length. A level display shows that the microphone hears something. A
-recording does not sit in memory until it is finished, and it stops in an orderly way before the storage is full.
+**Goal.** The user records memos. A level display shows that the microphone hears something. A recording is in the
+storage while it runs, so a page that is thrown away in the middle of a memo does not lose it, and it stops in an
+orderly way before the storage is full.
 
 **Demo.** `pnpm demo`, page `use-cases/voice-memo/`. Source:
 [`demo/use-cases/voice-memo/main.ts`](../../demo/use-cases/voice-memo/main.ts).
@@ -26,49 +27,46 @@ session.level?.on('change', (level) => (meter.value = level)) // 0 to 1
 
 The level is measured only while this listener exists. It is `undefined` where the browser has no Web Audio.
 
-## Recording into the storage
-
-`butler.recorder` hands every piece the browser records straight to a stream of the store.
+## Keeping it in the storage
 
 ```ts
-const sounds = await butler.storage.open({
-  driver: ['opfs', 'memory'], // the drivers that can stream
-  namespace: 'memos',
-  codec: new BinaryCodec(),
-})
-
-const id = crypto.randomUUID()
-
 const recording = await butler.recorder.record(session, {
-  into: (segment) => sounds.writeStream(segment === 0 ? id : `${id}-${segment}`),
+  keep: { namespace: 'memos', after: 'keep' },
   keepAwake: true, // the phone does not lock in the middle of a memo
 })
 
 recording.on('progress', ({ duration, bytes }) => showProgress(duration, bytes))
 ```
 
-Until the stream is closed the entry does not exist for anyone else, and no other tab can write or delete it.
-
-`into` is asked once per segment. There is one, unless the microphone is started again while it records; see
-[segments](../guides/recording.md#segments).
+Every piece the browser hands over (one per second, `interval`) is written into the storage as it arrives, next to
+a description of the recording. `after: 'keep'` leaves the memo there once it was stopped; without it, `finished`
+reads it back and removes it. The library chooses a backend that keeps bytes as they are and lives with the origin,
+IndexedDB or OPFS; `keep.storage` takes requirements like `butler.storage.open()`.
 
 ## Stopping
 
 ```ts
 try {
-  // the last piece is written and the stream closed: now the memo is there, in one step
-  const { duration, mimeType, segments } = await recording.stop()
-
-  await memos.set(id, { id, recordedAt, duration, mimeType, segments: segments.length })
+  await recording.stop()
 } finally {
   await session.close()
 }
 ```
 
-- `memos` is a second store, opened without a codec, that holds what is known about each memo as JSON.
-- Keep the `mimeType` with the memo. Browsers record in different formats, and the player has to be told.
-- A recording that could not be written to its end rejects, and nothing is kept of it: the stream is aborted, so
-  the entry stays as it was. `recording.discard()` does the same on purpose.
+The memo is in the storage as `finished`, with its format, its length and its size. `recording.discard()` removes
+it instead.
+
+## The list of memos
+
+```ts
+for (const memo of await butler.recorder.kept('memos').list()) {
+  // memo.state: 'finished' | 'recording' (in this tab or another) | 'interrupted'
+  show(memo.startedAt, memo.duration, memo.bytes, memo.state)
+}
+```
+
+`interrupted` is a memo whose page was thrown away, closed or crashed while it recorded. It has everything up to
+the last piece that was written, and plays like any other.
 
 ## Before the storage is full
 
@@ -77,15 +75,15 @@ using space = butler.storage.watchSpace({ interval: 2000, lowBelow: 20 * 1024 * 
 space.on('low', () => stop())
 ```
 
-Stopping with a reserve keeps the recording. Running into the `StorageQuotaExceededError` loses the piece that did
-not fit, and with `abort()` the whole recording.
+Stopping with a reserve keeps the recording as it is. Running into the storage limit stops the recording too:
+`finished` rejects with a `StorageQuotaExceededError`, and what was kept until then stays as an `interrupted` memo.
 
 ## When the microphone goes away
 
 A headset is unplugged, or the user stops the microphone in the browser:
 
 ```ts
-const { segments } = await recording.finished // resolves however the recording ended
+await recording.finished // resolves however the recording ended
 ```
 
 The recording ends by itself when its session does, and keeps what was recorded until then.
@@ -93,14 +91,16 @@ The recording ends by itself when its session does, and keeps what was recorded 
 ## Playing a memo
 
 ```ts
-const stream = await sounds.readStream(id)
-const sound = await new Response(stream).blob()
+const { segments } = await memo.read()
 
-audio.src = URL.createObjectURL(new Blob([sound], { type: memo.mimeType }))
+audio.src = URL.createObjectURL(segments[0].blob)
 await audio.play()
 ```
 
-While the stream is read, writers of the entry wait.
+`read()` puts the pieces together and writes the length into a WebM file, also into one that was interrupted, so a
+player can show it and jump in it. There is one segment, unless the microphone was started again while it
+recorded; see [segments](../guides/recording.md#segments). `memo.delete()` removes a memo; one that a tab records
+right now cannot be deleted.
 
 ## Muting
 
@@ -113,11 +113,13 @@ pausing the recorder would not give.
 
 ## Several tabs
 
-Two tabs can record at once, each with its own session. To prevent that, open with `exclusive: true`; the second tab
-then gets a `MediaDeviceBusyError`. The list of memos follows the other tab through `memos.on('change')`.
+Two tabs can record at once, each with its own session and its own memo. To prevent that, open with
+`exclusive: true`; the second tab then gets a `MediaDeviceBusyError`. A memo the other tab records is listed as
+`recording`; the demo reads the list again when the page becomes visible.
 
-## Where streams are not available
+## Memory
 
-`['opfs', 'memory']` ends in memory where a browser has no OPFS: the memos work and are gone after a reload. Check
-`sounds.capabilities.persistence` and say so. The alternative is to collect the pieces and store them with one
-`set()` in `indexeddb`, which limits the length of a memo to what fits in memory.
+A memo is in the storage while it records, not in memory. `read()` and `finished` put it together as a `Blob`,
+which the browser may hold in memory; a memo of an hour is better played from a file. Where the browser has no
+backend that lives with the origin, the memos end up in memory and are gone after a reload: check
+`butler.storage.prepare({ require: { persistence: 'origin' } })` and say so.

@@ -3,7 +3,7 @@ import { effectScope, type EffectScope } from 'vue'
 
 import type { StorageManager } from '../../../storage/storage-manager.ts'
 import type { Store } from '../../../storage/store/store.ts'
-import { FakeBrowser } from '../../../storage/testing/fake-browser.ts'
+import { FakeStorageBrowser } from '../../../storage/testing/fake-storage-browser.ts'
 import { useStoredValue } from './use-stored-value.ts'
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve))
@@ -28,12 +28,12 @@ describe('use-stored-value', () => {
     scope.stop()
   })
 
-  let browser!: FakeBrowser
+  let browser!: FakeStorageBrowser
   let storage!: StorageManager
   let store!: Store<number>
 
   beforeEach(async () => {
-    browser = new FakeBrowser()
+    browser = new FakeStorageBrowser()
     storage = browser.openTab()
     store = await storage.open<number>({ driver: 'local', namespace: 'settings' })
   })

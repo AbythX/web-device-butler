@@ -245,7 +245,7 @@ class StorageDemo extends DemoPage {
   }
 
   private watchSpace(): void {
-    this.spaceWatch?.dispose()
+    this.spaceWatch?.stop()
     this.spaceWatch = undefined
 
     if (this.element<HTMLInputElement>('watch-space').checked) {

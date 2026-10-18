@@ -277,6 +277,10 @@ using watch = butler.storage.watchSpace({ interval: 5000, lowBelow: 50 * 1024 * 
 
 watch.on('change', (space) => {})
 watch.on('low', (space) => stopRecording())
+
+watch.current // the last read; undefined until the first finished
+watch.isActive
+watch.stop()
 ```
 
 ## Errors

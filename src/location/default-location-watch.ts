@@ -40,7 +40,7 @@ export class DefaultLocationWatch extends EventEmitter<LocationWatchEvents> impl
     return this.identifier !== undefined
   }
 
-  public get position(): DevicePosition | undefined {
+  public get current(): DevicePosition | undefined {
     return this.lastPosition
   }
 
@@ -70,7 +70,7 @@ export class DefaultLocationWatch extends EventEmitter<LocationWatchEvents> impl
     }
 
     this.lastPosition = next
-    this.emitSafely('position', next, this.logger)
+    this.emitSafely('change', next, this.logger)
   }
 
   private failed(error: GeolocationPositionError): void {

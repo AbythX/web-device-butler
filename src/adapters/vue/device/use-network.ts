@@ -1,6 +1,7 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { DeviceNetwork, NetworkConnection } from '../../../network/device-network.ts'
+import { untilScopeEnd } from '../scope.ts'
 
 export interface UseNetwork {
   /** `false` if the device has no network; `undefined` where there is no browser, as during server-side rendering */
@@ -16,14 +17,8 @@ export const useNetwork = (network: DeviceNetwork): UseNetwork => {
   const isOnline = ref(network.isOnline)
   const connection = shallowRef(network.connection)
 
-  const subscriptions = [
-    network.on('change', (changed) => (isOnline.value = changed)),
-    network.on('connectionchange', (changed) => (connection.value = changed)),
-  ]
-
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => subscriptions.forEach((subscription) => subscription.unsubscribe()))
-  }
+  untilScopeEnd(network.on('change', (changed) => (isOnline.value = changed)))
+  untilScopeEnd(network.on('connectionchange', (changed) => (connection.value = changed)))
 
   return { isOnline, connection }
 }

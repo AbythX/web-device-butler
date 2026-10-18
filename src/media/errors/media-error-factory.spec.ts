@@ -75,6 +75,81 @@ describe('media-error-factory', () => {
     })
   })
 
+  describe('#fromScreenCapture', () => {
+    const action = 'Could not capture the screen'
+
+    test.each(['InvalidStateError', 'InvalidAccessError'])(
+      'should explain that %s means the call came without a click',
+      async (name) => {
+        const cause = browserError(name)
+
+        const error = MediaErrorFactory.fromScreenCapture(cause, action, undefined)
+
+        expect(error).toBeInstanceOf(MediaError)
+        expect(error.message).toBe(`${action}: open() has to be called in answer to a click or a key of the user`)
+        expect(error.cause).toBe(cause)
+      }
+    )
+
+    test('should take a refusal without a click for the missing click', async () => {
+      const error = MediaErrorFactory.fromScreenCapture(browserError('NotAllowedError'), action, false)
+
+      expect(error).not.toBeInstanceOf(PermissionDeniedError)
+      expect(error.message).toContain('in answer to a click')
+    })
+
+    test.each([true, undefined])(
+      'should take a refusal after a click (%s) for a denied capture',
+      async (wasActivated) => {
+        const error = MediaErrorFactory.fromScreenCapture(browserError('NotAllowedError'), action, wasActivated)
+
+        expect(error).toBeInstanceOf(PermissionDeniedError)
+        expect((error as PermissionDeniedError).permission).toBe('display-capture')
+      }
+    )
+  })
+
+  describe('#fromAudioOutput', () => {
+    const action = 'Could not send the sound to the audio output'
+
+    test('should name the output that does not exist', async () => {
+      const cause = browserError('NotFoundError')
+
+      const error = MediaErrorFactory.fromAudioOutput(cause, action, 'speakers')
+
+      expect(error).toBeInstanceOf(MediaDeviceNotFoundError)
+      expect(error.message).toBe("There is no audio output with the id 'speakers'")
+      expect(error.cause).toBe(cause)
+    })
+
+    test('should turn a refusal into a denied choice of the speaker', async () => {
+      const error = MediaErrorFactory.fromAudioOutput(browserError('NotAllowedError'), action, 'speakers')
+
+      expect(error).toBeInstanceOf(PermissionDeniedError)
+      expect((error as PermissionDeniedError).permission).toBe('speaker-selection')
+    })
+
+    test('should use the action as the message of every other failure', async () => {
+      const error = MediaErrorFactory.fromAudioOutput(browserError('AbortError'), action, 'speakers')
+
+      expect(error).toBeInstanceOf(MediaError)
+      expect(error.message).toBe(action)
+    })
+
+    test('should pass an error of the library through', async () => {
+      const error = new SessionClosedError()
+
+      expect(MediaErrorFactory.fromAudioOutput(error, action, 'speakers')).toBe(error)
+    })
+  })
+
+  describe('#isOutputChoiceCancelled', () => {
+    test('should take the refusal of the list of the outputs for a list the user closed', async () => {
+      expect(MediaErrorFactory.isOutputChoiceCancelled(browserError('NotAllowedError'))).toBe(true)
+      expect(MediaErrorFactory.isOutputChoiceCancelled(browserError('AbortError'))).toBe(false)
+    })
+  })
+
   describe('#isOverconstrained', () => {
     test('should tell an unsatisfied constraint from other errors', async () => {
       expect(MediaErrorFactory.isOverconstrained(browserError('OverconstrainedError'))).toBe(true)

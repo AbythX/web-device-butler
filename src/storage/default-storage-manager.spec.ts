@@ -8,7 +8,7 @@ import { DefaultStorageSpaceWatch } from './space/default-storage-space-watch.ts
 import { DefaultStorageManager } from './default-storage-manager.ts'
 import type { StorageManager } from './storage-manager.ts'
 import { DefaultStore } from './store/default-store.ts'
-import { FakeBrowser } from './testing/fake-browser.ts'
+import { FakeStorageBrowser } from './testing/fake-storage-browser.ts'
 
 class CustomStorageDriver extends MemoryStorageDriver {
   public override readonly name: string = 'custom'
@@ -25,11 +25,11 @@ class UnsupportedStorageDriver extends MemoryStorageDriver {
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve))
 
 describe('default-storage-manager', () => {
-  let browser!: FakeBrowser
+  let browser!: FakeStorageBrowser
   let sut!: StorageManager
 
   beforeEach(() => {
-    browser = new FakeBrowser()
+    browser = new FakeStorageBrowser()
     sut = browser.openTab()
   })
 

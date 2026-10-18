@@ -48,6 +48,8 @@ describe('default-permission-manager', () => {
       'persistent-storage': new StubRequester(),
       'clipboard-read': new StubRequester(),
       'screen-wake-lock': new StubRequester(),
+      motion: new StubRequester(),
+      notifications: new StubRequester(),
     }
     sut = createSut()
   })

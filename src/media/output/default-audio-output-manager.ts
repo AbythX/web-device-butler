@@ -5,17 +5,10 @@ import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
-import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
-import { MediaDeviceNotFoundError } from '../errors/media-device-not-found-error.ts'
 import { MediaError } from '../errors/media-error.ts'
+import { MediaErrorFactory } from '../errors/media-error-factory.ts'
 import type { AudioOutputDescriptor, AudioOutputManager, AudioOutputManagerEvents } from './audio-output-manager.ts'
-
-/**
- * `navigator.mediaDevices` with the call that lets the user choose an output, which few browsers have.
- */
-interface OutputMediaDevices extends MediaDevices {
-  selectAudioOutput?(): Promise<MediaDeviceInfo>
-}
+import { AudioOutputSupport } from './audio-output-support.ts'
 
 /**
  * The implementation of {@link AudioOutputManager}.
@@ -45,15 +38,15 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
   }
 
   public get canChoose(): boolean {
-    return typeof this.mediaDevices?.selectAudioOutput === 'function'
+    return AudioOutputSupport.canChooseIn(this.environment)
   }
 
   public canRoute(element: HTMLMediaElement): boolean {
-    return this.environment.isSecureContext && typeof element.setSinkId === 'function'
+    return AudioOutputSupport.canRouteIn(this.environment, element)
   }
 
   public async list(): Promise<AudioOutputDescriptor[]> {
-    const mediaDevices = this.mediaDevices
+    const mediaDevices = AudioOutputSupport.resolveFor(this.environment)
 
     if (mediaDevices === undefined || typeof mediaDevices.enumerateDevices !== 'function') {
       return []
@@ -67,7 +60,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
   }
 
   public async choose(): Promise<AudioOutputDescriptor | undefined> {
-    const mediaDevices = this.mediaDevices
+    const mediaDevices = AudioOutputSupport.resolveFor(this.environment)
 
     if (mediaDevices === undefined || typeof mediaDevices.selectAudioOutput !== 'function') {
       throw new UnsupportedError('selectAudioOutput')
@@ -78,8 +71,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
 
       return { id: deviceId, groupId, label, isDefault: deviceId === DefaultAudioOutputManager.defaultId }
     } catch (error) {
-      // the user closed the list
-      if (DefaultAudioOutputManager.nameOf(error) === 'NotAllowedError') {
+      if (MediaErrorFactory.isOutputChoiceCancelled(error)) {
         return undefined
       }
 
@@ -97,14 +89,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
     try {
       await element.setSinkId(id)
     } catch (error) {
-      switch (DefaultAudioOutputManager.nameOf(error)) {
-        case 'NotFoundError':
-          throw new MediaDeviceNotFoundError(`There is no audio output with the id '${id}'`, { cause: error })
-        case 'NotAllowedError':
-          throw new PermissionDeniedError('speaker-selection', { cause: error })
-        default:
-          throw new MediaError('Could not send the sound to the audio output', { cause: error })
-      }
+      throw MediaErrorFactory.fromAudioOutput(error, 'Could not send the sound to the audio output', id)
     }
   }
 
@@ -124,7 +109,7 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
   }
 
   protected override onFirstListener(): void {
-    this.watched = this.mediaDevices
+    this.watched = AudioOutputSupport.resolveFor(this.environment)
     this.watched?.addEventListener?.('devicechange', this.devicesChanged)
   }
 
@@ -138,10 +123,6 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
       (outputs) => this.emitSafely('change', outputs, this.logger),
       (error: unknown) => this.logger.error('Could not list the audio outputs after a device changed', error)
     )
-  }
-
-  private get mediaDevices(): OutputMediaDevices | undefined {
-    return this.environment.isSecureContext ? this.environment.mediaDevices : undefined
   }
 
   /**
@@ -170,9 +151,5 @@ export class DefaultAudioOutputManager extends EventEmitter<AudioOutputManagerEv
       label: device.label,
       isDefault: device === defaultDevice,
     }))
-  }
-
-  private static nameOf(error: unknown): unknown {
-    return typeof error === 'object' && error !== null && 'name' in error ? error.name : undefined
   }
 }

@@ -1,5 +1,6 @@
 import type { Listenable } from '../../core/events/listenable.ts'
 import type { MediaSessionEnd, MediaSessionState } from '../session/media-session.ts'
+import type { RecordingKeepOptions } from './kept/kept-recording.ts'
 
 export interface RecordingSourceEvents {
   statechange: MediaSessionState
@@ -30,8 +31,19 @@ export interface RecordingOptions {
    * Where the data is written instead of being kept in memory, for recordings that should not be held there:
    * `into: (segment) => store.writeStream(`memo-${segment}`)`. Called once per segment, see
    * {@link RecordingResult.segments}.
+   *
+   * A stream keeps nothing until it is closed, and the streams of the storage of the library replace their entry
+   * only then: a page that is thrown away while it records loses what it wrote into them. For a recording that has
+   * to survive the page, use {@link keep}.
    */
   into?: (segment: number) => Promise<WritableStream<Uint8Array>>
+  /**
+   * Keep the recording in the storage while it runs, piece by piece, instead of in memory. A page that is thrown
+   * away loses at most the last `interval`; the next visit finds the recording as `interrupted` in
+   * `butler.recorder.kept(namespace)`. Once it was stopped, `finished` reads it back, and it is removed from the
+   * storage unless `after` says to keep it. Not together with {@link into}.
+   */
+  keep?: RecordingKeepOptions
   /** keep the screen on while the recording runs, where the browser can; default: `false` */
   keepAwake?: boolean
   /** refuse other tabs that ask for the device while the recording runs; default: `true` */
@@ -108,6 +120,9 @@ export interface MediaRecordingEvents {
 export interface MediaRecording extends Listenable<MediaRecordingEvents>, AsyncDisposable {
   readonly state: MediaRecordingState
 
+  /** the name the recording is kept under in its namespace; `undefined` unless it is kept */
+  readonly id: string | undefined
+
   /** the format that is written */
   readonly mimeType: string
 
@@ -139,7 +154,8 @@ export interface MediaRecording extends Listenable<MediaRecordingEvents>, AsyncD
 
   /**
    * Ends the recording without keeping the segment that is being written: its data is dropped, and a stream it was
-   * written into is aborted. Segments that were finished before stay where they are.
+   * written into is aborted. Segments that were finished before stay where they are, except for a recording that is
+   * kept in the storage: that one is removed as a whole.
    */
   discard(): Promise<void>
 }

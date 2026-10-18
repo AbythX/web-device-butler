@@ -5,18 +5,28 @@ import { DefaultDeviceButler } from './default-device-butler.ts'
 import { BrowserEnvironment } from './environment/browser-environment.ts'
 import { InTabBroadcastChannel } from './coordination/channel/in-tab-broadcast-channel.ts'
 import { InTabLockManager } from './coordination/lock/in-tab-lock-manager.ts'
+import { UnsupportedError } from './errors/unsupported-error.ts'
 import type { Logger } from './logging/logger.ts'
 import { DefaultCameraManager } from '../media/camera/default-camera-manager.ts'
 import { CameraTestBench } from '../media/camera/testing/camera-test-bench.ts'
 import { DefaultMediaManager } from '../media/combined/default-media-manager.ts'
 import { MediaError } from '../media/errors/media-error.ts'
 import { DefaultMicrophoneManager } from '../media/microphone/default-microphone-manager.ts'
+import { DefaultDeviceNotifications } from '../attention/notifications/default-device-notifications.ts'
+import { FakeNotification } from '../attention/testing/fake-notifications.ts'
+import { DefaultDeviceVibration } from '../attention/vibration/default-device-vibration.ts'
+import { DefaultCodeScanner } from '../media/scanning/default-code-scanner.ts'
+import { DefaultDeviceMotion } from '../motion/default-device-motion.ts'
+import { FakeEventTarget } from './testing/fake-event-target.ts'
+import { FakeBarcodeDetector } from '../media/scanning/testing/fake-barcode-detector.ts'
+import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
 import { FakeMediaBrowser } from '../media/testing/fake-media-browser.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
 import { FakeGeolocation } from '../location/testing/fake-geolocation.ts'
 import { DefaultDeviceOrientation } from '../platform/default-device-orientation.ts'
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
 import { DefaultPermissionManager } from '../permission/default-permission-manager.ts'
+import { PermissionDeniedError } from '../permission/errors/permission-denied-error.ts'
 import { DefaultTabCoordination } from './coordination/default-tab-coordination.ts'
 import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
 import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
@@ -28,6 +38,9 @@ import { DefaultScreenFullscreen } from '../screen/fullscreen/default-screen-ful
 import { DefaultScreenWakeLock } from '../screen/wake-lock/default-screen-wake-lock.ts'
 import { DefaultDeviceClipboard } from '../sharing/clipboard/default-device-clipboard.ts'
 import { DefaultDeviceShare } from '../sharing/share/default-device-share.ts'
+import { FakeMediaRecorder } from '../media/recording/testing/fake-media-recorder.ts'
+import { FakeRecordingSource } from '../media/recording/testing/fake-recording-source.ts'
+import type { BrowserGlobals } from './environment/browser-environment.ts'
 
 describe('default-device-butler', () => {
   describe('#create', () => {
@@ -248,7 +261,10 @@ describe('default-device-butler', () => {
     test('should say that there is no location where the browser has none', async () => {
       using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
 
-      expect((await sut.prepare({ location: true })).location).toEqual({ permission: 'unsupported' })
+      expect((await sut.prepare({ location: true })).location).toEqual({
+        permission: 'unsupported',
+        error: new UnsupportedError('geolocation'),
+      })
     })
 
     test('should not prepare the storage and the location of an application that configured neither', async () => {
@@ -391,6 +407,161 @@ describe('default-device-butler', () => {
     })
   })
 
+  describe('#notifications and #vibration', () => {
+    test('should show notifications and vibrate where the browser can', async () => {
+      FakeNotification.reset()
+      const vibrate = vi.fn(() => true)
+      const navigator = { vibrate } as unknown as Navigator
+
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ Notification: FakeNotification, navigator }))
+
+      expect(sut.notifications).toBeInstanceOf(DefaultDeviceNotifications)
+      expect(sut.vibration).toBeInstanceOf(DefaultDeviceVibration)
+      expect(await sut.permission.query('notifications')).toBe('granted')
+      expect(await sut.notifications.show({ title: 'Report sent', tag: 'outbox' })).toBeDefined()
+      expect(sut.vibration.vibrate('success')).toBe(true)
+    })
+
+    test('should request the permission for the notifications in prepare() only when asked for', async () => {
+      FakeNotification.reset()
+      FakeNotification.permission = 'default'
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ Notification: FakeNotification }))
+
+      expect((await sut.prepare()).notifications).toBeUndefined()
+      expect(await sut.prepare({ notifications: true })).toEqual({ notifications: { permission: 'granted' } })
+    })
+
+    test('should say why notifications cannot be shown once the user refused them', async () => {
+      FakeNotification.reset()
+      FakeNotification.permission = 'default'
+      FakeNotification.answer = 'denied'
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ Notification: FakeNotification }))
+
+      const { notifications } = await sut.prepare({ notifications: true })
+
+      expect(notifications?.permission).toBe('denied')
+      expect(notifications?.error).toBeInstanceOf(PermissionDeniedError)
+      expect(notifications?.error).toMatchObject({ permission: 'notifications' })
+    })
+
+    test('should support neither where the browser has neither', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.notifications.isSupported).toBe(false)
+      expect(sut.vibration.isSupported).toBe(false)
+      expect(await sut.permission.request('notifications')).toBe('unsupported')
+    })
+  })
+
+  describe('#motion', () => {
+    const sensors = (requestPermission?: () => Promise<'granted' | 'denied'>) => ({
+      window: new FakeEventTarget() as unknown as Window,
+      document: {} as Document,
+      DeviceOrientationEvent: { prototype: {}, requestPermission },
+      DeviceMotionEvent: { prototype: {}, requestPermission },
+    })
+
+    test('should follow the sensors, and stop when the butler is disposed', async () => {
+      const globals = sensors()
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of(globals))
+
+      const watch = sut.motion.watchAttitude()
+
+      ;(globals.window as unknown as FakeEventTarget).dispatch('deviceorientation', { alpha: 0, beta: 10, gamma: 0 })
+
+      expect(sut.motion).toBeInstanceOf(DefaultDeviceMotion)
+      expect(watch.current?.pitch).toBeCloseTo(10)
+
+      await sut.dispose()
+
+      expect(watch.isActive).toBe(false)
+    })
+
+    test('should request the permission to read the sensors in prepare(), as Safari asks for it', async () => {
+      const requestPermission = vi.fn(async () => 'granted' as const)
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of(sensors(requestPermission)))
+
+      expect(await sut.prepare({ motion: true })).toEqual({ motion: { permission: 'granted' } })
+      expect(requestPermission).toHaveBeenCalledTimes(2)
+    })
+
+    test('should say why the sensors cannot be read once the user refused them', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of(sensors(async () => 'denied' as const)))
+
+      const { motion } = await sut.prepare({ motion: true })
+
+      expect(motion?.permission).toBe('denied')
+      expect(motion?.error).toBeInstanceOf(PermissionDeniedError)
+      expect(motion?.error).toMatchObject({ permission: 'motion' })
+    })
+
+    test('should report the sensors as unsupported where the browser has none', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(await sut.prepare({ motion: true })).toEqual({
+        motion: { permission: 'unsupported', error: new UnsupportedError('motion') },
+      })
+      expect(sut.motion.isSupported).toBe(false)
+    })
+  })
+
+  describe('#scanner', () => {
+    test('should read codes with the decoder of the configuration, or not at all', async () => {
+      const decoder = { name: 'test', formats: async () => ['qr_code'] as const, decode: async () => [] }
+
+      const sut = DefaultDeviceButler.create({ scanner: { decoder } }, BrowserEnvironment.of({}))
+      const without = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.scanner).toBeInstanceOf(DefaultCodeScanner)
+      expect(sut.scanner.isSupported).toBe(true)
+      expect(await sut.scanner.formats()).toEqual(['qr_code'])
+      expect(without.scanner.isSupported).toBe(false)
+    })
+
+    test('should stop its scans when the butler is disposed', async () => {
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ BarcodeDetector: FakeBarcodeDetector }))
+      const scan = sut.scanner.scan(new FakeRecordingSource())
+
+      await sut.dispose()
+      await new Promise((resolve) => setTimeout(resolve))
+
+      expect(scan.state).toBe('ended')
+    })
+  })
+
+  describe('#screenCapture', () => {
+    test('should capture the screen with the configured defaults', async () => {
+      const browser = new FakeMediaBrowser()
+
+      using sut = DefaultDeviceButler.create(
+        { screenCapture: { prefer: { surface: 'window' } } },
+        browser.openEnvironment()
+      )
+
+      await using _session = await sut.screenCapture.open()
+
+      expect(sut.screenCapture).toBeInstanceOf(DefaultScreenCaptureManager)
+      expect(browser.devices.displayRequests).toEqual([{ video: { displaySurface: 'window' } }])
+    })
+
+    test('should not be supported where the browser has nothing for it', () => {
+      const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
+
+      expect(sut.screenCapture.isSupported).toBe(false)
+    })
+
+    test('should stop its captures when the butler is disposed', async () => {
+      const browser = new FakeMediaBrowser()
+      const sut = DefaultDeviceButler.create({}, browser.openEnvironment())
+      const session = await sut.screenCapture.open()
+
+      await sut.dispose()
+
+      expect(session.state).toBe('ended')
+      expect(browser.devices.liveTracks).toEqual([])
+    })
+  })
+
   describe('the parts around the screen, the network and sharing', () => {
     test('should have every part, each working where the browser has nothing for it', async () => {
       const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
@@ -438,6 +609,21 @@ describe('default-device-butler', () => {
       const sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ navigator }))
 
       expect(sut.network.isOnline).toBe(false)
+    })
+
+    test('should keep a recording in its own storage', async () => {
+      FakeMediaRecorder.reset()
+      const MediaRecorder = FakeMediaRecorder as unknown as BrowserGlobals['MediaRecorder']
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ MediaRecorder, Blob }))
+
+      const recording = await sut.recorder.record(new FakeRecordingSource('audio'), { keep: { namespace: 'memos' } })
+      FakeMediaRecorder.last.deliver('kept ')
+      await new Promise((resolve) => setTimeout(resolve))
+
+      const [kept] = await sut.recorder.kept('memos').list()
+      expect(kept?.id).toBe(recording.id)
+      expect(kept?.state).toBe('recording')
+      expect(await (await recording.stop()).blob?.text()).toBe('kept end')
     })
 
     test('should let the screen sleep again when the butler is disposed', async () => {

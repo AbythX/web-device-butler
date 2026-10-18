@@ -1,5 +1,10 @@
 import './disposable-polyfill.ts'
 
+import { DefaultDeviceNotifications } from '../attention/notifications/default-device-notifications.ts'
+import type { DeviceNotifications } from '../attention/notifications/device-notifications.ts'
+import type { NotificationMessages } from '../attention/notifications/notification-messages.ts'
+import { DefaultDeviceVibration } from '../attention/vibration/default-device-vibration.ts'
+import type { DeviceVibration } from '../attention/vibration/device-vibration.ts'
 import { DefaultDeviceFiles } from '../files/default-device-files.ts'
 import type { DeviceFiles } from '../files/device-files.ts'
 import { DefaultDeviceLocation } from '../location/default-device-location.ts'
@@ -16,6 +21,10 @@ import type { AudioOutputManager } from '../media/output/audio-output-manager.ts
 import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
 import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
 import type { MediaRecordingManager } from '../media/recording/media-recording-manager.ts'
+import type { CodeScanner } from '../media/scanning/code-scanner.ts'
+import { DefaultCodeScanner } from '../media/scanning/default-code-scanner.ts'
+import { DefaultScreenCaptureManager } from '../media/screen-capture/default-screen-capture-manager.ts'
+import type { ScreenCaptureManager } from '../media/screen-capture/screen-capture-manager.ts'
 import { DefaultDeviceNetwork } from '../network/default-device-network.ts'
 import type { DeviceNetwork } from '../network/device-network.ts'
 import { DefaultOutboxManager } from '../outbox/default-outbox-manager.ts'
@@ -30,11 +39,18 @@ import { DefaultDeviceShare } from '../sharing/share/default-device-share.ts'
 import type { DeviceShare } from '../sharing/share/device-share.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import { DefaultPermissionManager } from '../permission/default-permission-manager.ts'
+import { PermissionDeniedError } from '../permission/errors/permission-denied-error.ts'
+import type { PermissionPreparation } from '../permission/permission-preparation.ts'
+import type { DevicePermissionName } from '../permission/permission-state.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import { ClipboardReadPermissionRequester } from '../permission/requesters/clipboard-read-permission-requester.ts'
 import { GeolocationPermissionRequester } from '../permission/requesters/geolocation-permission-requester.ts'
 import { WakeLockPermissionRequester } from '../permission/requesters/wake-lock-permission-requester.ts'
 import { PersistentStoragePermissionRequester } from '../permission/requesters/persistent-storage-permission-requester.ts'
+import { DefaultDeviceMotion } from '../motion/default-device-motion.ts'
+import type { DeviceMotion } from '../motion/device-motion.ts'
+import { MotionPermissionRequester } from '../permission/requesters/motion-permission-requester.ts'
+import { NotificationPermissionRequester } from '../permission/requesters/notification-permission-requester.ts'
 import { DefaultDeviceOrientation } from '../platform/default-device-orientation.ts'
 import type { DeviceOrientation } from '../platform/device-orientation.ts'
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
@@ -50,6 +66,7 @@ import { DefaultTabCoordination } from './coordination/default-tab-coordination.
 import type { TabCoordination } from './coordination/tab-coordination.ts'
 import type { DeviceButlerConfiguration } from './device-butler-configuration.ts'
 import { BrowserEnvironment } from './environment/browser-environment.ts'
+import { UnsupportedError } from './errors/unsupported-error.ts'
 import { NullLogger } from './logging/null-logger.ts'
 import { ScopedLogger } from './logging/scoped-logger.ts'
 import type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions } from './device-butler.ts'
@@ -57,7 +74,7 @@ import type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions 
 /**
  * Everything the parts of the library send to the other tabs.
  */
-type DeviceButlerMessages = StorageMessages & MediaMessages
+type DeviceButlerMessages = StorageMessages & MediaMessages & NotificationMessages
 
 /**
  * What `prepare()` has found so far.
@@ -65,9 +82,36 @@ type DeviceButlerMessages = StorageMessages & MediaMessages
 type Preparation = { -readonly [Kind in keyof DeviceButlerPreparation]: DeviceButlerPreparation[Kind] }
 
 /**
+ * The parts `prepare()` can prepare.
+ */
+type PreparedPart = keyof DeviceButlerPrepareOptions & keyof DeviceButlerPreparation
+
+/**
+ * What a part was asked to prepare with, once it was asked at all.
+ */
+type PrepareOption<Part extends PreparedPart> = Exclude<NonNullable<DeviceButlerPrepareOptions[Part]>, false>
+
+/**
+ * How each part is prepared.
+ */
+type Preparers = {
+  [Part in PreparedPart]: (option: PrepareOption<Part>) => Promise<NonNullable<DeviceButlerPreparation[Part]>>
+}
+
+/**
  * The implementation of {@link DeviceButler}.
  */
 export class DefaultDeviceButler implements DeviceButler {
+  /** the order in which the browser shows the prompts of `prepare()`, one at a time */
+  private static readonly preparationOrder: readonly PreparedPart[] = [
+    'storage',
+    'camera',
+    'microphone',
+    'location',
+    'motion',
+    'notifications',
+  ]
+
   /**
    * The composition root: builds every part of the library and injects what they share. Nothing of the browser is
    * touched here, so it is safe during server-side rendering and shows no permission prompt.
@@ -111,6 +155,8 @@ export class DefaultDeviceButler implements DeviceButler {
         'persistent-storage': new PersistentStoragePermissionRequester(environment),
         'clipboard-read': new ClipboardReadPermissionRequester(environment),
         'screen-wake-lock': new WakeLockPermissionRequester(wakeLock),
+        motion: new MotionPermissionRequester(environment),
+        notifications: new NotificationPermissionRequester(environment),
       },
       new ScopedLogger('PermissionManager', logger)
     )
@@ -131,20 +177,38 @@ export class DefaultDeviceButler implements DeviceButler {
       camera,
       microphone,
       new DefaultMediaManager(camera, microphone, environment, new ScopedLogger('MediaManager', logger)),
+      new DefaultScreenCaptureManager(
+        configuration.screenCapture ?? {},
+        environment,
+        new ScopedLogger('ScreenCaptureManager', logger)
+      ),
       permission,
       new DefaultTabCoordination(lock),
       new DefaultDeviceLocation(environment, new ScopedLogger('DeviceLocation', logger), configuration.location),
       new DefaultDevicePlatform(environment),
       new DefaultDeviceOrientation(environment, new ScopedLogger('DeviceOrientation', logger)),
+      new DefaultDeviceMotion(environment, new ScopedLogger('DeviceMotion', logger)),
       page,
-      // the recordings share the wake lock and the page of the butler
-      new DefaultMediaRecordingManager(environment, wakeLock, page, new ScopedLogger('MediaRecordingManager', logger)),
+      // the recordings share the wake lock, the page, the storage and the locks of the butler
+      new DefaultMediaRecordingManager(
+        environment,
+        wakeLock,
+        page,
+        new ScopedLogger('MediaRecordingManager', logger),
+        storage,
+        lock
+      ),
+      // the scans pause while the page of the butler is in the background
+      new DefaultCodeScanner(configuration.scanner ?? {}, environment, page, new ScopedLogger('CodeScanner', logger)),
       new DefaultAudioOutputManager(environment, new ScopedLogger('AudioOutputManager', logger)),
       network,
       wakeLock,
       new DefaultScreenFullscreen(environment, new ScopedLogger('ScreenFullscreen', logger)),
       new DefaultDeviceShare(environment),
       new DefaultDeviceClipboard(environment),
+      // the tabs ask each other over the channel of the butler whether one of them can be seen
+      new DefaultDeviceNotifications(environment, channel, page, new ScopedLogger('DeviceNotifications', logger)),
+      new DefaultDeviceVibration(environment, new ScopedLogger('DeviceVibration', logger)),
       new DefaultDeviceFiles(environment, new ScopedLogger('DeviceFiles', logger)),
       // the outboxes keep their items in the storage of the butler and send under its lock
       new DefaultOutboxManager(storage, lock, network, logger),
@@ -162,19 +226,24 @@ export class DefaultDeviceButler implements DeviceButler {
     public readonly microphone: MicrophoneManager,
     /** opens a camera and a microphone together */
     public readonly media: MediaManager,
+    public readonly screenCapture: ScreenCaptureManager,
     public readonly permission: PermissionManager,
     public readonly coordination: TabCoordination,
     public readonly location: DeviceLocation,
     public readonly platform: DevicePlatform,
     public readonly orientation: DeviceOrientation,
+    public readonly motion: DeviceMotion,
     public readonly page: PageLifecycle,
     public readonly recorder: MediaRecordingManager,
+    public readonly scanner: CodeScanner,
     public readonly audioOutput: AudioOutputManager,
     public readonly network: DeviceNetwork,
     public readonly wakeLock: ScreenWakeLock,
     public readonly fullscreen: ScreenFullscreen,
     public readonly share: DeviceShare,
     public readonly clipboard: DeviceClipboard,
+    public readonly notifications: DeviceNotifications,
+    public readonly vibration: DeviceVibration,
     public readonly files: DeviceFiles,
     public readonly outbox: OutboxManager,
     private readonly channel: CrossTabChannel<DeviceButlerMessages>,
@@ -182,29 +251,54 @@ export class DefaultDeviceButler implements DeviceButler {
   ) {}
 
   public async prepare(options: DeviceButlerPrepareOptions = this.prepared): Promise<DeviceButlerPreparation> {
-    const { storage = false, camera = false, microphone = false, location = false } = options
+    const preparers: Preparers = {
+      storage: (option) => this.storage.prepare(option === true ? undefined : option),
+      camera: (option) => this.camera.prepare(option === true ? undefined : option),
+      microphone: (option) => this.microphone.prepare(option === true ? undefined : option),
+      location: () => this.preparePermission('geolocation', 'geolocation'),
+      motion: () => this.preparePermission('motion', 'motion'),
+      notifications: () => this.preparePermission('notifications', 'Notification'),
+    }
 
     // what was not asked for has no entry
     const found: Preparation = {}
 
     // one after the other, so the browser shows one prompt at a time
-    if (storage !== false) {
-      found.storage = await this.storage.prepare(storage === true ? undefined : storage)
-    }
+    for (const part of DefaultDeviceButler.preparationOrder) {
+      const option = options[part]
 
-    if (camera !== false) {
-      found.camera = await this.camera.prepare(camera === true ? undefined : camera)
-    }
-
-    if (microphone !== false) {
-      found.microphone = await this.microphone.prepare(microphone === true ? undefined : microphone)
-    }
-
-    if (location) {
-      found.location = { permission: await this.permission.request('geolocation') }
+      if (option !== undefined && option !== false) {
+        await DefaultDeviceButler.prepareInto(found, part, preparers[part], option)
+      }
     }
 
     return found
+  }
+
+  /**
+   * Prepares a part whose preparation is the request of its permission, and says why it cannot be used the way the
+   * camera does: a refusal is a `PermissionDeniedError`, a part that does not exist here an `UnsupportedError`.
+   */
+  private async preparePermission(name: DevicePermissionName, feature: string): Promise<PermissionPreparation> {
+    const permission = await this.permission.request(name)
+
+    switch (permission) {
+      case 'denied':
+        return { permission, error: new PermissionDeniedError(name) }
+      case 'unsupported':
+        return { permission, error: new UnsupportedError(feature) }
+      default:
+        return { permission }
+    }
+  }
+
+  private static async prepareInto<Part extends PreparedPart>(
+    found: Preparation,
+    part: Part,
+    prepare: Preparers[Part],
+    option: PrepareOption<Part>
+  ): Promise<void> {
+    found[part] = await prepare(option)
   }
 
   public dispose(): Promise<void> {
@@ -231,13 +325,17 @@ export class DefaultDeviceButler implements DeviceButler {
     const released = Promise.allSettled([
       this.camera.dispose(),
       this.microphone.dispose(),
+      this.screenCapture.dispose(),
       ...this.gates.map((gate) => gate.dispose()),
     ])
 
+    this.scanner.dispose()
+    this.notifications.dispose()
     // before the storage and the network it works with
     this.outbox.dispose()
     this.location.dispose()
     this.orientation.dispose()
+    this.motion.dispose()
     this.page.dispose()
     this.audioOutput.dispose()
     this.network.dispose()
