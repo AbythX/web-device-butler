@@ -21,7 +21,7 @@ export type {
 
 export { DefaultScreenCaptureSession } from './session/default-screen-capture-session.ts'
 
-export type { ScreenCaptureTiming } from './session/default-screen-capture-session.ts'
+export type { ScreenCaptureTiming } from './session/screen-capture-timing.ts'
 
 export { ScreenCaptureConstraints } from './session/screen-capture-constraints.ts'
 

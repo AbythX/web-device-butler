@@ -10,12 +10,8 @@ import { MotionSupport } from './motion-support.ts'
 import type { Attitude, Movement } from './model/attitude.ts'
 import { MotionGeometry } from './model/motion-geometry.ts'
 import { SensorReadings } from './model/sensor-readings.ts'
-import {
-  DefaultMotionWatch,
-  type MotionWatchHost,
-  type MotionWatchTiming,
-  type SensorSource,
-} from './watch/default-motion-watch.ts'
+import { DefaultMotionWatch, type MotionWatchHost, type SensorSource } from './watch/default-motion-watch.ts'
+import type { MotionWatchTiming } from './watch/motion-watch-timing.ts'
 import type { MotionWatch, MotionWatchOptions } from './watch/motion-watch.ts'
 
 /**

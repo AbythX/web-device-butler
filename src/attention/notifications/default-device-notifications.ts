@@ -17,13 +17,7 @@ import type {
 } from './device-notifications.ts'
 import { type NotificationMessages, NotificationWorkerMessages } from './notification-messages.ts'
 import { NotificationSupport } from './notification-support.ts'
-
-export interface NotificationTiming {
-  /** how long the other tabs have to say that they can be seen, in milliseconds */
-  answerTimeout?: number
-  /** how long the service worker has to say whether there is one, in milliseconds */
-  registrationTimeout?: number
-}
+import type { NotificationTiming } from './notification-timing.ts'
 
 /**
  * The implementation of {@link DeviceNotifications}.

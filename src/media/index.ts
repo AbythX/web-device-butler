@@ -2,11 +2,12 @@ export { MediaAccess } from './access/media-access.ts'
 
 export type {
   MediaAccessEvents,
-  MediaAccessTiming,
   MediaAcquireOptions,
   MediaAvailability,
   MediaBusyPolicy,
 } from './access/media-access.ts'
+
+export type { MediaAccessTiming } from './access/media-access-timing.ts'
 
 export { MediaAccessState } from './access/media-access-state.ts'
 

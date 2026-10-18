@@ -3,6 +3,7 @@ import '../../core/disposable-polyfill.ts'
 import { EventEmitter } from '../../core/events/event-emitter.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import type { MotionWatch, MotionWatchEvents, MotionWatchOptions } from './motion-watch.ts'
+import type { MotionWatchTiming } from './motion-watch-timing.ts'
 
 /**
  * Something that announces the events of a sensor: the window of the page.
@@ -24,11 +25,6 @@ export interface SensorSource<Value> {
    * @returns `undefined` for an event without values
    */
   read(event: Event): Value | undefined
-}
-
-export interface MotionWatchTiming {
-  /** how long the watch waits for the first value before it says the sensor is unavailable, in milliseconds */
-  unavailableAfter?: number
 }
 
 /**

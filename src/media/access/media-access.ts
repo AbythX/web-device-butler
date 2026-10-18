@@ -25,6 +25,7 @@ import {
 import { MediaLease } from './media-lease.ts'
 import type { MediaMessages } from './media-messages.ts'
 import { MediaSupport } from './media-support.ts'
+import type { MediaAccessTiming } from './media-access-timing.ts'
 
 /**
  * Whether the device can be opened as far as the tabs of this library are concerned. `held-by-this-tab` means this
@@ -54,13 +55,6 @@ export interface MediaAccessEvents {
   availabilitychange: MediaAvailability
   /** a device was plugged in or removed */
   devicechange: undefined
-}
-
-export interface MediaAccessTiming {
-  /** how long a take-over waits for the holder, in milliseconds */
-  takeoverTimeout?: number
-  /** how often a device that another tab holds is checked again, in milliseconds */
-  availabilityInterval?: number
 }
 
 /**

@@ -7,7 +7,8 @@ import type { MicrophonePreparation } from './microphone-preparation.ts'
 import type { MicrophoneDescriptor } from './model/microphone-descriptor.ts'
 import type { MicrophoneRequirements } from './model/microphone-requirements.ts'
 import type { MicrophoneSelector } from './model/microphone-selector.ts'
-import type { MicrophoneSession, MicrophoneTiming } from './session/microphone-session.ts'
+import type { MicrophoneSession } from './session/microphone-session.ts'
+import type { MicrophoneTiming } from './session/microphone-timing.ts'
 
 /**
  * What a microphone manager works with. `DefaultDeviceButler.create()` and `DefaultMicrophoneManager.create()` build these.

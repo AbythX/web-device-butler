@@ -9,11 +9,7 @@ import type {
   ScreenCaptureSessionEvents,
 } from './screen-capture-session.ts'
 import { StreamHold } from './stream-hold.ts'
-
-export interface ScreenCaptureTiming {
-  /** how often the size of the capture is read while someone listens to `settingschange`, in milliseconds */
-  settingsInterval?: number
-}
+import type { ScreenCaptureTiming } from './screen-capture-timing.ts'
 
 /**
  * The implementation of {@link ScreenCaptureSession}.

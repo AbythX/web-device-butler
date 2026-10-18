@@ -14,9 +14,6 @@ export type { MotionWatch, MotionWatchEvents, MotionWatchOptions } from './watch
 
 export { DefaultMotionWatch } from './watch/default-motion-watch.ts'
 
-export type {
-  MotionWatchHost,
-  MotionWatchTiming,
-  SensorEventTarget,
-  SensorSource,
-} from './watch/default-motion-watch.ts'
+export type { MotionWatchHost, SensorEventTarget, SensorSource } from './watch/default-motion-watch.ts'
+
+export type { MotionWatchTiming } from './watch/motion-watch-timing.ts'

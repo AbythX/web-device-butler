@@ -10,12 +10,8 @@ import type { MicrophoneDescriptor } from '../model/microphone-descriptor.ts'
 import { MicrophoneFeatures } from '../model/microphone-features.ts'
 import type { MicrophoneProcessing, MicrophoneRequirements } from '../model/microphone-requirements.ts'
 import { MicrophoneSettings } from '../model/microphone-settings.ts'
-import type {
-  MicrophoneSession,
-  MicrophoneSessionEvents,
-  MicrophoneSessionHost,
-  MicrophoneTiming,
-} from './microphone-session.ts'
+import type { MicrophoneSession, MicrophoneSessionEvents, MicrophoneSessionHost } from './microphone-session.ts'
+import type { MicrophoneTiming } from './microphone-timing.ts'
 
 /**
  * The implementation of {@link MicrophoneSession}.
