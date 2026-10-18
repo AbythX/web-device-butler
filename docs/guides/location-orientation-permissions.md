@@ -162,7 +162,8 @@ each with `x` to the right edge of the screen, `y` to its top edge and `z` out o
   later are reported as usual.
 - `butler.motion.isSupported` is `false` where the browser has no events for the sensors, or the page was not loaded
   over HTTPS. A desktop browser has the events and no sensors.
-- `butler.prepare({ motion: true })` requests the permission, which in Safari has to be in answer to a click.
+- `butler.prepare({ motion: true })` requests the permission, which in Safari has to be in answer to a click. Its
+  `error` is a `PermissionDeniedError` once the user refused, and an `UnsupportedError` where there are no events.
 
 ## Platform
 

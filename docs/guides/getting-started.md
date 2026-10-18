@@ -123,9 +123,11 @@ camera?.selected // the camera open() will start
 ```
 
 For the storage it says which backend the stores are kept in and asks for the protection against eviction the
-configuration names; for the location it requests the permission.
+configuration names; for the location it requests the permission. `prepare({ motion: true, notifications: true })`
+requests those permissions too, in answer to a click.
 
-It reports per section instead of throwing, leaves no device running, and is cheap when it is called again. It is
+Every section says why its part cannot be used in `error`, `undefined` where it can, and the parts that need a
+permission report it in `permission`. It reports per section instead of throwing, leaves no device running, and is cheap when it is called again. It is
 optional: `open()` does the same on demand. See [the set-up screen](../use-cases/set-up-screen.md).
 
 ## Lifetimes

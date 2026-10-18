@@ -13,6 +13,9 @@ button.onclick = async () => {
 }
 ```
 
+`butler.prepare({ notifications: true })` does the same as part of a set-up screen, and reports a refusal as a
+`PermissionDeniedError` in `error`. `prepare()` without options leaves the notifications out.
+
 Ask in answer to a click: Safari and Firefox ask the user only then, and otherwise leave the state at `prompt`.
 Ask when the user wants something the notification is for ("tell me when it was sent"), not when the page loads:
 a prompt nobody asked for is mostly refused, and a refusal is for good.

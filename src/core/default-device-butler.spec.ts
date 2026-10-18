@@ -5,6 +5,7 @@ import { DefaultDeviceButler } from './default-device-butler.ts'
 import { BrowserEnvironment } from './environment/browser-environment.ts'
 import { InTabBroadcastChannel } from './coordination/channel/in-tab-broadcast-channel.ts'
 import { InTabLockManager } from './coordination/lock/in-tab-lock-manager.ts'
+import { UnsupportedError } from './errors/unsupported-error.ts'
 import type { Logger } from './logging/logger.ts'
 import { DefaultCameraManager } from '../media/camera/default-camera-manager.ts'
 import { CameraTestBench } from '../media/camera/testing/camera-test-bench.ts'
@@ -25,6 +26,7 @@ import { FakeGeolocation } from '../location/testing/fake-geolocation.ts'
 import { DefaultDeviceOrientation } from '../platform/default-device-orientation.ts'
 import { DefaultDevicePlatform } from '../platform/default-device-platform.ts'
 import { DefaultPermissionManager } from '../permission/default-permission-manager.ts'
+import { PermissionDeniedError } from '../permission/errors/permission-denied-error.ts'
 import { DefaultTabCoordination } from './coordination/default-tab-coordination.ts'
 import { DefaultAudioOutputManager } from '../media/output/default-audio-output-manager.ts'
 import { DefaultMediaRecordingManager } from '../media/recording/default-media-recording-manager.ts'
@@ -259,7 +261,10 @@ describe('default-device-butler', () => {
     test('should say that there is no location where the browser has none', async () => {
       using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
 
-      expect((await sut.prepare({ location: true })).location).toEqual({ permission: 'unsupported' })
+      expect((await sut.prepare({ location: true })).location).toEqual({
+        permission: 'unsupported',
+        error: new UnsupportedError('geolocation'),
+      })
     })
 
     test('should not prepare the storage and the location of an application that configured neither', async () => {
@@ -417,6 +422,28 @@ describe('default-device-butler', () => {
       expect(sut.vibration.vibrate('success')).toBe(true)
     })
 
+    test('should request the permission for the notifications in prepare() only when asked for', async () => {
+      FakeNotification.reset()
+      FakeNotification.permission = 'default'
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ Notification: FakeNotification }))
+
+      expect((await sut.prepare()).notifications).toBeUndefined()
+      expect(await sut.prepare({ notifications: true })).toEqual({ notifications: { permission: 'granted' } })
+    })
+
+    test('should say why notifications cannot be shown once the user refused them', async () => {
+      FakeNotification.reset()
+      FakeNotification.permission = 'default'
+      FakeNotification.answer = 'denied'
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({ Notification: FakeNotification }))
+
+      const { notifications } = await sut.prepare({ notifications: true })
+
+      expect(notifications?.permission).toBe('denied')
+      expect(notifications?.error).toBeInstanceOf(PermissionDeniedError)
+      expect(notifications?.error).toMatchObject({ permission: 'notifications' })
+    })
+
     test('should support neither where the browser has neither', async () => {
       using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
 
@@ -458,10 +485,22 @@ describe('default-device-butler', () => {
       expect(requestPermission).toHaveBeenCalledTimes(2)
     })
 
+    test('should say why the sensors cannot be read once the user refused them', async () => {
+      using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of(sensors(async () => 'denied' as const)))
+
+      const { motion } = await sut.prepare({ motion: true })
+
+      expect(motion?.permission).toBe('denied')
+      expect(motion?.error).toBeInstanceOf(PermissionDeniedError)
+      expect(motion?.error).toMatchObject({ permission: 'motion' })
+    })
+
     test('should report the sensors as unsupported where the browser has none', async () => {
       using sut = DefaultDeviceButler.create({}, BrowserEnvironment.of({}))
 
-      expect(await sut.prepare({ motion: true })).toEqual({ motion: { permission: 'unsupported' } })
+      expect(await sut.prepare({ motion: true })).toEqual({
+        motion: { permission: 'unsupported', error: new UnsupportedError('motion') },
+      })
       expect(sut.motion.isSupported).toBe(false)
     })
   })

@@ -1,9 +1,7 @@
-import type { DevicePermissionState } from '../permission/permission-state.ts'
+import type { PermissionPreparation } from '../permission/permission-preparation.ts'
 
 /**
- * What `butler.prepare()` found out about the sensors.
+ * What `butler.prepare()` found out about the sensors: whether the page may read how the device is turned and moves,
+ * and why not. `unsupported` where the browser does not report it.
  */
-export interface MotionPreparation {
-  /** whether the page may read how the device is turned and moves; `unsupported` where the browser does not report it */
-  readonly permission: DevicePermissionState
-}
+export type MotionPreparation = PermissionPreparation

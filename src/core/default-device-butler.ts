@@ -39,6 +39,9 @@ import { DefaultDeviceShare } from '../sharing/share/default-device-share.ts'
 import type { DeviceShare } from '../sharing/share/device-share.ts'
 import type { MicrophoneManager } from '../media/microphone/microphone-manager.ts'
 import { DefaultPermissionManager } from '../permission/default-permission-manager.ts'
+import { PermissionDeniedError } from '../permission/errors/permission-denied-error.ts'
+import type { PermissionPreparation } from '../permission/permission-preparation.ts'
+import type { DevicePermissionName } from '../permission/permission-state.ts'
 import type { PermissionManager } from '../permission/permission-manager.ts'
 import { ClipboardReadPermissionRequester } from '../permission/requesters/clipboard-read-permission-requester.ts'
 import { GeolocationPermissionRequester } from '../permission/requesters/geolocation-permission-requester.ts'
@@ -63,6 +66,7 @@ import { DefaultTabCoordination } from './coordination/default-tab-coordination.
 import type { TabCoordination } from './coordination/tab-coordination.ts'
 import type { DeviceButlerConfiguration } from './device-butler-configuration.ts'
 import { BrowserEnvironment } from './environment/browser-environment.ts'
+import { UnsupportedError } from './errors/unsupported-error.ts'
 import { NullLogger } from './logging/null-logger.ts'
 import { ScopedLogger } from './logging/scoped-logger.ts'
 import type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions } from './device-butler.ts'
@@ -78,9 +82,36 @@ type DeviceButlerMessages = StorageMessages & MediaMessages & NotificationMessag
 type Preparation = { -readonly [Kind in keyof DeviceButlerPreparation]: DeviceButlerPreparation[Kind] }
 
 /**
+ * The parts `prepare()` can prepare.
+ */
+type PreparedPart = keyof DeviceButlerPrepareOptions & keyof DeviceButlerPreparation
+
+/**
+ * What a part was asked to prepare with, once it was asked at all.
+ */
+type PrepareOption<Part extends PreparedPart> = Exclude<NonNullable<DeviceButlerPrepareOptions[Part]>, false>
+
+/**
+ * How each part is prepared.
+ */
+type Preparers = {
+  [Part in PreparedPart]: (option: PrepareOption<Part>) => Promise<NonNullable<DeviceButlerPreparation[Part]>>
+}
+
+/**
  * The implementation of {@link DeviceButler}.
  */
 export class DefaultDeviceButler implements DeviceButler {
+  /** the order in which the browser shows the prompts of `prepare()`, one at a time */
+  private static readonly preparationOrder: readonly PreparedPart[] = [
+    'storage',
+    'camera',
+    'microphone',
+    'location',
+    'motion',
+    'notifications',
+  ]
+
   /**
    * The composition root: builds every part of the library and injects what they share. Nothing of the browser is
    * touched here, so it is safe during server-side rendering and shows no permission prompt.
@@ -220,33 +251,54 @@ export class DefaultDeviceButler implements DeviceButler {
   ) {}
 
   public async prepare(options: DeviceButlerPrepareOptions = this.prepared): Promise<DeviceButlerPreparation> {
-    const { storage = false, camera = false, microphone = false, location = false, motion = false } = options
+    const preparers: Preparers = {
+      storage: (option) => this.storage.prepare(option === true ? undefined : option),
+      camera: (option) => this.camera.prepare(option === true ? undefined : option),
+      microphone: (option) => this.microphone.prepare(option === true ? undefined : option),
+      location: () => this.preparePermission('geolocation', 'geolocation'),
+      motion: () => this.preparePermission('motion', 'motion'),
+      notifications: () => this.preparePermission('notifications', 'Notification'),
+    }
 
     // what was not asked for has no entry
     const found: Preparation = {}
 
     // one after the other, so the browser shows one prompt at a time
-    if (storage !== false) {
-      found.storage = await this.storage.prepare(storage === true ? undefined : storage)
-    }
+    for (const part of DefaultDeviceButler.preparationOrder) {
+      const option = options[part]
 
-    if (camera !== false) {
-      found.camera = await this.camera.prepare(camera === true ? undefined : camera)
-    }
-
-    if (microphone !== false) {
-      found.microphone = await this.microphone.prepare(microphone === true ? undefined : microphone)
-    }
-
-    if (location) {
-      found.location = { permission: await this.permission.request('geolocation') }
-    }
-
-    if (motion) {
-      found.motion = { permission: await this.permission.request('motion') }
+      if (option !== undefined && option !== false) {
+        await DefaultDeviceButler.prepareInto(found, part, preparers[part], option)
+      }
     }
 
     return found
+  }
+
+  /**
+   * Prepares a part whose preparation is the request of its permission, and says why it cannot be used the way the
+   * camera does: a refusal is a `PermissionDeniedError`, a part that does not exist here an `UnsupportedError`.
+   */
+  private async preparePermission(name: DevicePermissionName, feature: string): Promise<PermissionPreparation> {
+    const permission = await this.permission.request(name)
+
+    switch (permission) {
+      case 'denied':
+        return { permission, error: new PermissionDeniedError(name) }
+      case 'unsupported':
+        return { permission, error: new UnsupportedError(feature) }
+      default:
+        return { permission }
+    }
+  }
+
+  private static async prepareInto<Part extends PreparedPart>(
+    found: Preparation,
+    part: Part,
+    prepare: Preparers[Part],
+    option: PrepareOption<Part>
+  ): Promise<void> {
+    found[part] = await prepare(option)
   }
 
   public dispose(): Promise<void> {

@@ -27,6 +27,8 @@ export { ConsoleLogger } from './core/logging/console-logger.ts'
 
 export type { DeviceButler, DeviceButlerPreparation, DeviceButlerPrepareOptions } from './core/device-butler.ts'
 
+export type { Preparation } from './core/preparation/preparation.ts'
+
 export { DefaultDeviceButler } from './core/default-device-butler.ts'
 
 export type { DeviceButlerConfiguration } from './core/device-butler-configuration.ts'

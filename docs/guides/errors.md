@@ -57,7 +57,8 @@ session that has ended, or from `next()` of a scan that ends; see [code scanning
 picture a decoder cannot read is no error.
 
 `prepare()` of the butler, the camera, the microphone and the storage does not throw these: it reports them as `error` of its
-result, so a set-up screen can go on without a camera.
+result, so a set-up screen can go on without a camera. `butler.prepare()` does the same for the location, the sensors
+and the notifications: a refused permission is a `PermissionDeniedError`, a missing part an `UnsupportedError`.
 
 ## Screen and sharing
 

@@ -12,6 +12,8 @@ export { DefaultDeviceNotifications } from './notifications/default-device-notif
 
 export type { NotificationTiming } from './notifications/default-device-notifications.ts'
 
+export type { NotificationPreparation } from './notifications/notification-preparation.ts'
+
 export { NotificationWorkerMessages } from './notifications/notification-messages.ts'
 
 export type { NotificationMessages, NotificationWorkerMessage } from './notifications/notification-messages.ts'

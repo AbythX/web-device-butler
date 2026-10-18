@@ -1,4 +1,5 @@
 import type { DeviceNotifications } from '../attention/notifications/device-notifications.ts'
+import type { NotificationPreparation } from '../attention/notifications/notification-preparation.ts'
 import type { DeviceVibration } from '../attention/vibration/device-vibration.ts'
 import type { DeviceFiles } from '../files/device-files.ts'
 import type { DeviceLocation } from '../location/device-location.ts'
@@ -46,6 +47,8 @@ export interface DeviceButlerPrepareOptions {
   location?: boolean
   /** `true` requests the permission to read how the device is turned and moves; in Safari only in answer to a click */
   motion?: boolean
+  /** `true` requests the permission to show notifications; in Safari and Firefox only in answer to a click */
+  notifications?: boolean
 }
 
 /**
@@ -57,6 +60,7 @@ export interface DeviceButlerPreparation {
   readonly microphone?: MicrophonePreparation
   readonly location?: LocationPreparation
   readonly motion?: MotionPreparation
+  readonly notifications?: NotificationPreparation
 }
 
 /**

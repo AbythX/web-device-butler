@@ -1,9 +1,7 @@
-import type { DevicePermissionState } from '../permission/permission-state.ts'
+import type { PermissionPreparation } from '../permission/permission-preparation.ts'
 
 /**
- * What `butler.prepare()` found out about the location.
+ * What `butler.prepare()` found out about the location: whether the application may ask where the device is, and
+ * why not. `unsupported` where the browser has no location.
  */
-export interface LocationPreparation {
-  /** whether the application may ask where the device is; `unsupported` where the browser has no location */
-  readonly permission: DevicePermissionState
-}
+export type LocationPreparation = PermissionPreparation

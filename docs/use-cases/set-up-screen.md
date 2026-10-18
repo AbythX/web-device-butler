@@ -83,10 +83,12 @@ storage?.capabilities // what the backend of the stores can do; undefined if non
 storage?.isPersistent // whether the browser protects the data against eviction
 storage?.error
 location?.permission // 'granted' | 'denied' | 'unknown' | 'unsupported'
+location?.error // PermissionDeniedError, UnsupportedError; undefined where the location can be used
 ```
 
 For the location this requests the permission, which shows the prompt. Without it the prompt comes with the first
-`butler.location.current()`.
+`butler.location.current()`. Every part reports why it cannot be used in `error`, so one check covers all of them:
+`if (camera?.error || location?.error)`.
 
 ## Letting the user choose a camera
 
