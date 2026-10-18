@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { CrossTabChannel } from '../../core/coordination/channel/cross-tab-channel.ts'
-import { InTabBroadcastChannel } from '../../core/coordination/channel/in-tab-broadcast-channel.ts'
-import { BrowserEnvironment, type BrowserGlobals } from '../../core/environment/browser-environment.ts'
+import type { BrowserGlobals } from '../../core/environment/browser-environment.ts'
 import { UnsupportedError } from '../../core/errors/unsupported-error.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
+import { FakeOrigin } from '../../core/testing/fake-origin.ts'
 import { PermissionDeniedError } from '../../permission/errors/permission-denied-error.ts'
 import type { PageLifecycle } from '../../platform/page/page-lifecycle.ts'
 import { FakeNotification, FakeServiceWorker } from '../testing/fake-notifications.ts'
@@ -13,30 +13,23 @@ import type { NotificationClick, NotificationClose } from './device-notification
 import type { NotificationMessages } from './notification-messages.ts'
 import { NotificationWorkerMessages } from './notification-messages.ts'
 
-let browsers = 0
-
 describe('default-device-notifications', () => {
-  /** the broadcast channels of one browser; they are global to the process */
-  let prefix!: string
+  /** the origin of the tabs of one spec */
+  let origin!: FakeOrigin
   let worker!: FakeServiceWorker | undefined
   let focus!: ReturnType<typeof vi.fn>
   const tabs: { notifications: DefaultDeviceNotifications; channel: CrossTabChannel<NotificationMessages> }[] = []
 
   /** a tab of the application, which the user can see or not */
   const openTab = (page: { isVisible: boolean } = { isVisible: false }, globals: Partial<BrowserGlobals> = {}) => {
-    const channelPrefix = prefix
-
-    const environment = BrowserEnvironment.of({
-      window: { focus } as unknown as Window,
-      navigator: { serviceWorker: worker } as unknown as Navigator,
-      Notification: FakeNotification,
-      BroadcastChannel: class extends InTabBroadcastChannel {
-        public constructor(name: string) {
-          super(channelPrefix + name)
-        }
+    const environment = origin.openEnvironment(
+      {
+        window: { focus } as unknown as Window,
+        navigator: { serviceWorker: worker } as unknown as Navigator,
+        Notification: FakeNotification,
       },
-      ...globals,
-    })
+      globals
+    )
 
     const channel = new CrossTabChannel<NotificationMessages>('notifications', environment, new NullLogger())
 
@@ -55,7 +48,7 @@ describe('default-device-notifications', () => {
 
   beforeEach(() => {
     FakeNotification.reset()
-    prefix = `notifications-${browsers++}:`
+    origin = new FakeOrigin()
     worker = undefined
     focus = vi.fn()
   })

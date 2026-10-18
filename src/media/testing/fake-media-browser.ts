@@ -1,17 +1,17 @@
 import { CrossTabChannel } from '../../core/coordination/channel/cross-tab-channel.ts'
-import { InTabBroadcastChannel } from '../../core/coordination/channel/in-tab-broadcast-channel.ts'
 import { CrossTabLock } from '../../core/coordination/lock/cross-tab-lock.ts'
-import { InTabLockManager } from '../../core/coordination/lock/in-tab-lock-manager.ts'
+import type { InTabLockManager } from '../../core/coordination/lock/in-tab-lock-manager.ts'
 import type { LockMode } from '../../core/coordination/lock/lock-manager-like.ts'
-import { BrowserEnvironment, type BrowserGlobals } from '../../core/environment/browser-environment.ts'
+import type { BrowserEnvironment, BrowserGlobals } from '../../core/environment/browser-environment.ts'
 import type { Logger } from '../../core/logging/logger.ts'
 import { NullLogger } from '../../core/logging/null-logger.ts'
-import { FakePermissions } from '../../permission/testing/fake-permissions.ts'
+import type { FakePermissions } from '../../permission/testing/fake-permissions.ts'
+import { FakeOrigin } from '../../core/testing/fake-origin.ts'
 import { MediaAccess, type MediaAccessTiming } from '../access/media-access.ts'
 import type { MediaKind } from '../access/media-access-state.ts'
 import type { MediaMessages } from '../access/media-messages.ts'
 import type { StorageMessages } from '../../storage/store/store-change.ts'
-import { FakeStorage } from '../../storage/testing/fake-storage.ts'
+import type { FakeStorage } from '../../core/testing/fake-storage.ts'
 import { FakeAudioContext } from './fake-audio-context.ts'
 import { FakeMediaDevices, type FakeMediaDevicesOptions } from './fake-media-devices.ts'
 import { FakeMediaStream } from './fake-media-stream.ts'
@@ -24,32 +24,34 @@ export interface FakeMediaTab {
 }
 
 /**
- * One origin in one browser on one device, for specs: every tab opened from it shares the hardware, the locks and
- * the broadcast channels.
+ * The devices of one browser on one device, for specs: every tab opened from it shares the hardware, and the locks,
+ * the permissions and the broadcast channels of its origin.
  *
  * The browser audits the locking: a device that is started while nobody holds the lock of its kind is added to the
  * violations of {@link devices}.
  */
 export class FakeMediaBrowser {
-  private static instances = 0
-
-  public readonly locks = new InTabLockManager()
   public readonly devices: FakeMediaDevices
-  public readonly permissions = new FakePermissions()
+  public readonly locks: InTabLockManager
+  public readonly permissions: FakePermissions
   /** survives a tab, like the data of the origin */
-  public readonly localStorage = new FakeStorage()
+  public readonly localStorage: FakeStorage
   /** what `navigator` says about the device, for example `{ platform: 'iPhone' }` */
   public identity: Partial<Pick<Navigator, 'platform' | 'userAgent' | 'maxTouchPoints'>> = {}
 
-  private readonly tabs: FakeMediaTab[] = []
-  // broadcast channels are global to the process, every fake browser needs its own
-  private readonly channelPrefix = `fake-media-browser-${FakeMediaBrowser.instances++}:`
-
+  /**
+   * @param globals what a spec changes in every tab; see {@link FakeOrigin.openEnvironment}
+   * @param origin the origin of the tabs, shared with the fake of another part where a spec needs both
+   */
   public constructor(
     options: FakeMediaDevicesOptions = { inputs: FakeMediaDevices.phone(), oneCameraAtATime: true },
-    private readonly globals: Partial<BrowserGlobals> = {}
+    private readonly globals: Partial<BrowserGlobals> = {},
+    public readonly origin: FakeOrigin = new FakeOrigin()
   ) {
     this.devices = new FakeMediaDevices(options)
+    this.locks = origin.locks
+    this.permissions = origin.permissions
+    this.localStorage = origin.localStorage
 
     this.devices.beforeCall = async ({ method, constraints }) => {
       if (method !== 'getUserMedia') {
@@ -66,25 +68,14 @@ export class FakeMediaBrowser {
   }
 
   public openEnvironment(): BrowserEnvironment {
-    const channelPrefix = this.channelPrefix
-
-    return BrowserEnvironment.of({
-      navigator: {
-        locks: this.locks,
-        mediaDevices: this.devices,
-        permissions: this.permissions,
-        ...this.identity,
-      } as unknown as Navigator,
-      localStorage: this.localStorage,
-      AudioContext: FakeAudioContext as unknown as new () => AudioContext,
-      MediaStream: FakeMediaStream as unknown as new (tracks: MediaStreamTrack[]) => MediaStream,
-      BroadcastChannel: class extends InTabBroadcastChannel {
-        public constructor(name: string) {
-          super(channelPrefix + name)
-        }
+    return this.origin.openEnvironment(
+      {
+        navigator: { mediaDevices: this.devices, ...this.identity } as unknown as Navigator,
+        AudioContext: FakeAudioContext as unknown as new () => AudioContext,
+        MediaStream: FakeMediaStream as unknown as new (tracks: MediaStreamTrack[]) => MediaStream,
       },
-      ...this.globals,
-    })
+      this.globals
+    )
   }
 
   /**
@@ -114,19 +105,18 @@ export class FakeMediaBrowser {
       timing
     )
 
-    const tab: FakeMediaTab = { environment, channel, access }
-    this.tabs.push(tab)
+    this.origin.onClose(() => {
+      access.dispose()
+      channel.close()
+    })
 
-    return tab
+    return { environment, channel, access }
   }
 
   /**
-   * Closes every tab.
+   * Closes every tab of the origin.
    */
   public close(): void {
-    for (const { access, channel } of this.tabs) {
-      access.dispose()
-      channel.close()
-    }
+    this.origin.close()
   }
 }

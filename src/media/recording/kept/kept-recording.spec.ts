@@ -13,8 +13,9 @@ import { DefaultPageLifecycle } from '../../../platform/page/default-page-lifecy
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
 import { BinaryCodec } from '../../../storage/codecs/binary-codec.ts'
 import { StorageQuotaExceededError } from '../../../storage/errors/storage-quota-exceeded-error.ts'
-import { FakeBrowser } from '../../../storage/testing/fake-browser.ts'
-import { FakeStorage } from '../../../storage/testing/fake-storage.ts'
+import { FakeStorageBrowser } from '../../../storage/testing/fake-storage-browser.ts'
+import { FakeOrigin } from '../../../core/testing/fake-origin.ts'
+import { FakeStorage } from '../../../core/testing/fake-storage.ts'
 import { MediaError } from '../../errors/media-error.ts'
 import { DefaultMediaRecordingManager } from '../default-media-recording-manager.ts'
 import type { MediaRecordingManager } from '../media-recording-manager.ts'
@@ -59,7 +60,7 @@ class TabLocks implements LockManagerLike {
 }
 
 describe('kept recordings', () => {
-  let browser!: FakeBrowser
+  let browser!: FakeStorageBrowser
   let source!: FakeRecordingSource
   /** the tab that records */
   let locks!: TabLocks
@@ -91,7 +92,7 @@ describe('kept recordings', () => {
   }
 
   const open = (localStorage?: FakeStorage) => {
-    browser = new FakeBrowser(globals, localStorage)
+    browser = new FakeStorageBrowser(globals, new FakeOrigin(localStorage))
     locks = new TabLocks(browser.locks)
     sut = openTab(locks)
     other = openTab()

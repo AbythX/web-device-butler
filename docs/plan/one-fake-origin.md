@@ -8,7 +8,8 @@ of two fakes apart, since `BroadcastChannel` is global to the process.
 After this change one `FakeOrigin` in `core/testing/` owns what every tab of an origin shares. The fakes of the
 storage and of the media add only what is theirs, and can share one origin where a spec needs both.
 
-Not implemented yet. Only specs and their fakes change; nothing of the library or its published types does.
+Implemented on the branch `refactor-feature-support`, with every decision taken as recommended. [What was built
+differently](#what-was-built-differently) lists where the code left the plan. Only specs and their fakes change; nothing of the library or its published types does.
 
 ## Review: what is there today
 
@@ -92,3 +93,12 @@ One commit each; every step leaves the specs green.
 | One fake browser for every part instead of an origin with a fake per part? | **No.** The parts of the storage and of the media have nothing in common but the origin; a single fake would mix a file system, IndexedDB, cameras and the audit of their locks in one class. |
 | Move the permissions to the origin? | **Yes.** They belong to the origin in a browser; the media fake keeps reaching them as `browser.permissions`. |
 | Fix the flaky specs with a second tab? | **No, not here.** They run against real tabs of Playwright (`core/testing/second-tab.ts`), not against these fakes. |
+
+## What was built differently
+
+| Plan | Built | Why |
+| ---- | ----- | --- |
+| `openEnvironment(globals)` merges `navigator` | `openEnvironment(parts, overrides)`: the `navigator` of the parts of a fake is merged with the shared one, the overrides of a spec replace it | the media specs pass `{ navigator: {} }` to fake a browser without devices; merging it would have kept the devices and changed what those specs test |
+| A spec of the kept recordings with the storage and the media of one origin | left as it is | its second environment does not stand for another part: it hands each tab a lock manager that records the locks of that tab. There is nothing to combine. |
+| The local storage of the origin given to the storage fake | the storage fake takes an origin, and a spec with a limited `localStorage` builds that origin: `new FakeStorageBrowser({}, new FakeOrigin(new FakeStorage(200)))` | the origin owns the `localStorage` now |
+| `FakeMediaBrowser` keeps a list of its tabs | each tab registers its end with the origin | the origin closes the tabs of every fake that shares it |

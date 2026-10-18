@@ -5,7 +5,7 @@ import type { Logger } from '../../../core/logging/logger.ts'
 import { NullLogger } from '../../../core/logging/null-logger.ts'
 import type { StorageManager } from '../../../storage/storage-manager.ts'
 import type { Store } from '../../../storage/store/store.ts'
-import { FakeBrowser } from '../../../storage/testing/fake-browser.ts'
+import { FakeStorageBrowser } from '../../../storage/testing/fake-storage-browser.ts'
 import { CameraDescriptor } from '../model/camera-descriptor.ts'
 import { CameraFeatures } from '../model/camera-features.ts'
 import { CameraProbeCache } from './camera-probe-cache.ts'
@@ -17,14 +17,14 @@ const probed = (id: string, torch = true) =>
   new CameraDescriptor(id, `group-${id}`, id, 'probed', 'back', new CameraFeatures({ torch, focusModes: [] }))
 
 describe('camera-probe-cache', () => {
-  let browser!: FakeBrowser
+  let browser!: FakeStorageBrowser
   let storage!: StorageManager
   let sut!: CameraProbeCache
 
   const cameras = [listed('a'), listed('b')]
 
   beforeEach(() => {
-    browser = new FakeBrowser()
+    browser = new FakeStorageBrowser()
     storage = browser.openTab()
     sut = CameraProbeCache.in(storage, new NullLogger())
   })
@@ -163,7 +163,7 @@ describe('camera-probe-cache', () => {
 
   describe('without working storage', () => {
     test('should fall back to the memory of the page where there is no localStorage', async () => {
-      browser = new FakeBrowser({ localStorage: undefined })
+      browser = new FakeStorageBrowser({ localStorage: undefined })
       sut = CameraProbeCache.in(browser.openTab(), new NullLogger())
 
       await sut.remember(cameras, [probed('a')])
