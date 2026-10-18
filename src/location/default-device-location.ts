@@ -7,6 +7,7 @@ import { NullLogger } from '../core/logging/null-logger.ts'
 import { DevicePosition } from './device-position.ts'
 import { LocationErrorFactory } from './errors/location-error-factory.ts'
 import type { CurrentLocationOptions, LocationConfiguration, LocationOptions } from './location-options.ts'
+import { LocationSupport } from './location-support.ts'
 import { PositionSearch } from './position-search.ts'
 import { DefaultLocationWatch } from './default-location-watch.ts'
 import type { LocationWatch } from './location-watch.ts'
@@ -39,7 +40,7 @@ export class DefaultDeviceLocation implements DeviceLocation {
   ) {}
 
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.geolocation !== undefined
+    return LocationSupport.isSupportedIn(this.environment)
   }
 
   public async current(options: CurrentLocationOptions = {}): Promise<DevicePosition> {

@@ -1,5 +1,6 @@
 import type { BrowserEnvironment } from '../../core/environment/browser-environment.ts'
 import { LocationErrorFactory } from '../../location/errors/location-error-factory.ts'
+import { LocationSupport } from '../../location/location-support.ts'
 import { PermissionDeniedError } from '../errors/permission-denied-error.ts'
 import type { DevicePermissionState } from '../permission-state.ts'
 import type { PermissionRequester } from './permission-requester.ts'
@@ -17,7 +18,7 @@ export class GeolocationPermissionRequester implements PermissionRequester {
    * `false` outside a secure context and where the browser has no Geolocation API.
    */
   public get isSupported(): boolean {
-    return this.environment.isSecureContext && this.environment.geolocation !== undefined
+    return LocationSupport.isSupportedIn(this.environment)
   }
 
   /**
