@@ -1,9 +1,10 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { DeviceLocation } from '../../../location/device-location.ts'
 import type { DevicePosition } from '../../../location/device-position.ts'
 import type { LocationOptions } from '../../../location/location-options.ts'
 import type { LocationWatch } from '../../../location/location-watch.ts'
+import { onScopeEnd } from '../scope.ts'
 
 export interface UseLocation {
   /** the latest position; `undefined` until the first one arrived */
@@ -56,9 +57,7 @@ export const useLocation = (location: DeviceLocation): UseLocation => {
     }
   }
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(stop)
-  }
+  onScopeEnd(stop)
 
   return { position, error, isWatching, start, stop }
 }

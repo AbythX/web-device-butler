@@ -1,8 +1,9 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { DeviceMotion } from '../../../motion/device-motion.ts'
 import type { Attitude, Movement } from '../../../motion/model/attitude.ts'
 import type { MotionWatch, MotionWatchOptions } from '../../../motion/watch/motion-watch.ts'
+import { onScopeEnd } from '../scope.ts'
 
 export interface UseMotionWatch<Value> {
   /** the latest value; `undefined` until the first one arrived */
@@ -56,9 +57,7 @@ export const useMotionWatch = <Value>(
     }
   }
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(stop)
-  }
+  onScopeEnd(stop)
 
   return { value, isAvailable, error, isWatching, start, stop }
 }

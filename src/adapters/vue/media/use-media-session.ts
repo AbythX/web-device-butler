@@ -1,6 +1,7 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../../media/session/media-session.ts'
+import { onScopeEnd } from '../scope.ts'
 
 /**
  * What opens the sessions: the manager of the cameras, of the microphones or of the capture of the screen.
@@ -108,12 +109,10 @@ export const useMediaSession = <TSession extends MediaSession, TRequirements>(
     return opening
   }
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => {
-      isDisposed = true
-      void close()
-    })
-  }
+  onScopeEnd(() => {
+    isDisposed = true
+    void close()
+  })
 
   return { session, state, isOpening, error, ended, open, close }
 }

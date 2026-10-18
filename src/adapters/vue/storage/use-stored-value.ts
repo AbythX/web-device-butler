@@ -1,6 +1,7 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { Store } from '../../../storage/store/store.ts'
+import { untilScopeEnd } from '../scope.ts'
 
 export interface UseStoredValue<T> {
   /** the stored value; `undefined` while it is loading and where there is no entry */
@@ -51,15 +52,11 @@ export const useStoredValue = <T>(store: Store<T>, key: string): UseStoredValue<
       }
     })
 
-  const subscription = store.on('change', (change) => {
+  untilScopeEnd(store.on('change', (change) => {
     if (change.key === key) {
       void load()
     }
-  })
-
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => subscription.unsubscribe())
-  }
+  }))
 
   void load()
 

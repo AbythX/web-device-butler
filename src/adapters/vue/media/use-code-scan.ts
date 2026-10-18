@@ -1,8 +1,9 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { CodeScanner } from '../../../media/scanning/code-scanner.ts'
 import type { DetectedCode } from '../../../media/scanning/model/detected-code.ts'
 import type { CodeScan, CodeScanOptions, CodeScanSource } from '../../../media/scanning/scan/code-scan.ts'
+import { onScopeEnd } from '../scope.ts'
 
 export interface UseCodeScan {
   /** the scan that runs; `undefined` before `start()` and after it ended */
@@ -61,9 +62,7 @@ export const useCodeScan = (scanner: CodeScanner): UseCodeScan => {
     }
   }
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => void stop())
-  }
+  onScopeEnd(() => void stop())
 
   return { scan, code, isScanning, error, start, stop }
 }

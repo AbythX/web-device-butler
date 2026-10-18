@@ -1,7 +1,8 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
 import type { WakeLockHold } from '../../../screen/wake-lock/wake-lock-hold.ts'
+import { untilScopeEnd, onScopeEnd } from '../scope.ts'
 
 export interface UseWakeLock {
   /** whether the browser keeps the screen on right now; `false` while the page is in the background */
@@ -27,7 +28,7 @@ export const useWakeLock = (wakeLock: ScreenWakeLock): UseWakeLock => {
   let hold: WakeLockHold | undefined
   let isWanted = false
 
-  const subscription = wakeLock.on('change', (changed) => (isActive.value = changed))
+  untilScopeEnd(wakeLock.on('change', (changed) => (isActive.value = changed)))
 
   const release = (): void => {
     isWanted = false
@@ -60,12 +61,7 @@ export const useWakeLock = (wakeLock: ScreenWakeLock): UseWakeLock => {
     }
   }
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => {
-      release()
-      subscription.unsubscribe()
-    })
-  }
+  onScopeEnd(release)
 
   return { isActive, isRequested, error, request, release }
 }

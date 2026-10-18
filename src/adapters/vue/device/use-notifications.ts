@@ -1,4 +1,4 @@
-import { getCurrentScope, onScopeDispose, shallowRef, type ShallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 
 import type {
   DeviceNotifications,
@@ -6,6 +6,7 @@ import type {
   NotificationRequest,
   ShownNotification,
 } from '../../../attention/notifications/device-notifications.ts'
+import { untilScopeEnd } from '../scope.ts'
 
 export interface UseNotifications {
   /** the notification of this page the user clicked last */
@@ -28,7 +29,7 @@ export const useNotifications = (notifications: DeviceNotifications): UseNotific
   const click = shallowRef<NotificationClick>()
   const error = shallowRef<unknown>()
 
-  const subscription = notifications.on('click', (clicked) => (click.value = clicked))
+  untilScopeEnd(notifications.on('click', (clicked) => (click.value = clicked)))
 
   const show = async (request: NotificationRequest): Promise<ShownNotification | undefined> => {
     error.value = undefined
@@ -40,10 +41,6 @@ export const useNotifications = (notifications: DeviceNotifications): UseNotific
 
       return undefined
     }
-  }
-
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => subscription.unsubscribe())
   }
 
   return { click, error, show }

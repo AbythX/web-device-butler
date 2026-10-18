@@ -1,4 +1,4 @@
-import { getCurrentScope, onScopeDispose, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 
 import type {
   MediaRecording,
@@ -8,6 +8,7 @@ import type {
   RecordingSource,
 } from '../../../media/recording/media-recording.ts'
 import type { MediaRecordingManager } from '../../../media/recording/media-recording-manager.ts'
+import { onScopeEnd } from '../scope.ts'
 
 export interface UseRecording {
   /** the recording that runs; `undefined` before `start()` and once it is over */
@@ -130,12 +131,10 @@ export const useRecording = (recorder: MediaRecordingManager): UseRecording => {
     }
   }
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => {
-      isDisposed = true
-      void stop()
-    })
-  }
+  onScopeEnd(() => {
+    isDisposed = true
+    void stop()
+  })
 
   return {
     recording,
