@@ -83,10 +83,10 @@ What a device cannot tell is `undefined`, never `null` or `NaN`.
 ```ts
 using watch = butler.location.watch({ highAccuracy: true })
 
-watch.on('position', (position) => {})
+watch.on('change', (position) => {})
 watch.on('error', (error) => {})
 
-watch.position // the latest one; undefined until the first arrived
+watch.current // the latest position; undefined until the first arrived
 watch.isActive
 watch.stop()
 ```

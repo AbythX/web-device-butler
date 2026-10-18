@@ -109,7 +109,7 @@ class LocationDemo extends DemoPage {
     this.element('positions').replaceChildren()
 
     const watch = this.butler.location.watch(this.options)
-    watch.on('position', (position) => {
+    watch.on('change', (position) => {
       this.origin ??= position
       this.showPosition(position)
       this.element('positions').prepend(

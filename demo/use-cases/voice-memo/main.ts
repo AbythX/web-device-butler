@@ -118,7 +118,7 @@ class VoiceMemos extends DemoPage {
       // a full storage rejects here; what was kept until then stays, as an interrupted memo
       await recording.recording.stop()
     } finally {
-      space.dispose()
+      space.stop()
       await session.close()
       this.element<HTMLMeterElement>('level').value = 0
       await this.showMemos()

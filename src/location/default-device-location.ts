@@ -29,7 +29,7 @@ export class DefaultDeviceLocation implements DeviceLocation {
     return new DefaultDeviceLocation(environment, logger, configuration)
   }
 
-  private readonly watches = new WatchRegistry<LocationWatch>((watch) => watch.stop())
+  private readonly watches = new WatchRegistry<LocationWatch>()
 
   /**
    * @param configuration the defaults of every call

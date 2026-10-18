@@ -32,7 +32,7 @@ export class DefaultDeviceMotion implements DeviceMotion {
     return new DefaultDeviceMotion(environment, logger)
   }
 
-  private readonly watches = new WatchRegistry<MotionWatch<unknown>>((watch) => watch.stop())
+  private readonly watches = new WatchRegistry<MotionWatch<unknown>>()
 
   public constructor(
     private readonly environment: BrowserEnvironment,

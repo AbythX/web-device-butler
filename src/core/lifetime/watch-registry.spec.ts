@@ -15,7 +15,7 @@ class TestWatch {
 
 describe('watch-registry', () => {
   const create = () => {
-    const registry: WatchRegistry<TestWatch> = new WatchRegistry((watch) => watch.stop())
+    const registry: WatchRegistry<TestWatch> = new WatchRegistry()
 
     return { registry, watch: () => registry.track(new TestWatch(registry)) }
   }

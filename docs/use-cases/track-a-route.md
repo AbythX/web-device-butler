@@ -28,7 +28,7 @@ const points: Point[] = []
 let distance = 0
 let last: DevicePosition | undefined
 
-watch.on('position', (position) => {
+watch.on('change', (position) => {
   // a position that is less certain than 30 m would draw a zigzag
   if (position.accuracy > 30) return
   // standing still jitters by a few metres; count only real movement

@@ -27,7 +27,7 @@ export class LocationController extends WatchController<LocationWatch, LocationO
 
   protected listen(watch: LocationWatch): void {
     // the latest problem is cleared by the next position
-    watch.on('position', (position) => this.change({ position, error: undefined }))
+    watch.on('change', (position) => this.change({ position, error: undefined }))
     // a refused permission ends the watch
     watch.on('error', (error) => this.change({ error, isWatching: watch.isActive }))
   }

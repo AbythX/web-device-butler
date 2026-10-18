@@ -42,7 +42,7 @@ describe('location-controller', () => {
     watches[0]?.announce('error', new Error('timeout'))
     expect(sut.read()).toMatchObject({ isWatching: true, error: new Error('timeout') })
 
-    watches[0]?.announce('position', { latitude: 1 })
+    watches[0]?.announce('change', { latitude: 1 })
     expect(sut.read()).toMatchObject({ isWatching: true, error: undefined, position: { latitude: 1 } })
   })
 

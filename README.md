@@ -257,7 +257,7 @@ const precise = await butler.location.current({
 })
 
 using watch = butler.location.watch()
-watch.on('position', (position) => {
+watch.on('change', (position) => {
   /* DevicePosition */
 })
 

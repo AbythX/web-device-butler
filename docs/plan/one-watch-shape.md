@@ -21,7 +21,8 @@ The gain is modest: three names to learn instead of seven, a space watch that ca
 registry that ends every watch the same way. It changes the public API, which the package at `0.0.0` can still
 afford.
 
-Not implemented yet.
+Implemented on the branch `refactor-feature-support`, with every decision taken as recommended. [What was built
+differently](#what-was-built-differently) lists where the code left the plan.
 
 ## Review: what is there today
 
@@ -124,3 +125,10 @@ One commit each; every step leaves the specs green.
 | Keep the old names as deprecated aliases? | **No.** The package is at `0.0.0`; the migration guide covers the renames. |
 | Rename the snapshots of the hooks too (`useLocation().position` → `current`)? | **No.** A hook returns state of a component, not a watch, and `position` says what it is. |
 | `connectionchange` of the network: fold it into `change`? | **No, not in this plan.** `change` carries `isOnline` and `connectionchange` the connection; merging them changes what a listener receives. |
+
+## What was built differently
+
+| Plan | Built | Why |
+| ---- | ----- | --- |
+| `WatchRegistry<Tracked extends Watch<unknown>>` | `WatchRegistry<Tracked extends Pick<Watch<unknown>, 'stop'>>` | the registry only stops a watch; asking for the whole shape would tie the fakes of its spec to every event |
+| `LocationWatch` stays an interface | a type: `Watch<DevicePosition, LocationWatchEvents>` | it adds nothing to the shape, so an empty interface would only repeat it |

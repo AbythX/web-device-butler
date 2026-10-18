@@ -22,6 +22,7 @@ One per area: what the area does for you, the calls in the order you need them, 
 | [Several tabs](guides/multiple-tabs.md)                                         | what the tabs of an application share and how the library coordinates it |
 | [Errors](guides/errors.md)                                                      | every error class, when it is thrown and what to tell the user     |
 | [Migrating to `require` and `prefer`](guides/migrating-to-require-and-prefer.md) | what changed in what an application asks of a camera or a microphone |
+| [Migrating to one shape for the watches](guides/migrating-to-one-watch.md) | what was renamed in the watches of the location and of the storage space |
 
 ## Use cases
 

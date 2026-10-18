@@ -66,7 +66,7 @@ export class DefaultStorageManager implements StorageManager {
   private readonly loaders = new Map<string, StorageDriverLoader>()
   private readonly loading = new Map<string, Promise<StorageDriver>>()
   private readonly support = new Map<StorageDriver, Promise<boolean>>()
-  private readonly watches = new WatchRegistry<StorageSpaceWatch>((watch) => watch.dispose())
+  private readonly watches = new WatchRegistry<StorageSpaceWatch>()
   private readonly selector = new StorageDriverSelector()
   /** the promise of the browser not to evict the data, asked for once; a refusal is asked again */
   private persisting: Promise<boolean> | undefined

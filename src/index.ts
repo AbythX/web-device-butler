@@ -74,6 +74,8 @@ export type { EventListener, Listenable } from './core/events/listenable.ts'
 
 export { EventSubscription } from './core/events/event-subscription.ts'
 
+export type { Watch, WatchEvents } from './core/lifetime/watch.ts'
+
 export type { Logger } from './core/logging/logger.ts'
 
 export { NullLogger } from './core/logging/null-logger.ts'

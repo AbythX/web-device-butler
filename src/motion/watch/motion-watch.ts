@@ -1,6 +1,6 @@
-import type { Listenable } from '../../core/events/listenable.ts'
+import type { Watch, WatchEvents } from '../../core/lifetime/watch.ts'
 
-export interface MotionWatchEvents<Value> {
+export interface MotionWatchEvents<Value> extends WatchEvents<Value> {
   /** the device was turned or moved; at most `rate` times per second */
   change: Value
   /**
@@ -18,24 +18,9 @@ export interface MotionWatchOptions {
 /**
  * Follows a sensor of the device until it is stopped. Created by `butler.motion`, never by the application.
  */
-export interface MotionWatch<Value> extends Listenable<MotionWatchEvents<Value>>, Disposable {
-  /**
-   * `false` once the watch has been stopped.
-   */
-  readonly isActive: boolean
-
-  /**
-   * The latest value; `undefined` until the first one arrived.
-   */
-  readonly current: Value | undefined
-
+export interface MotionWatch<Value> extends Watch<Value, MotionWatchEvents<Value>> {
   /**
    * `true` once a value arrived, `false` once the watch found that none will, `undefined` until then.
    */
   readonly isAvailable: boolean | undefined
-
-  /**
-   * Stops following the sensor and forgets every listener. Stopping a watch that has stopped does nothing.
-   */
-  stop(): void
 }
