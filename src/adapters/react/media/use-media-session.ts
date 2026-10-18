@@ -1,4 +1,4 @@
-import type { MediaSession, MediaSessionEnd, MediaSessionState } from '../../../media/session/media-session.ts'
+import type { MediaSession } from '../../../media/session/media-session.ts'
 import {
   MediaSessionController,
   type MediaSessionOpener,
@@ -8,17 +8,7 @@ import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
 export type { MediaSessionOpener } from '../../state/media/media-session-controller.ts'
 
-export interface UseMediaSession<TSession, TRequirements> {
-  /** the open session; `undefined` before `open()` and after the session ended */
-  readonly session: TSession | undefined
-  /** `undefined` while there is no session */
-  readonly state: MediaSessionState | undefined
-  /** `true` between the call of `open()` and its outcome */
-  readonly isOpening: boolean
-  /** why the last `open()` failed; cleared by the next one */
-  readonly error: unknown
-  /** why the last session ended */
-  readonly ended: MediaSessionEnd | undefined
+export interface UseMediaSession<TSession, TRequirements> extends MediaSessionSnapshot<TSession> {
   /**
    * Opens a session, after closing the one that is open. A failure is not thrown, it ends up in `error`.
    *

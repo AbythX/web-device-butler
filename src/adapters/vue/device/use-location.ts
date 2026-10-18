@@ -1,17 +1,9 @@
-import type { Ref, ShallowRef } from 'vue'
-
 import type { DeviceLocation } from '../../../location/device-location.ts'
-import type { DevicePosition } from '../../../location/device-position.ts'
 import type { LocationOptions } from '../../../location/location-options.ts'
-import { LocationController } from '../../state/device/location-controller.ts'
-import { useController } from '../use-controller.ts'
+import { LocationController, type LocationSnapshot } from '../../state/device/location-controller.ts'
+import { type SnapshotRefs, useController } from '../use-controller.ts'
 
-export interface UseLocation {
-  /** the latest position; `undefined` until the first one arrived */
-  readonly position: ShallowRef<DevicePosition | undefined>
-  /** the latest problem; cleared by the next position */
-  readonly error: ShallowRef<unknown>
-  readonly isWatching: Ref<boolean>
+export interface UseLocation extends SnapshotRefs<LocationSnapshot> {
   /** starts following the device, which can show the permission prompt of the browser */
   start(options?: LocationOptions): void
   /** stops following the device; the last position stays */

@@ -1,15 +1,11 @@
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
-import { WakeLockController } from '../../state/screen/wake-lock-controller.ts'
+import { WakeLockController, type WakeLockSnapshot } from '../../state/screen/wake-lock-controller.ts'
 import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 import { useEventValue } from '../use-event-value.ts'
 
-export interface UseWakeLock {
+export interface UseWakeLock extends WakeLockSnapshot {
   /** whether the browser keeps the screen on right now; `false` while the page is in the background */
   readonly isActive: boolean
-  /** whether this component asked for the screen to stay on */
-  readonly isRequested: boolean
-  /** why the last request failed; cleared by the next one */
-  readonly error: unknown
   /** keeps the screen on until `release()` or until the component is unmounted */
   request(): Promise<void>
   release(): void

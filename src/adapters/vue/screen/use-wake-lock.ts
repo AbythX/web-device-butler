@@ -1,17 +1,13 @@
-import { ref, type Ref, type ShallowRef } from 'vue'
+import { ref, type Ref } from 'vue'
 
 import type { ScreenWakeLock } from '../../../screen/wake-lock/screen-wake-lock.ts'
-import { WakeLockController } from '../../state/screen/wake-lock-controller.ts'
+import { WakeLockController, type WakeLockSnapshot } from '../../state/screen/wake-lock-controller.ts'
 import { untilScopeEnd } from '../scope.ts'
-import { useController } from '../use-controller.ts'
+import { type SnapshotRefs, useController } from '../use-controller.ts'
 
-export interface UseWakeLock {
+export interface UseWakeLock extends SnapshotRefs<WakeLockSnapshot> {
   /** whether the browser keeps the screen on right now; `false` while the page is in the background */
   readonly isActive: Ref<boolean>
-  /** whether this component asked for the screen to stay on */
-  readonly isRequested: Ref<boolean>
-  /** why the last request failed; cleared by the next one */
-  readonly error: ShallowRef<unknown>
   /** keeps the screen on until `release()` or until the component is unmounted */
   request(): Promise<void>
   release(): void

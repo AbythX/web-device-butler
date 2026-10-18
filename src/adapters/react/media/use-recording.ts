@@ -1,27 +1,14 @@
 import type {
   MediaRecording,
-  MediaRecordingState,
   RecordingOptions,
   RecordingResult,
   RecordingSource,
 } from '../../../media/recording/media-recording.ts'
 import type { MediaRecordingManager } from '../../../media/recording/media-recording-manager.ts'
-import { RecordingController } from '../../state/media/recording-controller.ts'
+import { RecordingController, type RecordingSnapshot } from '../../state/media/recording-controller.ts'
 import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
-export interface UseRecording {
-  /** the recording that runs; `undefined` before `start()` and once it is over */
-  readonly recording: MediaRecording | undefined
-  /** `undefined` while there is no recording */
-  readonly state: MediaRecordingState | undefined
-  /** how long was recorded, in milliseconds; follows each time the recorder hands over data */
-  readonly duration: number
-  /** how much was handed over */
-  readonly bytes: number
-  /** what the last recording left; cleared by the next `start()` */
-  readonly result: RecordingResult | undefined
-  /** why the last recording could not be started or written; cleared by the next `start()` */
-  readonly error: unknown
+export interface UseRecording extends RecordingSnapshot {
   /**
    * Starts a recording, after stopping the one that runs. A failure is not thrown, it ends up in `error`.
    *

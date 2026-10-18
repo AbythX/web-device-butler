@@ -1,17 +1,10 @@
 import type { DeviceMotion } from '../../../motion/device-motion.ts'
 import type { Attitude, Movement } from '../../../motion/model/attitude.ts'
 import type { MotionWatch, MotionWatchOptions } from '../../../motion/watch/motion-watch.ts'
-import { MotionController } from '../../state/device/motion-controller.ts'
+import { MotionController, type MotionSnapshot } from '../../state/device/motion-controller.ts'
 import { useController, useLatest, useSnapshot } from '../use-controller.ts'
 
-export interface UseMotionWatch<Value> {
-  /** the latest value; `undefined` until the first one arrived */
-  readonly value: Value | undefined
-  /** `false` once the watch found that the device reports nothing, `undefined` until it knows */
-  readonly isAvailable: boolean | undefined
-  /** why the last `start()` failed; cleared by the next one */
-  readonly error: unknown
-  readonly isWatching: boolean
+export interface UseMotionWatch<Value> extends MotionSnapshot<Value> {
   /** starts following the sensor; in Safari, request the permission `motion` in a click first */
   start(options?: MotionWatchOptions): void
   /** stops following the sensor; the last value stays */

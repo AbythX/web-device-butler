@@ -1,16 +1,10 @@
 import { useEffect } from 'react'
 
 import type { Store } from '../../../storage/store/store.ts'
-import { StoredValueController } from '../../state/storage/stored-value-controller.ts'
+import { StoredValueController, type StoredValueSnapshot } from '../../state/storage/stored-value-controller.ts'
 import { useController, useSnapshot } from '../use-controller.ts'
 
-export interface UseStoredValue<T> {
-  /** the stored value; `undefined` while it is loading and where there is no entry */
-  readonly value: T | undefined
-  /** `true` once the entry was read for the first time */
-  readonly isLoaded: boolean
-  /** why the last read or write failed */
-  readonly error: unknown
+export interface UseStoredValue<T> extends StoredValueSnapshot<T> {
   /** writes the value; `value` follows once it is stored */
   set(value: T): Promise<void>
   /** builds on the current value, safely when several tabs do it at once */

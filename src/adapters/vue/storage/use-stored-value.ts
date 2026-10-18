@@ -1,16 +1,8 @@
-import type { Ref, ShallowRef } from 'vue'
-
 import type { Store } from '../../../storage/store/store.ts'
-import { StoredValueController } from '../../state/storage/stored-value-controller.ts'
-import { useController } from '../use-controller.ts'
+import { StoredValueController, type StoredValueSnapshot } from '../../state/storage/stored-value-controller.ts'
+import { type SnapshotRefs, useController } from '../use-controller.ts'
 
-export interface UseStoredValue<T> {
-  /** the stored value; `undefined` while it is loading and where there is no entry */
-  readonly value: ShallowRef<T | undefined>
-  /** `true` once the entry was read for the first time */
-  readonly isLoaded: Ref<boolean>
-  /** why the last read or write failed */
-  readonly error: ShallowRef<unknown>
+export interface UseStoredValue<T> extends SnapshotRefs<StoredValueSnapshot<T>> {
   /** writes the value; `value` follows once it is stored */
   set(value: T): Promise<void>
   /** builds on the current value, safely when several tabs do it at once */

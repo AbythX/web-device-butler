@@ -1,29 +1,14 @@
-import type { Ref, ShallowRef } from 'vue'
-
 import type {
   MediaRecording,
-  MediaRecordingState,
   RecordingOptions,
   RecordingResult,
   RecordingSource,
 } from '../../../media/recording/media-recording.ts'
 import type { MediaRecordingManager } from '../../../media/recording/media-recording-manager.ts'
-import { RecordingController } from '../../state/media/recording-controller.ts'
-import { useController } from '../use-controller.ts'
+import { RecordingController, type RecordingSnapshot } from '../../state/media/recording-controller.ts'
+import { type SnapshotRefs, useController } from '../use-controller.ts'
 
-export interface UseRecording {
-  /** the recording that runs; `undefined` before `start()` and once it is over */
-  readonly recording: ShallowRef<MediaRecording | undefined>
-  /** `undefined` while there is no recording */
-  readonly state: Ref<MediaRecordingState | undefined>
-  /** how long was recorded, in milliseconds; follows each time the recorder hands over data */
-  readonly duration: Ref<number>
-  /** how much was handed over */
-  readonly bytes: Ref<number>
-  /** what the last recording left; cleared by the next `start()` */
-  readonly result: ShallowRef<RecordingResult | undefined>
-  /** why the last recording could not be started or written; cleared by the next `start()` */
-  readonly error: ShallowRef<unknown>
+export interface UseRecording extends SnapshotRefs<RecordingSnapshot> {
   /**
    * Starts a recording, after stopping the one that runs. A failure is not thrown, it ends up in `error`.
    *

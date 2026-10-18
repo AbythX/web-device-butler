@@ -2,9 +2,8 @@ import { useEffect } from 'react'
 
 import type { MicrophoneManager } from '../../../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../../../media/microphone/model/microphone-requirements.ts'
-import type { MicrophoneSettings } from '../../../media/microphone/model/microphone-settings.ts'
 import type { MicrophoneSession } from '../../../media/microphone/session/microphone-session.ts'
-import { MicrophoneController } from '../../state/media/microphone-controller.ts'
+import { MicrophoneController, type MicrophoneSnapshot } from '../../state/media/microphone-controller.ts'
 import { useLatest } from '../use-controller.ts'
 import { useMediaSessionOf, type UseMediaSession } from './use-media-session.ts'
 
@@ -16,13 +15,7 @@ export interface UseMicrophoneOptions {
   level?: boolean
 }
 
-export interface UseMicrophone extends UseMediaSession<MicrophoneSession, MicrophoneRequirements> {
-  /** what the microphone delivers; follows `session.processing.set()` */
-  readonly settings: MicrophoneSettings | undefined
-  /** whether the application muted the microphone */
-  readonly muted: boolean
-  /** from `0` to `1`; stays `0` unless the `level` option is set */
-  readonly level: number
+export interface UseMicrophone extends UseMediaSession<MicrophoneSession, MicrophoneRequirements>, MicrophoneSnapshot {
   /** mutes and unmutes; a session that is opened later continues the way the last one was left */
   setMuted(muted: boolean): void
 }

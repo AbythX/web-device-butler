@@ -1,10 +1,10 @@
-import { watch, type Ref, type ShallowRef } from 'vue'
+import { watch, type ShallowRef } from 'vue'
 
 import type { MicrophoneManager } from '../../../media/microphone/microphone-manager.ts'
 import type { MicrophoneRequirements } from '../../../media/microphone/model/microphone-requirements.ts'
-import type { MicrophoneSettings } from '../../../media/microphone/model/microphone-settings.ts'
 import type { MicrophoneSession } from '../../../media/microphone/session/microphone-session.ts'
-import { MicrophoneController } from '../../state/media/microphone-controller.ts'
+import { MicrophoneController, type MicrophoneSnapshot } from '../../state/media/microphone-controller.ts'
+import type { SnapshotRefs } from '../use-controller.ts'
 import { bindMediaSession, type UseMediaSession } from './use-media-session.ts'
 
 export interface UseMicrophoneOptions {
@@ -12,13 +12,10 @@ export interface UseMicrophoneOptions {
   level?: boolean
 }
 
-export interface UseMicrophone extends UseMediaSession<MicrophoneSession, MicrophoneRequirements> {
-  /** what the microphone delivers; follows `session.processing.set()` */
-  readonly settings: ShallowRef<MicrophoneSettings | undefined>
+export interface UseMicrophone
+  extends UseMediaSession<MicrophoneSession, MicrophoneRequirements>, SnapshotRefs<MicrophoneSnapshot> {
   /** whether the application muted the microphone; assign to mute and unmute */
-  readonly muted: Ref<boolean>
-  /** from `0` to `1`; stays `0` unless the `level` option is set */
-  readonly level: Ref<number>
+  readonly muted: ShallowRef<boolean>
 }
 
 /**

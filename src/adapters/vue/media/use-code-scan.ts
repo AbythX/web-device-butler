@@ -1,19 +1,9 @@
-import type { Ref, ShallowRef } from 'vue'
-
 import type { CodeScanner } from '../../../media/scanning/code-scanner.ts'
-import type { DetectedCode } from '../../../media/scanning/model/detected-code.ts'
 import type { CodeScan, CodeScanOptions, CodeScanSource } from '../../../media/scanning/scan/code-scan.ts'
-import { CodeScanController } from '../../state/media/code-scan-controller.ts'
-import { useController } from '../use-controller.ts'
+import { CodeScanController, type CodeScanSnapshot } from '../../state/media/code-scan-controller.ts'
+import { type SnapshotRefs, useController } from '../use-controller.ts'
 
-export interface UseCodeScan {
-  /** the scan that runs; `undefined` before `start()` and after it ended */
-  readonly scan: ShallowRef<CodeScan | undefined>
-  /** the code that came into sight last; kept after the scan ended */
-  readonly code: ShallowRef<DetectedCode | undefined>
-  readonly isScanning: Ref<boolean>
-  /** why the last `start()` failed; cleared by the next one */
-  readonly error: ShallowRef<unknown>
+export interface UseCodeScan extends SnapshotRefs<CodeScanSnapshot> {
   /**
    * Starts to scan the session, after stopping the scan that runs. A failure is not thrown, it ends up in `error`.
    *
